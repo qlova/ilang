@@ -72,7 +72,14 @@ SUBROUTINE num
 			BREAK
 		END
 		
+		
 		INDEX text i tens*i
+		SEQ __condition tens*i 45
+		IF __condition 
+			MUL number number -1
+			BREAK
+		END
+		
 		SUB tens*i tens*i 48 #Convert from unicode.
 		MUL tens*i tens tens*i
 		
