@@ -89,6 +89,14 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 		s.Scan()
 		return "i+tmp+"+fmt.Sprint(unique)
 	}
+	
+	if len(s.TokenText()) == 3 && s.TokenText()[0] == '\'' && s.TokenText()[2] == '\'' {
+		defer s.Scan()
+		return strconv.Itoa(int(s.TokenText()[1]))
+	} else if s.TokenText() == `'\n'` {
+		defer s.Scan()
+		return strconv.Itoa(int('\n'))
+	}
 
 
 	//Is it a literal number?
@@ -130,7 +138,11 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 			unique++
 			output.Write([]byte("RUN "+name+"\n"))
 			if len(functions[name].Returns) > 0 {
-				output.Write([]byte("POP i+output+"+fmt.Sprint(unique)+"\n"))
+				if functions[name].Returns[0] {
+					output.Write([]byte("POPSTRING i+output+"+fmt.Sprint(unique)+"\n"))
+				} else {
+					output.Write([]byte("POP i+output+"+fmt.Sprint(unique)+"\n"))
+				}
 			}			
 			return "i+output+"+fmt.Sprint(unique)
 		}
@@ -175,15 +187,8 @@ func main() {
 		return
 	}
 	
-	output.Write([]byte(
-`
-SUBROUTINE output
-	POPSTRING data
-	PUSHSTRING data
-	STDOUT 
-END
-`	))
-	functions["output"] = Function{Exists:true, Args:[]bool{true}}
+	//Add builtin functions.
+	builtin(output)
 	
 	var s scanner.Scanner
 	s.Init(file)
@@ -350,7 +355,7 @@ END
 							
 						} else {
 							variables[name] = true
-							output.Write([]byte("VAR "+name+" "+s.TokenText()+"\n"))
+							output.Write([]byte("VAR "+name+" "+expression(&s, output)+"\n"))
 						}
 					default:
 						fmt.Println(s.Pos(), "Unexpected ", name)
