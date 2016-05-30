@@ -55,13 +55,48 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 				s.Scan()
 				output.Write([]byte("MOD i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
 				return "i+shunt+"+fmt.Sprint(unique)
+			case "^":
+				unique++
+				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
+				s.Scan()
+				output.Write([]byte("POW i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
+				return "i+shunt+"+fmt.Sprint(unique)
+			case "&":
+				unique++
+				var uniq = unique
+				output.Write([]byte("STRING i+shunt+"+fmt.Sprint(unique)+"\n"))
+				s.Scan()
+				output.Write([]byte("JOIN i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
+				return "i+shunt+"+fmt.Sprint(uniq)
 			case "²":
 				unique++
 				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
 				s.Scan()
 				output.Write([]byte("MUL i+shunt+"+fmt.Sprint(unique)+" "+name+" "+name+"\n"))
 				return "i+shunt+"+fmt.Sprint(unique)
+			case "@":
+				s.Scan()
+				output.Write([]byte("PUSHSTRING "+name+"\n"))
+				output.Write([]byte("PUSH "+expression(s, output)+"\n"))
+				output.Write([]byte("RUN hash\n"))
+				unique++
+				output.Write([]byte("POP i+shunt+"+fmt.Sprint(unique)+"\n"))
+				return "i+shunt+"+fmt.Sprint(unique)
+			case "?":
+				s.Scan()
+				output.Write([]byte("PUSH "+name+"\n"))
+				output.Write([]byte("PUSH "+expression(s, output)+"\n"))
+				output.Write([]byte("RUN unhash\n"))
+				unique++
+				output.Write([]byte("POPSTRING i+shunt+"+fmt.Sprint(unique)+"\n"))
+				return "i+shunt+"+fmt.Sprint(unique)
 			default:
+				if s.TokenText()[0] == '.' {
+					unique++
+					output.Write([]byte("INDEX "+name+" "+s.TokenText()[1:]+" i+shunt+"+fmt.Sprint(unique)+"\n"))
+					s.Scan()
+					return "i+shunt+"+fmt.Sprint(unique)
+				}
 				println(name, s.TokenText())
 			
 		}
@@ -104,8 +139,7 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 		end:
 		//println(newarg)
 		output.Write([]byte(newarg))
-		s.Scan()
-		return "i+tmp+"+fmt.Sprint(unique)
+		return shunt("i+tmp+"+fmt.Sprint(unique), s, output)
 	}
 	
 	if len(s.TokenText()) == 3 && s.TokenText()[0] == '\'' && s.TokenText()[2] == '\'' {
@@ -151,18 +185,17 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 				}
 				
 				
-			}
-			s.Scan()		
-			unique++
+			}		
 			output.Write([]byte("RUN "+name+"\n"))
 			if len(functions[name].Returns) > 0 {
+				unique++
 				if functions[name].Returns[0] {
 					output.Write([]byte("POPSTRING i+output+"+fmt.Sprint(unique)+"\n"))
 				} else {
 					output.Write([]byte("POP i+output+"+fmt.Sprint(unique)+"\n"))
 				}
 			}			
-			return "i+output+"+fmt.Sprint(unique)
+			return shunt("i+output+"+fmt.Sprint(unique), s, output)
 		}
 	
 		//Is it a variable?
@@ -200,7 +233,7 @@ func main() {
 		return
 	}
 	
-	output, err := os.Create(flag.Arg(0)+".u")
+	output, err := os.Create(flag.Arg(0)[:len(flag.Arg(0))-2]+".u")
 	if err != nil {
 		return
 	}
@@ -345,6 +378,10 @@ func main() {
 				
 				s.Scan()
 				switch s.TokenText() {
+					case "&":
+						s.Scan()
+						variables[name] = true
+						output.Write([]byte("PUSH "+expression(&s, output)+" "+name+" \n"))
 					case "=":
 						// a = 
 						s.Scan()
@@ -370,14 +407,65 @@ func main() {
 								}
 								s.Scan()
 							}
-							
+						
+						} else if s.TokenText()[0] == '"' {
+							//Turn string literals into numeric strings.
+							//For example string arguments to a function
+							//eg. output("A")
+							// ->
+							// STRING i+tmp+id
+							// PUSH 'A' i+tmp+id
+							// PUSHSTRING i+tmp+id
+							// RUN output
+								var newarg string = "STRING "+name+"\n"
+								var j int
+								var arg = s.TokenText()[1:]
+		
+								stringloop:
+								arg = strings.Replace(arg, "\\n", "\n", -1)
+								for _, v := range arg {
+									if v == '"' {
+										goto end
+									}
+									newarg += "PUSH "+strconv.Itoa(int(v))+" "+name+"\n"
+								}
+								if len(arg) == 0 {
+									goto end
+								}
+								newarg += "PUSH "+strconv.Itoa(int(' '))+" "+name+"\n"
+								j++
+								//println(arg)
+								arg = string(s.TokenText()[j])
+								goto stringloop
+								end:
+								//println(newarg)
+								output.Write([]byte(newarg))
+								s.Scan()
+						
 						} else {
 							variables[name] = true
 							output.Write([]byte("VAR "+name+" "+expression(&s, output)+"\n"))
 						}
 					default:
-						fmt.Println(s.Pos(), "Unexpected ", name)
-						return
+						if len(s.TokenText()) > 0 && s.TokenText()[0] == '.' {
+							var index = s.TokenText()[1:]
+							s.Scan()
+							if s.TokenText() != "=" {
+								fmt.Println(s.Pos(), "Expecting = found ", s.TokenText())
+								return
+							}
+							s.Scan()
+							output.Write([]byte("SET "+name+" "+index+" "+expression(&s, output)+"\n"))
+							
+						} else {
+					
+					
+							if name == "" {
+								return	
+							}
+							fmt.Println(s.Pos(), "Unexpected ", name)
+							return
+						}
 				}
 				
 		}
