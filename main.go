@@ -37,6 +37,24 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 				s.Scan()
 				output.Write([]byte("ADD i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
 				return "i+shunt+"+fmt.Sprint(unique)
+			case "-":
+				unique++
+				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
+				s.Scan()
+				output.Write([]byte("SUB i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
+				return "i+shunt+"+fmt.Sprint(unique)
+			case "*":
+				unique++
+				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
+				s.Scan()
+				output.Write([]byte("MUL i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
+				return "i+shunt+"+fmt.Sprint(unique)
+			case "mod":
+				unique++
+				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
+				s.Scan()
+				output.Write([]byte("MOD i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
+				return "i+shunt+"+fmt.Sprint(unique)
 			case "²":
 				unique++
 				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
