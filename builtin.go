@@ -12,7 +12,7 @@ SUBROUTINE output
 	STDOUT 
 END
 `	))
-	functions["output"] = Function{Exists:true, Args:[]bool{true}}
+	functions["output"] = Function{Exists:true, Args:[]int{STRING}}
 
 	//Inbuilt output function.
 	output.Write([]byte(
@@ -22,7 +22,7 @@ SUBROUTINE len
 	PUSH #data
 END
 `	))
-	functions["len"] = Function{Exists:true, Args:[]bool{true}, Returns:[]bool{false}}
+	functions["len"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{NUMBER}}
 
 	//Inbuilt reada function.
 	output.Write([]byte(
@@ -51,7 +51,7 @@ SUBROUTINE reada
 	PUSHSTRING input
 END
 `	))
-	functions["reada"] = Function{Exists:true, Args:[]bool{false}, Returns:[]bool{true}}
+	functions["reada"] = Function{Exists:true, Args:[]int{NUMBER}, Returns:[]int{STRING}}
 	
 	//Inbuilt num function.
 	output.Write([]byte(
@@ -101,7 +101,7 @@ SUBROUTINE num
 	PUSH number
 END
 `	))
-	functions["num"] = Function{Exists:true, Args:[]bool{true}, Returns:[]bool{false}}
+	functions["num"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{NUMBER}}
 
 	//Inbuilt text function.
 	output.Write([]byte(
@@ -164,7 +164,7 @@ SUBROUTINE text
 	PUSHSTRING txt
 END
 `	))
-	functions["text"] = Function{Exists:true, Args:[]bool{false}, Returns:[]bool{true}}
+	functions["text"] = Function{Exists:true, Args:[]int{NUMBER}, Returns:[]int{STRING}}
 	
 	//Hash function.
 	output.Write([]byte(
@@ -263,5 +263,5 @@ SUBROUTINE unhash
 	PUSHSTRING txt
 END
 `	))
-	//functions["hash"] = Function{Exists:true, Args:[]bool{true}, Returns:[]bool{false}}
+	//functions["hash"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{NUMBER}}
 }

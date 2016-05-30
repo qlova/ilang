@@ -12,8 +12,11 @@ import (
 
 type Function struct {
 	Exists bool
-	Args []bool
-	Returns []bool
+	Args []int
+	Returns []int
+	
+	//Is this a local?
+	Local bool
 }
 
 var variables = make( map[string]bool)
@@ -162,19 +165,24 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 
 			var i int
 			for tok := s.Scan(); tok != scanner.EOF; {
-				
+				if s.TokenText() == ")" {
+					return name
+				}
 				s.Scan()
 				if s.TokenText() == ")" {
 					break
 				}
 				
 				if len(functions[name].Args) > i {
-					if functions[name].Args[i] {
-						output.Write([]byte("PUSHSTRING "+expression(s, output)+"\n"))
-					} else {
-						output.Write([]byte("PUSH "+expression(s, output)+"\n"))
+					switch functions[name].Args[i] {
+						case STRING:
+							output.Write([]byte("PUSHSTRING "+expression(s, output)+"\n"))
+						case NUMBER:
+							output.Write([]byte("PUSH "+expression(s, output)+"\n"))
+						case FUNCTION:
+							output.Write([]byte("PUSHFUNC "+expression(s, output)+"\n"))
 					}
-				}
+				} 
 				
 				if s.TokenText() == ")" {
 					break
@@ -186,13 +194,20 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 				
 				
 			}		
-			output.Write([]byte("RUN "+name+"\n"))
+			if functions[name].Local {
+				output.Write([]byte("EXE "+name+"\n"))
+			} else {
+				output.Write([]byte("RUN "+name+"\n"))
+			}
 			if len(functions[name].Returns) > 0 {
 				unique++
-				if functions[name].Returns[0] {
-					output.Write([]byte("POPSTRING i+output+"+fmt.Sprint(unique)+"\n"))
-				} else {
-					output.Write([]byte("POP i+output+"+fmt.Sprint(unique)+"\n"))
+				switch functions[name].Returns[0] {
+					case STRING:
+						output.Write([]byte("POPSTRING i+output+"+fmt.Sprint(unique)+"\n"))
+					case NUMBER:
+						output.Write([]byte("POP i+output+"+fmt.Sprint(unique)+"\n"))
+					case FUNCTION:
+						output.Write([]byte("POPFUNC i+output+"+fmt.Sprint(unique)+"\n"))
 				}
 			}			
 			return shunt("i+output+"+fmt.Sprint(unique), s, output)
@@ -224,6 +239,12 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 	}
 	return shunt(s.TokenText(), s, output)
 }
+
+const (
+	FUNCTION = iota
+	STRING
+	NUMBER
+)
 
 func main() {
 	flag.Parse()
@@ -309,10 +330,11 @@ func main() {
 					if s.TokenText() == ")" {
 						break
 					}
+					//String arguments.
 					if s.TokenText() == "[" {
 						
 						//Update our function definition with a string argument.
-						function.Args = append(function.Args, true)
+						function.Args = append(function.Args, STRING)
 						
 						popstring += "POPSTRING "
 						s.Scan()
@@ -321,9 +343,22 @@ func main() {
 							return
 						}
 						s.Scan()
+					//Function arguments.
+					} else if s.TokenText() == "(" {
+						
+						//Update our function definition with a string argument.
+						function.Args = append(function.Args, FUNCTION)
+						
+						popstring += "POPFUNC "
+						s.Scan()
+						if s.TokenText() != ")" {
+							fmt.Println(s.Pos(), "Expecting ) found ", s.TokenText())
+							return
+						}
+						s.Scan()
 					} else {
 						//Update our function definition with a numeric argument.
-						function.Args = append(function.Args, false)
+						function.Args = append(function.Args, NUMBER)
 						
 						popstring += "POP "
 					}
@@ -345,9 +380,9 @@ func main() {
 				s.Scan()
 				if s.TokenText() != "{" {
 					if s.TokenText() != "[" {
-						function.Returns = append(function.Returns, false)
+						function.Returns = append(function.Returns, NUMBER)
 					} else {
-						function.Returns = append(function.Returns, true)
+						function.Returns = append(function.Returns, STRING)
 						s.Scan()
 						if s.TokenText() != "]" {
 							fmt.Println(s.Pos(), "Expecting ] found ", s.TokenText())
@@ -378,6 +413,9 @@ func main() {
 				
 				s.Scan()
 				switch s.TokenText() {
+					case "(":
+						s.Scan()
+						output.Write([]byte("EXE "+name+" \n"))
 					case "&":
 						s.Scan()
 						variables[name] = true
@@ -443,8 +481,19 @@ func main() {
 								s.Scan()
 						
 						} else {
-							variables[name] = true
-							output.Write([]byte("VAR "+name+" "+expression(&s, output)+"\n"))
+							if functions[s.TokenText()].Exists {
+								
+								functions[name] = functions[s.TokenText()]
+								f := functions[name] 
+								f.Local = true
+								functions[name] = f
+								output.Write([]byte("FUNC "+name+" "+s.TokenText()+"\n"))
+								
+							} else {
+						
+								variables[name] = true
+								output.Write([]byte("VAR "+name+" "+expression(&s, output)+"\n"))
+							}
 						}
 					default:
 						if len(s.TokenText()) > 0 && s.TokenText()[0] == '.' {
