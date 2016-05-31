@@ -17,6 +17,8 @@ type Function struct {
 	
 	//Is this a local?
 	Local bool
+	
+	Variadic bool
 }
 
 var variables = make( map[string]bool)
@@ -161,7 +163,51 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 	
 		var name = s.TokenText()
 	
+		//Function call.
 		if functions[name].Exists  {
+		
+			if functions[name].Variadic {
+				unique++
+				var id = unique
+				output.Write([]byte("STRING i+variadic+"+fmt.Sprint(unique)+"\n"))
+				for tok := s.Scan(); tok != scanner.EOF; {
+					
+					if s.TokenText() == ")" {
+						break
+					}
+					s.Scan()
+				
+					output.Write([]byte("PUSH "+expression(s, output)+" i+variadic+"+fmt.Sprint(id)+"\n"))
+					
+					if s.TokenText() == ")" {
+						break
+					}
+					
+					if s.TokenText() != "," {
+						fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
+						os.Exit(1)
+					}
+				}
+			
+				output.Write([]byte("PUSHSTRING i+variadic+"+fmt.Sprint(id)+"\n"))
+				if functions[name].Local {
+					output.Write([]byte("EXE "+name+"\n"))
+				} else {
+					output.Write([]byte("RUN "+name+"\n"))
+				}
+				if len(functions[name].Returns) > 0 {
+					unique++
+					switch functions[name].Returns[0] {
+						case STRING:
+							output.Write([]byte("POPSTRING i+output+"+fmt.Sprint(unique)+"\n"))
+						case NUMBER:
+							output.Write([]byte("POP i+output+"+fmt.Sprint(unique)+"\n"))
+						case FUNCTION:
+							output.Write([]byte("POPFUNC i+output+"+fmt.Sprint(unique)+"\n"))
+					}
+				}	
+				return shunt("i+output+"+fmt.Sprint(unique), s, output)
+			}
 
 			var i int
 			for tok := s.Scan(); tok != scanner.EOF; {
@@ -340,6 +386,19 @@ func main() {
 						s.Scan()
 						if s.TokenText() != "]" {
 							fmt.Println(s.Pos(), "Expecting ] found ", s.TokenText())
+							return
+						}
+					//Other type of string argument.
+					} else if s.TokenText() == "." {
+						
+						//Update our function definition with a string argument.
+						function.Args = append(function.Args, STRING)
+						function.Variadic = true
+						
+						popstring += "POPSTRING "
+						s.Scan()
+						if s.TokenText() != "." {
+							fmt.Println(s.Pos(), "Expecting . found ", s.TokenText())
 							return
 						}
 						s.Scan()
