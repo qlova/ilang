@@ -27,33 +27,38 @@ var unique int
 
 func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 		s.Scan()
+		
 		switch s.TokenText() {
 			case ")", ",", "\n", "]":
 				return name
 			case "/":
 				unique++
+				var tmp = unique
 				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
 				s.Scan()
-				output.Write([]byte("DIV i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
-				return "i+shunt+"+fmt.Sprint(unique)
+				output.Write([]byte("DIV i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output, false)+"\n"))
+				return shunt("i+shunt+"+fmt.Sprint(tmp), s, output)
 			case "+":
 				unique++
+				var tmp = unique
 				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
 				s.Scan()
 				output.Write([]byte("ADD i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
-				return "i+shunt+"+fmt.Sprint(unique)
+				return "i+shunt+"+fmt.Sprint(tmp)
 			case "-":
 				unique++
+				var tmp = unique
 				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
 				s.Scan()
 				output.Write([]byte("SUB i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
-				return "i+shunt+"+fmt.Sprint(unique)
+				return "i+shunt+"+fmt.Sprint(tmp)
 			case "*":
 				unique++
+				var tmp = unique
 				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
 				s.Scan()
-				output.Write([]byte("MUL i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
-				return "i+shunt+"+fmt.Sprint(unique)
+				output.Write([]byte("MUL i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output, false)+"\n"))
+				return shunt("i+shunt+"+fmt.Sprint(tmp), s, output)
 			case "mod":
 				unique++
 				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
@@ -108,7 +113,9 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 		return ""
 }
 
-func expression(s *scanner.Scanner, output io.Writer) string {
+func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
+	
+	var shunting bool = len(param) <= 0
 
 	//Turn string literals into numeric strings.
 	//For example string arguments to a function
@@ -118,7 +125,7 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 	// PUSH 'A' i+tmp+id
 	// PUSHSTRING i+tmp+id
 	// RUN output
-	if s.TokenText()[0] == '"' {
+	if len(s.TokenText()) > 0 && s.TokenText()[0] == '"' {
 				
 		unique++
 		var newarg string = "STRING i+tmp+"+fmt.Sprint(unique)+"\n"
@@ -144,7 +151,42 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 		end:
 		//println(newarg)
 		output.Write([]byte(newarg))
-		return shunt("i+tmp+"+fmt.Sprint(unique), s, output)
+		if shunting {
+			return shunt("i+tmp+"+fmt.Sprint(unique), s, output)
+		} else {
+			return "i+tmp+"+fmt.Sprint(unique)
+		}
+	}
+	
+	if  s.TokenText()[0] == '[' {
+		unique++
+		var id = unique
+		
+		output.Write([]byte("STRING i+string+"+fmt.Sprint(id)+"\n"))
+		
+		for tok := s.Scan(); tok != scanner.EOF; {
+		
+			if s.TokenText() == "]" {
+				break
+			}
+		
+			output.Write([]byte("PUSH "+expression(s, output)+" i+string+"+fmt.Sprint(id)+"\n"))
+			
+			if s.TokenText() == "]" {
+				break
+			}
+			
+			if s.TokenText() != "," {
+				fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
+				os.Exit(1)
+			}
+			s.Scan()
+		}
+		if shunting {
+			return shunt("i+string+"+fmt.Sprint(unique), s, output)
+		} else {
+			return "i+string+"+fmt.Sprint(unique)
+		}
 	}
 	
 	if len(s.TokenText()) == 3 && s.TokenText()[0] == '\'' && s.TokenText()[2] == '\'' {
@@ -158,7 +200,11 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 
 	//Is it a literal number?
 	if _, err := strconv.Atoi(s.TokenText()); err == nil {
-		return shunt(s.TokenText(), s, output)
+		if shunting {
+			return shunt(s.TokenText(), s, output)
+		} else {
+			return s.TokenText()
+		}
 	} else {
 	
 		var name = s.TokenText()
@@ -206,7 +252,11 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 							output.Write([]byte("POPFUNC i+output+"+fmt.Sprint(unique)+"\n"))
 					}
 				}	
-				return shunt("i+output+"+fmt.Sprint(unique), s, output)
+				if shunting {
+					return shunt("i+output+"+fmt.Sprint(unique), s, output)
+				} else {
+					return "i+output+"+fmt.Sprint(unique)
+				}
 			}
 
 			var i int
@@ -255,18 +305,26 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 					case FUNCTION:
 						output.Write([]byte("POPFUNC i+output+"+fmt.Sprint(unique)+"\n"))
 				}
-			}			
-			return shunt("i+output+"+fmt.Sprint(unique), s, output)
+			}		
+			var tmp = unique
+			if shunting {
+				return shunt("i+output+"+fmt.Sprint(unique), s, output)
+			}	
+			return "i+output+"+fmt.Sprint(tmp)
 		}
 	
 		//Is it a variable?
 		if variables[s.TokenText()] {
-			return shunt(s.TokenText(), s, output)
+			if shunting {
+				return shunt(s.TokenText(), s, output)
+			} else {
+				return s.TokenText()
+			}
 			
 		} else {
 			
 			// a=2; b=4; ab
-			if variables[string(rune(s.TokenText()[0]))] {
+			if len(s.TokenText()) > 0 && variables[string(rune(s.TokenText()[0]))] {
 				if len(s.TokenText()) == 2 {
 					if variables[string(rune(s.TokenText()[1]))] {
 						unique++
@@ -275,7 +333,11 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 							string(rune(s.TokenText()[0]))+" "+
 							string(rune(s.TokenText()[1]))+"\n"))
 						
-						return shunt("i+tmp+"+s.TokenText()+fmt.Sprint(unique), s, output)
+						if shunting {
+							return shunt("i+tmp+"+s.TokenText()+fmt.Sprint(unique), s, output)
+						} else {
+							return "i+tmp+"+s.TokenText()+fmt.Sprint(unique)
+						}
 					}
 				}
 			}
@@ -283,7 +345,11 @@ func expression(s *scanner.Scanner, output io.Writer) string {
 		}
 	
 	}
-	return shunt(s.TokenText(), s, output)
+	if shunting {
+		return shunt(s.TokenText(), s, output)
+	} else {
+		return s.TokenText()
+	}
 }
 
 const (
@@ -540,7 +606,7 @@ func main() {
 								s.Scan()
 						
 						} else {
-							if functions[s.TokenText()].Exists {
+							if functions[s.TokenText()].Exists && s.Peek() != '(' {
 								
 								functions[name] = functions[s.TokenText()]
 								f := functions[name] 
