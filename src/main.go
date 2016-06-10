@@ -36,81 +36,27 @@ var unique int
 
 func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	
+	//Do we need to shunt? This is for operator precidence. (defaults to true)
 	var shunting bool = len(param) <= 0 || param[0]
+	var token = s.TokenText()
+	
+	if len(token) <= 0 {
+		fmt.Println("Empty expression!")
+		return ""
+	}
 
-	//Turn string literals into numeric strings.
-	//For example string arguments to a function
-	//eg. output("A")
-	// ->
-	// STRING i+tmp+id
-	// PUSH 'A' i+tmp+id
-	// PUSHSTRING i+tmp+id
-	// RUN output.
-	if len(s.TokenText()) > 0 && s.TokenText()[0] == '"' {
-				
-		unique++
-		var newarg string = "STRING i+tmp+"+fmt.Sprint(unique)+"\n"
-		var j int
-		var arg = s.TokenText()[1:]
-		
-		stringloop:
-		arg = strings.Replace(arg, "\\n", "\n", -1)
-		for _, v := range arg {
-			if v == '"' {
-				goto end
-			}
-			newarg += "PUSH "+strconv.Itoa(int(v))+" i+tmp+"+fmt.Sprint(unique)+"\n"
-		}
-		if len(arg) == 0 {
-			goto end
-		}
-		newarg += "PUSH "+strconv.Itoa(int(' '))+" i+tmp+"+fmt.Sprint(unique)+"\n"
-		j++
-		//println(arg)
-		arg = string(s.TokenText()[j])
-		goto stringloop
-		end:
-		//println(newarg)
-		output.Write([]byte(newarg))
-		if shunting {
-			return shunt("i+tmp+"+fmt.Sprint(unique), s, output)
-		} else {
-			return "i+tmp+"+fmt.Sprint(unique)
-		}
+	//If there is a quotation mark, parse the string. 
+	if token[0] == '"' {
+		return ParseString(s, output, shunting)
 	}
 	
-	if  s.TokenText()[0] == '[' {
-		unique++
-		var id = unique
-		
-		output.Write([]byte("STRING i+string+"+fmt.Sprint(id)+"\n"))
-		
-		for tok := s.Scan(); tok != scanner.EOF; {
-		
-			if s.TokenText() == "]" {
-				break
-			}
-		
-			output.Write([]byte("PUSH "+expression(s, output)+" i+string+"+fmt.Sprint(id)+"\n"))
-			
-			if s.TokenText() == "]" {
-				break
-			}
-			
-			if s.TokenText() != "," {
-				fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
-				os.Exit(1)
-			}
-			s.Scan()
-		}
-		if shunting {
-			return shunt("i+string+"+fmt.Sprint(unique), s, output)
-		} else {
-			return "i+string+"+fmt.Sprint(unique)
-		}
+	if  token[0] == '[' {
+		return ParseArray(s, output, shunting)
 	}
 	
-	if len(s.TokenText()) == 3 && s.TokenText()[0] == '\'' && s.TokenText()[2] == '\'' {
+	//Deal with runes. 
+	//	eg. 'a' -> 97
+	if len(token) == 3 && token[0] == '\'' && token[2] == '\'' {
 		defer s.Scan()
 		return strconv.Itoa(int(s.TokenText()[1]))
 	} else if s.TokenText() == `'\n'` {
@@ -118,160 +64,42 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 		return strconv.Itoa(int('\n'))
 	}
 
-
-	//Is it a literal number?
-	if _, err := strconv.Atoi(s.TokenText()); err == nil {
-		if shunting {
-			return shunt(s.TokenText(), s, output)
-		} else {
-			return s.TokenText()
-		}
-	} else {
 	
-		var name = s.TokenText()
-	
-		//Function call.
-		if functions[name].Exists  {
-		
-			if functions[name].Variadic {
-				unique++
-				var id = unique
-				output.Write([]byte("STRING i+variadic+"+fmt.Sprint(unique)+"\n"))
-				for tok := s.Scan(); tok != scanner.EOF; {
-					
-					if s.TokenText() == ")" {
-						break
-					}
-					s.Scan()
-				
-					output.Write([]byte("PUSH "+expression(s, output)+" i+variadic+"+fmt.Sprint(id)+"\n"))
-					
-					if s.TokenText() == ")" {
-						break
-					}
-					
-					if s.TokenText() != "," {
-						fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
-						os.Exit(1)
-					}
-				}
-			
-				output.Write([]byte("PUSHSTRING i+variadic+"+fmt.Sprint(id)+"\n"))
-				if functions[name].Local {
-					output.Write([]byte("EXE "+name+"\n"))
-				} else {
-					output.Write([]byte("RUN "+name+"\n"))
-				}
-				if len(functions[name].Returns) > 0 {
-					unique++
-					switch functions[name].Returns[0] {
-						case STRING:
-							output.Write([]byte("POPSTRING i+output+"+fmt.Sprint(unique)+"\n"))
-						case NUMBER:
-							output.Write([]byte("POP i+output+"+fmt.Sprint(unique)+"\n"))
-						case FUNCTION:
-							output.Write([]byte("POPFUNC i+output+"+fmt.Sprint(unique)+"\n"))
-						case FILE:
-							output.Write([]byte("POPIT i+output+"+fmt.Sprint(unique)+"\n"))
-					}
-				}	
-				if shunting {
-					return shunt("i+output+"+fmt.Sprint(unique), s, output)
-				} else {
-					return "i+output+"+fmt.Sprint(unique)
-				}
-			}
-
-			var i int
-			for tok := s.Scan(); tok != scanner.EOF; {
-				if s.TokenText() == ")" {
-					return name
-				}
-				s.Scan()
-				if s.TokenText() == ")" {
-					break
-				}
-				
-				if len(functions[name].Args) > i {
-					switch functions[name].Args[i] {
-						case STRING:
-							output.Write([]byte("PUSHSTRING "+expression(s, output)+"\n"))
-						case NUMBER:
-							output.Write([]byte("PUSH "+expression(s, output)+"\n"))
-						case FUNCTION:
-							output.Write([]byte("PUSHFUNC "+expression(s, output)+"\n"))
-						case FILE:
-							output.Write([]byte("PUSHIT "+expression(s, output)+"\n"))
-					}
-				} 
-				
-				if s.TokenText() == ")" {
-					break
-				}
-				if s.TokenText() != "," {
-					fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
-					os.Exit(1)
-				}
-				
-				
-			}		
-			if functions[name].Local {
-				output.Write([]byte("EXE "+name+"\n"))
-			} else {
-				output.Write([]byte("RUN "+name+"\n"))
-			}
-			if len(functions[name].Returns) > 0 {
-				unique++
-				switch functions[name].Returns[0] {
-					case STRING:
-						output.Write([]byte("POPSTRING i+output+"+fmt.Sprint(unique)+"\n"))
-					case NUMBER:
-						output.Write([]byte("POP i+output+"+fmt.Sprint(unique)+"\n"))
-					case FUNCTION:
-						output.Write([]byte("POPFUNC i+output+"+fmt.Sprint(unique)+"\n"))
-					case FILE:
-						output.Write([]byte("POPIT i+output+"+fmt.Sprint(unique)+"\n"))
-				}
-			}		
-			var tmp = unique
-			if shunting {
-				return shunt("i+output+"+fmt.Sprint(unique), s, output)
-			}	
-			return "i+output+"+fmt.Sprint(tmp)
-		}
-	
-		//Is it a variable?
-		if variables[s.TokenText()] {
-			if shunting {
-				return shunt(s.TokenText(), s, output)
-			} else {
-				return s.TokenText()
-			}
-			
-		} else {
-			
-			// a=2; b=4; ab
-			if len(s.TokenText()) > 0 && variables[string(rune(s.TokenText()[0]))] {
-				if len(s.TokenText()) == 2 {
-					if variables[string(rune(s.TokenText()[1]))] {
-						unique++
-						output.Write([]byte("VAR i+tmp+"+s.TokenText()+fmt.Sprint(unique)+"\n"))
-						output.Write([]byte("MUL i+tmp+"+s.TokenText()+fmt.Sprint(unique)+" "+
-							string(rune(s.TokenText()[0]))+" "+
-							string(rune(s.TokenText()[1]))+"\n"))
-						
-						if shunting {
-							return shunt("i+tmp+"+s.TokenText()+fmt.Sprint(unique), s, output)
-						} else {
-							return "i+tmp+"+s.TokenText()+fmt.Sprint(unique)
-						}
-					}
-				}
-			}
-			
-		}
-	
+	//Parse function call.
+	if functions[token].Exists {
+		return ParseFunction(s, output, shunting)
 	}
+
+	//Is it a literal number? Then just return it.
+	//OR is it a variable?
+	if _, err := strconv.Atoi(token); err == nil || variables[token] {
+		if shunting {
+			return shunt(token, s, output)
+		} else {
+			return token
+		}
+	}
+		
+	//Do some special maths which people will hate about I.
+	// a=2; b=4; ab
+	// ab is 8
+	if variables[string(rune(token[0]))] {
+		if len(token) == 2 {
+			if variables[string(rune(token[1]))] {
+				unique++
+				id := "i+tmp+"+s.TokenText()+fmt.Sprint(unique)
+				fmt.Fprintf(output, "VAR %v\n", id)
+				fmt.Fprintf(output, "MUL %v %v %v\n", id, string(rune(s.TokenText()[0])), string(rune(s.TokenText()[1])))
+				
+				if shunting {
+					return shunt(id, s, output)
+				} else {
+					return id
+				}
+			}
+		}
+	}
+	
 	if shunting {
 		return shunt(s.TokenText(), s, output)
 	} else {
@@ -287,18 +115,21 @@ func main() {
 		return
 	}
 	
+	//Open the output file with the file type replaced to .u
 	output, err := os.Create(flag.Arg(0)[:len(flag.Arg(0))-2]+".u")
 	if err != nil {
 		return
 	}
 	
-	//Add builtin functions.
+	//Add builtin functions to file.
 	builtin(output)
 	
+	//Startup the scanner.
 	var s scanner.Scanner
 	s.Init(file)
 	s.Whitespace= 1<<'\t' | 1<<'\r' | 1<<' '
 	
+	//TODO cleanup file from here forward.
 	var tok rune
 	for tok != scanner.EOF {
 		tok = s.Scan()
