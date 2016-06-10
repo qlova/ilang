@@ -1,5 +1,8 @@
 #! /bin/bash
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+
 #Test A+B
 cd A+B/ && ic a+b.i && uct -py a+b.u
 if [ "$?" -eq "1" ]; then
