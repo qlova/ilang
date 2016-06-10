@@ -7,12 +7,36 @@ func builtin(output io.Writer) {
 	output.Write([]byte(
 `
 SUBROUTINE output
-	POPSTRING data
-	PUSHSTRING data
 	STDOUT 
 END
 `	))
 	functions["output"] = Function{Exists:true, Args:[]int{STRING}}
+	
+	//Inbuilt output function.
+	output.Write([]byte(
+`
+SUBROUTINE open
+	OPEN file
+	POP status
+	
+	IF status
+		ERROR 1
+	END
+	
+	PUSHIT file
+END
+`	))
+	functions["open"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{FILE}}
+	
+	//Inbuilt output function.
+	output.Write([]byte(
+`
+SUBROUTINE close
+	POPIT file
+	CLOSE file
+END
+`	))
+	functions["close"] = Function{Exists:true, Args:[]int{FILE}}
 
 	//Inbuilt output function.
 	output.Write([]byte(

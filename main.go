@@ -10,6 +10,13 @@ import (
 	"flag"
 )
 
+const (
+	FUNCTION = iota
+	STRING
+	NUMBER
+	FILE
+)
+
 type Function struct {
 	Exists bool
 	Args []int
@@ -250,6 +257,8 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 							output.Write([]byte("POP i+output+"+fmt.Sprint(unique)+"\n"))
 						case FUNCTION:
 							output.Write([]byte("POPFUNC i+output+"+fmt.Sprint(unique)+"\n"))
+						case FILE:
+							output.Write([]byte("POPIT i+output+"+fmt.Sprint(unique)+"\n"))
 					}
 				}	
 				if shunting {
@@ -277,6 +286,8 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 							output.Write([]byte("PUSH "+expression(s, output)+"\n"))
 						case FUNCTION:
 							output.Write([]byte("PUSHFUNC "+expression(s, output)+"\n"))
+						case FILE:
+							output.Write([]byte("PUSHIT "+expression(s, output)+"\n"))
 					}
 				} 
 				
@@ -304,6 +315,8 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 						output.Write([]byte("POP i+output+"+fmt.Sprint(unique)+"\n"))
 					case FUNCTION:
 						output.Write([]byte("POPFUNC i+output+"+fmt.Sprint(unique)+"\n"))
+					case FILE:
+						output.Write([]byte("POPIT i+output+"+fmt.Sprint(unique)+"\n"))
 				}
 			}		
 			var tmp = unique
@@ -352,12 +365,6 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	}
 }
 
-const (
-	FUNCTION = iota
-	STRING
-	NUMBER
-)
-
 func main() {
 	flag.Parse()
 
@@ -404,10 +411,26 @@ func main() {
 			
 			case "return":
 				s.Scan()
-				output.Write([]byte("PUSH "+expression(&s, output)+"\n"))
+				if s.TokenText() != "\n" {
+					output.Write([]byte("PUSH "+expression(&s, output)+"\n"))
+				}
+				output.Write([]byte("RETURN\n"))
 			
 			case "software":
 				output.Write([]byte("ROUTINE\n"))
+				s.Scan()
+				if s.TokenText() != "{" {
+					fmt.Println(s.Pos(), "Expecting { found ", s.TokenText())
+					return
+				}
+				s.Scan()
+				if s.TokenText() != "\n" {
+					fmt.Println(s.Pos(), "Expecting newline found ", s.TokenText())
+					return
+				}
+			
+			case "issues":
+				output.Write([]byte("IF ERROR\nADD ERROR 0 0\n"))
 				s.Scan()
 				if s.TokenText() != "{" {
 					fmt.Println(s.Pos(), "Expecting { found ", s.TokenText())
@@ -444,7 +467,6 @@ func main() {
 					}
 					//String arguments.
 					if s.TokenText() == "[" {
-						
 						//Update our function definition with a string argument.
 						function.Args = append(function.Args, STRING)
 						
@@ -454,7 +476,8 @@ func main() {
 							fmt.Println(s.Pos(), "Expecting ] found ", s.TokenText())
 							return
 						}
-					//Other type of string argument.
+						s.Scan()
+					//Other type of string argument. (Variadic)
 					} else if s.TokenText() == "." {
 						
 						//Update our function definition with a string argument.
@@ -532,7 +555,13 @@ func main() {
 			
 				var name = s.TokenText()
 				if functions[name].Exists {
-					expression(&s, output)
+					var returns = functions[name].Returns
+					var f = functions[name]
+					f.Returns = nil
+					functions[name] = f
+						expression(&s, output)
+					f.Returns = returns
+					functions[name] = f
 					continue
 				}
 				
