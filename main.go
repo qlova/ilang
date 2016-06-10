@@ -10,6 +10,7 @@ import (
 	"flag"
 )
 
+//These are the 4 types in I.
 const (
 	FUNCTION = iota
 	STRING
@@ -17,6 +18,7 @@ const (
 	FILE
 )
 
+//This holds the definition of a function.
 type Function struct {
 	Exists bool
 	Args []int
@@ -32,97 +34,9 @@ var variables = make( map[string]bool)
 var functions = make( map[string]Function)
 var unique int
 
-func shunt(name string, s *scanner.Scanner, output io.Writer) string {
-		s.Scan()
-		
-		switch s.TokenText() {
-			case ")", ",", "\n", "]":
-				return name
-			case "/":
-				unique++
-				var tmp = unique
-				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
-				s.Scan()
-				output.Write([]byte("DIV i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output, false)+"\n"))
-				return shunt("i+shunt+"+fmt.Sprint(tmp), s, output)
-			case "+":
-				unique++
-				var tmp = unique
-				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
-				s.Scan()
-				output.Write([]byte("ADD i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
-				return "i+shunt+"+fmt.Sprint(tmp)
-			case "-":
-				unique++
-				var tmp = unique
-				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
-				s.Scan()
-				output.Write([]byte("SUB i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
-				return "i+shunt+"+fmt.Sprint(tmp)
-			case "*":
-				unique++
-				var tmp = unique
-				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
-				s.Scan()
-				output.Write([]byte("MUL i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output, false)+"\n"))
-				return shunt("i+shunt+"+fmt.Sprint(tmp), s, output)
-			case "mod":
-				unique++
-				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
-				s.Scan()
-				output.Write([]byte("MOD i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
-				return "i+shunt+"+fmt.Sprint(unique)
-			case "^":
-				unique++
-				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
-				s.Scan()
-				output.Write([]byte("POW i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
-				return "i+shunt+"+fmt.Sprint(unique)
-			case "&":
-				unique++
-				var uniq = unique
-				output.Write([]byte("STRING i+shunt+"+fmt.Sprint(unique)+"\n"))
-				s.Scan()
-				output.Write([]byte("JOIN i+shunt+"+fmt.Sprint(unique)+" "+name+" "+expression(s, output)+"\n"))
-				return "i+shunt+"+fmt.Sprint(uniq)
-			case "²":
-				unique++
-				output.Write([]byte("VAR i+shunt+"+fmt.Sprint(unique)+"\n"))
-				s.Scan()
-				output.Write([]byte("MUL i+shunt+"+fmt.Sprint(unique)+" "+name+" "+name+"\n"))
-				return "i+shunt+"+fmt.Sprint(unique)
-			case "@":
-				s.Scan()
-				output.Write([]byte("PUSHSTRING "+name+"\n"))
-				output.Write([]byte("PUSH "+expression(s, output)+"\n"))
-				output.Write([]byte("RUN hash\n"))
-				unique++
-				output.Write([]byte("POP i+shunt+"+fmt.Sprint(unique)+"\n"))
-				return "i+shunt+"+fmt.Sprint(unique)
-			case "?":
-				s.Scan()
-				output.Write([]byte("PUSH "+name+"\n"))
-				output.Write([]byte("PUSH "+expression(s, output)+"\n"))
-				output.Write([]byte("RUN unhash\n"))
-				unique++
-				output.Write([]byte("POPSTRING i+shunt+"+fmt.Sprint(unique)+"\n"))
-				return "i+shunt+"+fmt.Sprint(unique)
-			default:
-				if s.TokenText()[0] == '.' {
-					unique++
-					output.Write([]byte("INDEX "+name+" "+s.TokenText()[1:]+" i+shunt+"+fmt.Sprint(unique)+"\n"))
-					s.Scan()
-					return "i+shunt+"+fmt.Sprint(unique)
-				}
-				println(name, s.TokenText())
-			
-		}
-		return ""
-}
-
 func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	
-	var shunting bool = len(param) <= 0
+	var shunting bool = len(param) <= 0 || param[0]
 
 	//Turn string literals into numeric strings.
 	//For example string arguments to a function
@@ -131,7 +45,7 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	// STRING i+tmp+id
 	// PUSH 'A' i+tmp+id
 	// PUSHSTRING i+tmp+id
-	// RUN output
+	// RUN output.
 	if len(s.TokenText()) > 0 && s.TokenText()[0] == '"' {
 				
 		unique++
