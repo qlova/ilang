@@ -55,6 +55,15 @@ function BasicTest {
 }
 
 cd Plus
+if [ "$2" != "" ]; then
+	for l in py bash go lua rb java cs; do
+		LANGUAGE=$l
+		echo $l
+		BasicTest $1 $2 
+	done
+	exit
+fi
+
 BasicTest Plus "4" "2 2\n"
 BasicTest Arithmetic "Sum: 8\nDifference: -2\nProduct: 15\nQuotient: 0\nModulus: 3\nExponent: 243" "3 5\n"
 BasicTest Arrays "2\n4"
@@ -67,3 +76,5 @@ BasicTest OrderOfOperation "405"
 BasicTest FileExists "input.txt exists\n/input.txt does not exist\ndocs exists\n/docs does not exist"
 BasicTest Maths "d d b"
 BasicTest Conditionals "3=3\n3!=2\nverified"
+BasicTest Copy "2\n1"
+BasicTest Variables "2"
