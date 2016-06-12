@@ -16,12 +16,22 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 		
 		//If it is one of these characters, then we have finished our shunt.
 		switch s.TokenText() {
-			case ")", ",", "\n", "]":
+			case ")", ",", "\n", "]", ";":
 				return name
 		}
 		
-		//I love doing the shunting. 
+		//I love doing the shunting.
 		if operator, ok := Operators[s.TokenText()]; ok {
+		
+			//Multi-opps.
+			if _, ok := Operators[string(s.Peek())]; ok {
+				operator = Operators[s.TokenText()+string(s.Peek())]
+				s.Scan()
+				if operator.code == "" {
+					fmt.Println("[SHUNTING YARD] Invalid operator matchup: "+s.TokenText()+string(s.Peek()))
+					os.Exit(1)
+				}
+			}
 		
 			//Here we create the unique name for the shunting result.
 			unique++
@@ -53,7 +63,7 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 			return "i+shunt+"+fmt.Sprint(unique)
 		}
 		
-		fmt.Println("[SHUNTING YARD] Unexpected ", s.TokenText())
+		fmt.Println("[SHUNTING YARD] Unexpected ", s.TokenText(), "("+name+")")
 		os.Exit(1)
 		return ""
 }

@@ -135,11 +135,24 @@ func main() {
 		tok = s.Scan()
 		
 		switch s.TokenText() {
-			case "\n":
+			case "\n", ";":
 				
 			
-			case "}":
+			case "}", "end":
 				output.Write([]byte("END\n"))
+			
+			case "else":
+				fmt.Fprintf(output, "ELSE\n")
+			
+			case "if", "elseif":
+				
+				if s.TokenText() == "if" {
+					s.Scan()
+					fmt.Fprintf(output, "IF %v\n", expression(&s, output))
+				} else {
+					s.Scan()
+					fmt.Fprintf(output, "ELSEIF %v\n", expression(&s, output))
+				}
 				
 			//Inline universal assembly.
 			case ".":
@@ -387,6 +400,30 @@ func main() {
 								f.Local = true
 								functions[name] = f
 								output.Write([]byte("FUNC "+name+" "+s.TokenText()+"\n"))
+								
+							} else if functions[s.TokenText()].Exists {
+								
+								if len(functions[s.TokenText()].Returns) > 0 {
+									if functions[s.TokenText()].Returns[0] == FILE {
+										variables[name] = true
+										fmt.Fprintf(output, "PUSHIT %v\n", expression(&s, output))
+										fmt.Fprintf(output, "POPIT %v\n", name)
+									} else if functions[s.TokenText()].Returns[0] == STRING {
+										variables[name] = true
+										fmt.Fprintf(output, "PUSHSTRING %v\n", expression(&s, output))
+										fmt.Fprintf(output, "POPSTRING %v\n", name)
+									} else if functions[s.TokenText()].Returns[0] == FUNCTION {
+										variables[name] = true
+										fmt.Fprintf(output, "PUSHFUNC %v\n", expression(&s, output))
+										fmt.Fprintf(output, "POPFUNCTION %v\n", name)
+									} else {
+										variables[name] = true
+										output.Write([]byte("VAR "+name+" "+expression(&s, output)+"\n"))
+									}
+								} else {
+									fmt.Println(s.Pos(), "Function ", s.TokenText(), " output cannot be assigned to a value!")
+									return
+								}
 								
 							} else {
 						
