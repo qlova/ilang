@@ -3,11 +3,6 @@ function add(a, b) r {
 	return a+b
 }
 
-function output([]data) {
-	.pushstring data
-	.stdout
-}
-
 software {
 	a = 50
 	b = 50

@@ -3,43 +3,45 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-#Test A+B
-cd A+B/ && ic a+b.i && uct -py a+b.u
-if [ "$?" -eq "1" ]; then
-	echo -e "A+B \e[31mFAILED!\e[0m to compile D:"
-	exit 1
-fi
-OUTPUT=$(python3 a+b.py <<< $(echo -e "2 2\n"))
-if [ "$OUTPUT" = "4" ]; then
-	echo -e "A+B \e[32mPASSED!\e[0m"
+if [ "$1" = "" ]; then
+	LANGUAGE=py
 else
-	echo -e "A+B \e[31mFAILED!\e[0m"
-	exit 1
+	LANGUAGE=$1
 fi
 
-#Test Arithmetic
-cd ../Arithmetic/ && ic Arithmetic.i && uct -py Arithmetic.u
-if [ "$?" -eq "1" ]; then
-	echo -e "Arithmetic \e[31mFAILED!\e[0m to compile D:"
-	exit 1
-fi
-OUTPUT=$(python3 Arithmetic.py <<< $(echo -e "3 5\n"))
-DEFINED=$(echo -e "Sum: 8\nDifference: -2\nProduct: 15\nQuotient: 0\nModulus: 3\nExponent: 243")
-if [ "$OUTPUT" = "$DEFINED" ]; then
-	echo -e "Arithmetic \e[32mPASSED!\e[0m!"
-else
-	echo -e "Arithmetic \e[31mFAILED!\e[0m!"
-	echo "$OUTPUT"
-	exit 1
-fi
+function runit {
+	case $LANGUAGE in
+		py)
+			python3 $1.py <<< $(echo -e "$2")
+		;;
+		go)
+			go run $1.go <<< $(echo -e "$2")
+		;;
+		bash) 
+			./$1.bash <<< $(echo -e "$2")
+		;;
+		java) 
+			javac $1.java && java $1 <<< $(echo -e "$2")
+		;;
+		cs) 
+			mcs -nowarn:414 /r:System.Numerics.dll $1.cs && mono $1.exe <<< $(echo -e "$2")
+		;;
+		rb)
+			ruby $1.rb <<< $(echo -e "$2")
+		;;
+		lua)
+			lua $1.lua <<< $(echo -e "$2")
+		;;
+	esac
+}
 
 function BasicTest {
-	cd ../$1/ && ic $1.i && uct -py $1.u
+	cd ../$1/ && ic $1.i && uct -$LANGUAGE $1.u
 	if [ "$?" -eq "1" ]; then
 		echo -e "$1 \e[31mFAILED!\e[0m to compile D:"
 		exit 1
 	fi
-	local OUTPUT=$(python3 $1.py)
+	local OUTPUT=$(runit $1 "$3")
 	local DEFINED=$(echo -e "$2")
 	if [ "$OUTPUT" = "$DEFINED" ]; then
 		echo -e "$1 \e[32mPASSED!\e[0m"
@@ -52,6 +54,9 @@ function BasicTest {
 	fi
 }
 
+cd Plus
+BasicTest Plus "4" "2 2\n"
+BasicTest Arithmetic "Sum: 8\nDifference: -2\nProduct: 15\nQuotient: 0\nModulus: 3\nExponent: 243" "3 5\n"
 BasicTest Arrays "2\n4"
 BasicTest Chars "97\na"
 BasicTest Concat "This string is joined!"
@@ -61,3 +66,4 @@ BasicTest Length "2"
 BasicTest OrderOfOperation "405"
 BasicTest FileExists "input.txt exists\n/input.txt does not exist\ndocs exists\n/docs does not exist"
 BasicTest Maths "d d b"
+BasicTest Conditionals "3=3\n3!=2\nverified"
