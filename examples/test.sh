@@ -59,7 +59,7 @@ if [ "$2" != "" ]; then
 	for l in py bash go lua rb java cs; do
 		LANGUAGE=$l
 		echo $l
-		BasicTest $1 $2 
+		BasicTest "$1" "$2" 
 	done
 	exit
 fi
@@ -78,3 +78,4 @@ BasicTest Maths "d d b"
 BasicTest Conditionals "3=3\n3!=2\nverified"
 BasicTest Copy "2\n1"
 BasicTest Variables "2"
+BasicTest CreateFile "output.txt created!\ndocs/ created!\nFailed to create /output.txt\nFailed to create /docs/"

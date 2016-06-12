@@ -16,6 +16,8 @@ const (
 	STRING
 	NUMBER
 	FILE
+	
+	UNDEFINED
 )
 
 //This holds the definition of a function.
@@ -30,12 +32,40 @@ type Function struct {
 	Variadic bool
 }
 
-var variables = make( map[string]bool)
+
+//Deal with scoping for variables.
+type Variables map[string]int
+
+var Scope []Variables
+
+func GainScope() {
+	Scope = append(Scope, make(map[string]int))
+}
+
+func GetVariable(name string) int {
+	for i:=len(Scope)-1; i>=0; i-- {
+		if v, ok := Scope[i][name]; ok {
+			return v
+		}
+	}
+	return UNDEFINED
+}
+
+func SetVariable(name string, sort int) {
+	Scope[len(Scope)-1][name] = sort
+}
+
+func LoseScope() {
+	Scope = Scope[:len(Scope)-1]
+}
+
 var functions = make( map[string]Function)
+var methods = make( map[string]bool)
 var unique int
 
 var CurrentFunction Function
 
+var ExpressionType int
 func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	
 	//Do we need to shunt? This is for operator precidence. (defaults to true)
@@ -49,27 +79,37 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 
 	//If there is a quotation mark, parse the string. 
 	if token[0] == '"' {
+		ExpressionType = STRING
 		return ParseString(s, output, shunting)
 	}
 	
 	if  token[0] == '[' {
+		ExpressionType = STRING
 		return ParseArray(s, output, shunting)
 	}
 	
 	//Deal with runes. 
 	//	eg. 'a' -> 97
 	if len(token) == 3 && token[0] == '\'' && token[2] == '\'' {
+		ExpressionType = NUMBER
 		defer s.Scan()
 		return strconv.Itoa(int(s.TokenText()[1]))
 	} else if s.TokenText() == `'\n'` {
+		ExpressionType = NUMBER
 		defer s.Scan()
 		return strconv.Itoa(int('\n'))
 	}
 
 	
+	//Parse method call.
+	if methods[token] && s.Peek() == '@' {
+		return ParseFunction(s, output, shunting)
+	}
+	
 	//Parse function call.
 	if functions[token].Exists {
 		if s.Peek() != '(' {
+			ExpressionType = FUNCTION
 			unique++
 			id := "i+func+"+fmt.Sprint(unique)
 			fmt.Fprintf(output, "FUNC %v %v\n", id, token)
@@ -80,7 +120,17 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 
 	//Is it a literal number? Then just return it.
 	//OR is it a variable?
-	if _, err := strconv.Atoi(token); err == nil || variables[token] {
+	if _, err := strconv.Atoi(token); err == nil{
+		ExpressionType = NUMBER
+		if shunting {
+			return shunt(token, s, output)
+		} else {
+			return token
+		}
+	}
+	
+	if sort := GetVariable(token); sort != UNDEFINED {
+		ExpressionType = sort
 		if shunting {
 			return shunt(token, s, output)
 		} else {
@@ -91,9 +141,10 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	//Do some special maths which people will hate about I.
 	// a=2; b=4; ab
 	// ab is 8
-	if variables[string(rune(token[0]))] {
+	if GetVariable(string(rune(token[0]))) != UNDEFINED {
+		ExpressionType = NUMBER
 		if len(token) == 2 {
-			if variables[string(rune(token[1]))] {
+			if GetVariable(string(rune(token[1]))) != UNDEFINED {
 				unique++
 				id := "i+tmp+"+s.TokenText()+fmt.Sprint(unique)
 				fmt.Fprintf(output, "VAR %v\n", id)
@@ -144,23 +195,32 @@ func main() {
 		
 		switch s.TokenText() {
 			case "\n", ";":
-				
+			
+			case "!":
+				output.Write([]byte("ERROR 0\n"))
 			
 			case "}", "end":
 				output.Write([]byte("END\n"))
+				LoseScope()
 			
 			case "else":
 				fmt.Fprintf(output, "ELSE\n")
+				LoseScope()
+				GainScope()
 			
 			case "if", "elseif":
 				
 				if s.TokenText() == "if" {
+					GainScope()
 					s.Scan()
 					fmt.Fprintf(output, "IF %v\n", expression(&s, output))
 				} else {
+					LoseScope()
+					GainScope()
 					s.Scan()
 					fmt.Fprintf(output, "ELSEIF %v\n", expression(&s, output))
 				}
+				
 				
 			//Inline universal assembly.
 			case ".":
@@ -208,6 +268,7 @@ func main() {
 					fmt.Println(s.Pos(), "Expecting newline found ", s.TokenText())
 					return
 				}
+				GainScope()
 			
 			case "issues":
 				output.Write([]byte("IF ERROR\nADD ERROR 0 0\n"))
@@ -221,17 +282,33 @@ func main() {
 					fmt.Println(s.Pos(), "Expecting newline found ", s.TokenText())
 					return
 				}
+				GainScope()
 				
 			//Compiles function declerations.
-			case "function":
+			case "function", "method":
+				GainScope()
 				var name string
 				var function Function
+				
+				var method bool = s.TokenText() == "method"
+				var methodType = NUMBER
 				
 				
 				// function name(param1, param2) returns {
 				output.Write([]byte("SUBROUTINE "))
 				s.Scan()
-				output.Write([]byte(s.TokenText()+"\n"))
+				if method {
+					switch s.TokenText() {
+						case "~":
+							methodType = FILE
+							s.Scan()
+					}
+				}
+				if method {
+					fmt.Fprintf(output, "%v_m_%v\n", s.TokenText(), methodType)
+				} else {
+					output.Write([]byte(s.TokenText()+"\n"))
+				}
 				name = s.TokenText()
 				s.Scan()
 				if s.TokenText() != "(" {
@@ -306,6 +383,12 @@ func main() {
 				for i := len(toReverse)-1; i>=0; i-- {
 					output.Write([]byte(toReverse[i]))
 				}
+				if method {
+					switch methodType {
+						case FILE:
+							fmt.Fprintf(output, "POPIT self\n")
+					}
+				}
 				s.Scan()
 				if s.TokenText() != "{" {
 					if s.TokenText() != "[" {
@@ -329,9 +412,16 @@ func main() {
 					fmt.Println(s.Pos(), "Expecting newline found ", s.TokenText())
 					return
 				}
-			
+				
 				function.Exists = true
-				functions[name] = function
+				
+				if method {
+					methods[name] = true
+					functions[name+"_m_"+fmt.Sprint(methodType)] = function	
+				} else {
+					functions[name] = function
+				}
+				
 				CurrentFunction = function
 			case "var":
 				s.Scan()
@@ -348,7 +438,7 @@ func main() {
 					n := expression(&s, output)
 					fmt.Fprintf(output, "PUSHSTRING %v\n", n)
 					fmt.Fprintf(output, "POPSTRING %v\n", name)
-					variables[name] = true
+					SetVariable(name, STRING)
 				} else if s.TokenText() == "(" {
 					s.Scan()
 					if s.TokenText() != ")" {
@@ -362,7 +452,7 @@ func main() {
 					n := expression(&s, output)
 					fmt.Fprintf(output, "PUSHFUNC %v\n", n)
 					fmt.Fprintf(output, "POPFUNC %v\n", name)
-					variables[name] = true
+					SetVariable(name, FUNCTION)
 				} else if s.TokenText() == "~" {
 					s.Scan()
 					var name = s.TokenText()
@@ -371,18 +461,26 @@ func main() {
 					n := expression(&s, output)
 					fmt.Fprintf(output, "PUSHIT %v\n", n)
 					fmt.Fprintf(output, "POPIT %v\n", name)
-					variables[name] = true
+					SetVariable(name, FILE)
 				} else {
 					var name = s.TokenText()
 					s.Scan()
 					s.Scan()
 					fmt.Fprintf(output, "VAR %v %v\n", name, expression(&s, output))
-					variables[name] = true
+					SetVariable(name, NUMBER)
 				}
 			
 			default:
 			
 				var name = s.TokenText()
+				
+				//Method lines.
+				if methods[name] && s.Peek() == '@' {
+					expression(&s, output)
+					continue
+				}
+				
+				//Function lines.
 				if functions[name].Exists {
 					var returns = functions[name].Returns
 					var f = functions[name]
@@ -401,7 +499,6 @@ func main() {
 						output.Write([]byte("EXE "+name+" \n"))
 					case "&":
 						s.Scan()
-						variables[name] = true
 						output.Write([]byte("PUSH "+expression(&s, output)+" "+name+" \n"))
 					case "=":
 						/*if functions[s.TokenText()].Exists && s.Peek() != '(' {

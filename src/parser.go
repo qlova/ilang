@@ -142,6 +142,8 @@ func ParseFunctionReturns(token string, s *scanner.Scanner, output io.Writer, sh
 */
 func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool) string {
 	var token = s.TokenText()
+	var method bool
+	var methodType int
 	
 	//Currently variadic functions only work with numbers. Why? No reason (Lazyness).
 	if functions[token].Variadic {
@@ -173,6 +175,25 @@ func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool) string {
 
 		var i int
 		for tok := s.Scan(); tok != scanner.EOF; {
+		
+			if s.TokenText() == "@" {
+				s.Scan()
+				method = true
+				sort := GetVariable(s.TokenText())
+				methodType = sort
+				switch sort {
+					case STRING:
+						fmt.Fprintf(output, "PUSHSTRING %v\n", s.TokenText())
+					case NUMBER:
+						fmt.Fprintf(output, "PUSH %v\n", s.TokenText())
+					case FUNCTION:
+						fmt.Fprintf(output, "PUSHFUNC %v\n", s.TokenText())
+					case FILE:
+						fmt.Fprintf(output, "PUSHIT %v\n", s.TokenText())
+				}
+				s.Scan()
+			}
+		
 			if s.TokenText() == ")" {
 				return token
 			}
@@ -206,6 +227,8 @@ func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool) string {
 		
 	if functions[token].Local {
 		output.Write([]byte("EXE "+token+"\n"))
+	} else if method {
+		fmt.Fprintf(output, "RUN %v_m_%v\n", token, methodType)
 	} else {
 		output.Write([]byte("RUN "+token+"\n"))
 	}

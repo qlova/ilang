@@ -53,6 +53,23 @@ SUBROUTINE copy
 END
 `	))
 	functions["copy"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{STRING}}
+
+	output.Write([]byte(	
+`	
+SUBROUTINE output_m_3
+	POPSTRING text
+	POPIT self
+	PUSHSTRING text
+	OUT self
+	POP status
+	IF status
+		ERROR 1
+	END
+END
+`))
+	functions["output_m_3"] = Function{Exists:true, Args:[]int{STRING}}
+	methods["output"] = true
+
 	
 	
 	//Inbuilt output function.
