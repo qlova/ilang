@@ -1,5 +1,5 @@
 software {
-	a = 3
+	var a = 3
 	
 	if a = 3 
 		output("3=3\n")

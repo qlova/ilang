@@ -1,5 +1,5 @@
 software {
-	a = []
+	var []a = []
 	a & 2
 	output(text(a.0)&"\n")
 	

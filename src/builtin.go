@@ -28,6 +28,33 @@ END
 `	))
 	functions["open"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{FILE}}
 	
+	output.Write([]byte(	
+`
+#Compiled with IC.
+SUBROUTINE copy
+	POPSTRING array
+	STRING c
+	VAR i 0
+	LOOP
+		PUSHSTRING array
+		RUN len
+		POP i+output+2
+		VAR i+shunt+1
+		SGE i+shunt+1 i i+output+2
+		IF i+shunt+1
+			PUSHSTRING c
+			RETURN
+		END
+		INDEX array i i+shunt+3
+		VAR v i+shunt+3
+		PUSH v c
+		ADD i i 1
+	REPEAT
+END
+`	))
+	functions["copy"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{STRING}}
+	
+	
 	//Inbuilt output function.
 	output.Write([]byte(
 `

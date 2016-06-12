@@ -34,6 +34,8 @@ var variables = make( map[string]bool)
 var functions = make( map[string]Function)
 var unique int
 
+var CurrentFunction Function
+
 func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	
 	//Do we need to shunt? This is for operator precidence. (defaults to true)
@@ -67,6 +69,12 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	
 	//Parse function call.
 	if functions[token].Exists {
+		if s.Peek() != '(' {
+			unique++
+			id := "i+func+"+fmt.Sprint(unique)
+			fmt.Fprintf(output, "FUNC %v %v\n", id, token)
+			return id
+		}
 		return ParseFunction(s, output, shunting)
 	}
 
@@ -157,22 +165,36 @@ func main() {
 			//Inline universal assembly.
 			case ".":
 				s.Scan()
-				output.Write([]byte(strings.ToUpper(s.TokenText()+" ")))
+				output.Write([]byte(strings.ToUpper(s.TokenText())))
 				for tok = s.Scan(); tok != scanner.EOF; {
 					if s.TokenText() == "\n" {
 						output.Write([]byte("\n"))
 						break
 					}
-					output.Write([]byte(s.TokenText()))
+					output.Write([]byte(" "+s.TokenText()))
 					s.Scan()
 				}
 			
 			case "return":
 				s.Scan()
-				if s.TokenText() != "\n" {
-					output.Write([]byte("PUSH "+expression(&s, output)+"\n"))
+				if CurrentFunction.Exists {
+					if s.TokenText() != "\n" {
+						if len(CurrentFunction.Returns) > 0 {
+							switch CurrentFunction.Returns[0] {
+								case NUMBER:
+									output.Write([]byte("PUSH "+expression(&s, output)+"\n"))
+								case STRING:
+									output.Write([]byte("PUSHSTRING "+expression(&s, output)+"\n"))
+								case FUNCTION:
+									output.Write([]byte("PUSHFUNC "+expression(&s, output)+"\n"))
+								case FILE:
+									output.Write([]byte("PUSHIT "+expression(&s, output)+"\n"))
+							}
+						}
+					}
 				}
 				output.Write([]byte("RETURN\n"))
+				CurrentFunction = Function{}
 			
 			case "software":
 				output.Write([]byte("ROUTINE\n"))
@@ -204,6 +226,7 @@ func main() {
 			case "function":
 				var name string
 				var function Function
+				
 				
 				// function name(param1, param2) returns {
 				output.Write([]byte("SUBROUTINE "))
@@ -309,6 +332,54 @@ func main() {
 			
 				function.Exists = true
 				functions[name] = function
+				CurrentFunction = function
+			case "var":
+				s.Scan()
+				if s.TokenText() == "[" {
+					s.Scan()
+					if s.TokenText() != "]" {
+						fmt.Println(s.Pos(), "Expecting ] found ", s.TokenText())
+						return
+					}
+					s.Scan()
+					var name = s.TokenText()
+					s.Scan()
+					s.Scan()
+					n := expression(&s, output)
+					fmt.Fprintf(output, "PUSHSTRING %v\n", n)
+					fmt.Fprintf(output, "POPSTRING %v\n", name)
+					variables[name] = true
+				} else if s.TokenText() == "(" {
+					s.Scan()
+					if s.TokenText() != ")" {
+						fmt.Println(s.Pos(), "Expecting ) found ", s.TokenText())
+						return
+					}
+					s.Scan()
+					var name = s.TokenText()
+					s.Scan()
+					s.Scan()
+					n := expression(&s, output)
+					fmt.Fprintf(output, "PUSHFUNC %v\n", n)
+					fmt.Fprintf(output, "POPFUNC %v\n", name)
+					variables[name] = true
+				} else if s.TokenText() == "~" {
+					s.Scan()
+					var name = s.TokenText()
+					s.Scan()
+					s.Scan()
+					n := expression(&s, output)
+					fmt.Fprintf(output, "PUSHIT %v\n", n)
+					fmt.Fprintf(output, "POPIT %v\n", name)
+					variables[name] = true
+				} else {
+					var name = s.TokenText()
+					s.Scan()
+					s.Scan()
+					fmt.Fprintf(output, "VAR %v %v\n", name, expression(&s, output))
+					variables[name] = true
+				}
+			
 			default:
 			
 				var name = s.TokenText()
@@ -333,104 +404,17 @@ func main() {
 						variables[name] = true
 						output.Write([]byte("PUSH "+expression(&s, output)+" "+name+" \n"))
 					case "=":
-						// a = 
+						/*if functions[s.TokenText()].Exists && s.Peek() != '(' {
+							
+							functions[name] = functions[s.TokenText()]
+							f := functions[name] 
+							f.Local = true
+							functions[name] = f
+							output.Write([]byte("FUNC "+name+" "+s.TokenText()+"\n"))
+							
+						}*/
 						s.Scan()
-						if s.TokenText() == "[" {
-							//a = [12,32,92]
-							output.Write([]byte("STRING "+name+"\n"))
-							
-							for tok = s.Scan(); tok != scanner.EOF; {
-							
-								if s.TokenText() == "]" {
-									break
-								}
-							
-								output.Write([]byte("PUSH "+expression(&s, output)+" "+name+"\n"))
-								
-								if s.TokenText() == "]" {
-									break
-								}
-								
-								if s.TokenText() != "," {
-									fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
-									return
-								}
-								s.Scan()
-							}
-						
-						} else if s.TokenText()[0] == '"' {
-							//Turn string literals into numeric strings.
-							//For example string arguments to a function
-							//eg. output("A")
-							// ->
-							// STRING i+tmp+id
-							// PUSH 'A' i+tmp+id
-							// PUSHSTRING i+tmp+id
-							// RUN output
-								var newarg string = "STRING "+name+"\n"
-								var j int
-								var arg = s.TokenText()[1:]
-		
-								stringloop:
-								arg = strings.Replace(arg, "\\n", "\n", -1)
-								for _, v := range arg {
-									if v == '"' {
-										goto end
-									}
-									newarg += "PUSH "+strconv.Itoa(int(v))+" "+name+"\n"
-								}
-								if len(arg) == 0 {
-									goto end
-								}
-								newarg += "PUSH "+strconv.Itoa(int(' '))+" "+name+"\n"
-								j++
-								//println(arg)
-								arg = string(s.TokenText()[j])
-								goto stringloop
-								end:
-								//println(newarg)
-								output.Write([]byte(newarg))
-								s.Scan()
-						
-						} else {
-							if functions[s.TokenText()].Exists && s.Peek() != '(' {
-								
-								functions[name] = functions[s.TokenText()]
-								f := functions[name] 
-								f.Local = true
-								functions[name] = f
-								output.Write([]byte("FUNC "+name+" "+s.TokenText()+"\n"))
-								
-							} else if functions[s.TokenText()].Exists {
-								
-								if len(functions[s.TokenText()].Returns) > 0 {
-									if functions[s.TokenText()].Returns[0] == FILE {
-										variables[name] = true
-										fmt.Fprintf(output, "PUSHIT %v\n", expression(&s, output))
-										fmt.Fprintf(output, "POPIT %v\n", name)
-									} else if functions[s.TokenText()].Returns[0] == STRING {
-										variables[name] = true
-										fmt.Fprintf(output, "PUSHSTRING %v\n", expression(&s, output))
-										fmt.Fprintf(output, "POPSTRING %v\n", name)
-									} else if functions[s.TokenText()].Returns[0] == FUNCTION {
-										variables[name] = true
-										fmt.Fprintf(output, "PUSHFUNC %v\n", expression(&s, output))
-										fmt.Fprintf(output, "POPFUNCTION %v\n", name)
-									} else {
-										variables[name] = true
-										output.Write([]byte("VAR "+name+" "+expression(&s, output)+"\n"))
-									}
-								} else {
-									fmt.Println(s.Pos(), "Function ", s.TokenText(), " output cannot be assigned to a value!")
-									return
-								}
-								
-							} else {
-						
-								variables[name] = true
-								output.Write([]byte("VAR "+name+" "+expression(&s, output)+"\n"))
-							}
-						}
+						fmt.Fprintf(output, "ADD %v 0 %v\n", name, expression(&s, output))
 					default:
 						if len(s.TokenText()) > 0 && s.TokenText()[0] == '.' {
 							var index = s.TokenText()[1:]

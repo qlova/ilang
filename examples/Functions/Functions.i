@@ -15,7 +15,7 @@ function printchars( ..x ) {
 }
 
 software {
-	b=f
+	var ()b = f
 	b()
 	call(b)
 	printchars(add(40, 59), 98, 97, 10)

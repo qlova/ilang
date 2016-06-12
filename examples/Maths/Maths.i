@@ -4,12 +4,12 @@ function add(a, b) r {
 }
 
 software {
-	a = 50
-	b = 50
+	var a = 50
+	var b = 50
 	
-	e = 2
+	var e = 2
 	
-	c = [ae, 32, a+b, 32, 98]
+	var []c = [ae, 32, a+b, 32, 98]
 	
 	output(c&"\n")
 }

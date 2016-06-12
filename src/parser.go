@@ -98,9 +98,9 @@ func ParseArray(s *scanner.Scanner, output io.Writer, shunting bool) string {
 		s.Scan()
 	}
 	if shunting {
-		return shunt("i+string+"+fmt.Sprint(unique), s, output)
+		return shunt(id, s, output)
 	} else {
-		return "i+string+"+fmt.Sprint(unique)
+		return id
 	}
 }
 

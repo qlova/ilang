@@ -5,6 +5,7 @@ import (
 	"text/scanner"
 	"io"
 	"os"
+	"strconv"
 )
 
 //This is an expression shunter. It takes the current identifyer and shunts it into the next operator.
@@ -56,9 +57,15 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 		}
 		
 		//Special case for indexing arrays.
-		if s.TokenText()[0] == '.' {
+		if _, err := strconv.Atoi(s.TokenText()[1:]); err == nil && s.TokenText()[0] == '.' {
 			unique++
 			output.Write([]byte("INDEX "+name+" "+s.TokenText()[1:]+" i+shunt+"+fmt.Sprint(unique)+"\n"))
+			s.Scan()
+			return "i+shunt+"+fmt.Sprint(unique)
+		} else if s.TokenText() == "." {
+			s.Scan()
+			unique++
+			output.Write([]byte("INDEX "+name+" "+s.TokenText()+" i+shunt+"+fmt.Sprint(unique)+"\n"))
 			s.Scan()
 			return "i+shunt+"+fmt.Sprint(unique)
 		}

@@ -1,5 +1,5 @@
 function exists([]filename) {
-	file = open(filename)
+	var ~file = open(filename)
 	issues {
 		output(filename&" does not exist"&"\n")
 		return
