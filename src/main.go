@@ -282,7 +282,6 @@ func main() {
 					}
 				}
 				output.Write([]byte("RETURN\n"))
-				CurrentFunction = Function{}
 			
 			case "software":
 				output.Write([]byte("ROUTINE\n"))
