@@ -24,7 +24,7 @@ function runit {
 			javac $1.java && java $1 <<< $(echo -e "$2")
 		;;
 		cs) 
-			mcs -nowarn:414 /r:System.Numerics.dll $1.cs && mono $1.exe <<< $(echo -e "$2")
+			mcs -nowarn:414 /r:mscorlib.dll /r:System.Numerics.dll $1.cs && mono $1.exe <<< $(echo -e "$2")
 		;;
 		rb)
 			ruby $1.rb <<< $(echo -e "$2")
@@ -79,3 +79,9 @@ BasicTest Conditionals "3=3\n3!=2\nverified"
 BasicTest Copy "2\n1"
 BasicTest Variables "2"
 BasicTest CreateFile "output.txt created!\ndocs/ created!\nFailed to create /output.txt\nFailed to create /docs/"
+BasicTest DivideByZero "5/0 is a divivision by zero.\n5/2 is not divivision by zero.\n0/0 is a divivision by zero."
+BasicTest Strconv "1200  is numeric :)\n3.14  is numeric :)\n3/4  is numeric :)\nabcdefg  is not numeric!"
+BasicTest EmptyString "Empty string!"
+BasicTest Enviroment "$HOME\n$USER\n$PATH"
+BasicTest Empty "\n"
+

@@ -72,6 +72,8 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	var shunting bool = len(param) <= 0 || param[0]
 	var token = s.TokenText()
 	
+	//fmt.Println("TOKEN ", token)
+	
 	if len(token) <= 0 {
 		fmt.Println("Empty expression!")
 		return ""
@@ -117,6 +119,23 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 		}
 		return ParseFunction(s, output, shunting)
 	}
+	
+	if token[0] == '-' {
+		s.Scan()
+		//Is it a literal number? Then just return it.
+		//OR is it a variable?
+		if _, err := strconv.Atoi("-"+s.TokenText()); err == nil{
+			ExpressionType = NUMBER
+			if shunting {
+				return shunt("-"+s.TokenText(), s, output)
+			} else {
+				return "-"+s.TokenText()
+			}
+		} else {
+			fmt.Println("Unexpected - sign.")
+			os.Exit(1)
+		}
+	}
 
 	//Is it a literal number? Then just return it.
 	//OR is it a variable?
@@ -156,6 +175,15 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 					return id
 				}
 			}
+		}
+	}
+	
+	if token[0] == '(' {
+		s.Scan()
+		if shunting {
+			return shunt(expression(s, output), s, output)
+		} else {
+			return expression(s, output)
 		}
 	}
 	

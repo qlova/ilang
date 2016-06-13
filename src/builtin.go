@@ -2,6 +2,7 @@ package main
 
 import "io"
 
+//TODO optimise some of the functions to be inline.
 func builtin(output io.Writer) {
 	//Inbuilt output function.
 	output.Write([]byte(
@@ -11,6 +12,15 @@ SUBROUTINE output
 END
 `	))
 	functions["output"] = Function{Exists:true, Args:[]int{STRING}}
+
+	//Inbuilt output function.
+	output.Write([]byte(
+`
+SUBROUTINE load
+	LOAD
+END
+`	))
+	functions["load"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{STRING}}
 	
 	//Inbuilt output function.
 	output.Write([]byte(
@@ -135,6 +145,9 @@ SUBROUTINE num
 	
 	VAR i
 	VAR __first
+	VAR __toobig
+	VAR __toosmall
+	VAR __invalid
 	ADD i 0 end
 	LOOP
 		VAR __condition
@@ -158,6 +171,13 @@ SUBROUTINE num
 			BREAK
 		END
 		
+		
+		SGT __toobig tens*i 57
+		SLT __toosmall tens*i 46
+		ADD __invalid __toobig __toosmall
+		IF __invalid
+			ERROR 1
+		END
 		SUB tens*i tens*i 48 #Convert from unicode.
 		MUL tens*i tens tens*i
 		
