@@ -84,4 +84,5 @@ BasicTest Strconv "1200  is numeric :)\n3.14  is numeric :)\n3/4  is numeric :)\
 BasicTest EmptyString "Empty string!"
 BasicTest Enviroment "$HOME\n$USER\n$PATH"
 BasicTest Empty "\n"
+BasicTest Factorial "1\n1\n2\n6\n1124000727777607680000"
 
