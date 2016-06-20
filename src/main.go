@@ -238,19 +238,33 @@ func main() {
 		tok = s.Scan()
 		
 		switch s.TokenText() {
+			case "loop", "repeat", "break":
+				fmt.Fprintf(output, "%v", strings.ToUpper(s.TokenText())+"\n")
+			
 			case "\n", ";":
 			
 			case "!":
 				output.Write([]byte("ERROR 0\n"))
 			
 			case "}", "end":
+				nesting, ok := Scope[len(Scope)-1]["elseif"]
+				if ok {
+					for i:=0; i < nesting; i++ {
+						output.Write([]byte("END\n"))
+					}
+				}
 				output.Write([]byte("END\n"))
 				LoseScope()
 			
 			case "else":
 				fmt.Fprintf(output, "ELSE\n")
+				nesting, ok := Scope[len(Scope)-1]["elseif"]
+				if !ok {
+					nesting = 0
+				}
 				LoseScope()
 				GainScope()
+				SetVariable("elseif", nesting)
 			
 			case "if", "elseif":
 				
@@ -259,10 +273,17 @@ func main() {
 					s.Scan()
 					fmt.Fprintf(output, "IF %v\n", expression(&s, output))
 				} else {
+					nesting, ok := Scope[len(Scope)-1]["elseif"]
+					if !ok {
+						nesting = 0
+					}
 					LoseScope()
 					GainScope()
+					SetVariable("elseif", nesting+1)
 					s.Scan()
-					fmt.Fprintf(output, "ELSEIF %v\n", expression(&s, output))
+					fmt.Fprintf(output, "ELSE\n")
+					condition := expression(&s, output)
+					fmt.Fprintf(output, "IF %v\n", condition)
 				}
 				
 				
