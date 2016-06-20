@@ -27,11 +27,16 @@ func app(a string, shunt ...bool) Operator {
 //Contains format for compliation.
 var Operators = map[string]Operator{
 	"/": 	opp( "VAR %v\nDIV %v %v %v\n", true),
+	"÷": 	opp( "VAR %v\nDIV %v %v %v\n", true),
 	"+": 	opp( "VAR %v\nADD %v %v %v\n"),
 	"-": 	opp( "VAR %v\nSUB %v %v %v\n"),
+	
+	//Should these be kept??
 	"and":	opp( "VAR %v\nMUL %v %v %v\n"),
 	"or":	opp( "VAR %v\nADD %v %v %v\n"),
+	
 	"*":	opp( "VAR %v\nMUL %v %v %v\n", true),
+	"×":	opp( "VAR %v\nMUL %v %v %v\n", true),
 	"mod": 	opp( "VAR %v\nMOD %v %v %v\n", true),
 	"^": 	opp( "VAR %v\nPOW %v %v %v\n", true),
 	"&":	opp( "STRING %v\nJOIN %v %v %v\n"),
