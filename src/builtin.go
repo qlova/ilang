@@ -62,11 +62,13 @@ END
 SUBROUTINE copy
 	POPSTRING array
 	STRING c
+	
+	PUSHSTRING array
+	RUN len
+	POP i+output+2
+	
 	VAR i 0
 	LOOP
-		PUSHSTRING array
-		RUN len
-		POP i+output+2
 		VAR i+shunt+1
 		SGE i+shunt+1 i i+output+2
 		IF i+shunt+1
