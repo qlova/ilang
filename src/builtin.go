@@ -134,6 +134,11 @@ SUBROUTINE reada
 		STDIN
 		POP byte
 		
+		VAR byte==n1000
+		SEQ byte==n1000 byte -1000
+		IF byte==n1000
+			BREAK
+		END
 	
 		VAR byte==delim
 		SEQ byte==delim byte delim
