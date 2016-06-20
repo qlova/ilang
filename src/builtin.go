@@ -13,6 +13,24 @@ END
 `	))
 	functions["output"] = Function{Exists:true, Args:[]int{STRING}}
 
+
+	output.Write([]byte(
+`
+STRINGDATA i_true "true"
+STRINGDATA i_false "false"
+SUBROUTINE bool
+	POP n
+	IF n
+		PUSHSTRING i_true
+		RUN copy
+		RETURN
+	END
+	PUSHSTRING i_false
+	RUN copy
+END
+`	))
+	functions["bool"] = Function{Exists:true, Args:[]int{NUMBER}, Returns:[]int{STRING}}
+
 	//Inbuilt output function.
 	output.Write([]byte(
 `
