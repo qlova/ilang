@@ -78,6 +78,22 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 		fmt.Println("Empty expression!")
 		return ""
 	}
+	
+	if token == "true" {
+		if shunting {
+			return shunt("1", s, output)
+		} else {
+			return "1"
+		}
+	}
+	
+	if token == "false" {
+		if shunting {
+			return shunt("0", s, output)
+		} else {
+			return "0"
+		}
+	}
 
 	//If there is a quotation mark, parse the string. 
 	if token[0] == '"' {
