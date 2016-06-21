@@ -238,8 +238,21 @@ func main() {
 		tok = s.Scan()
 		
 		switch s.TokenText() {
-			case "loop", "repeat", "break":
+			//LOOPS
+			
+			case "repeat", "break":
 				fmt.Fprintf(output, "%v", strings.ToUpper(s.TokenText())+"\n")
+			
+			case "do":
+				fmt.Fprintf(output, "LOOP\n")
+			
+			case "done":
+				fmt.Fprintf(output, "REPEAT\n")
+			
+			case "while":
+				s.Scan()
+				fmt.Fprintf(output, "IF %v\nERROR 0\nELSE\nBREAK\nEND\n", expression(&s, output))
+				fmt.Fprintf(output, "REPEAT\n")
 			
 			case "\n", ";":
 			
@@ -487,7 +500,8 @@ func main() {
 				}
 				
 				CurrentFunction = function
-			case "var":
+			case "var", "for":
+				var forloop = s.TokenText() == "for"
 				s.Scan()
 				if s.TokenText() == "[" {
 					s.Scan()
@@ -531,7 +545,17 @@ func main() {
 					s.Scan()
 					s.Scan()
 					fmt.Fprintf(output, "VAR %v %v\n", name, expression(&s, output))
-					SetVariable(name, NUMBER)
+					SetVariable(name, ExpressionType)
+				}
+				if !forloop {
+					continue
+				}
+				fallthrough
+			case "loop":
+				fmt.Fprintf(output, "LOOP\n")
+				s.Scan()
+				if s.TokenText() != "\n" {
+					fmt.Fprintf(output, "IF %v\nERROR 0\nELSE\nBREAK\nEND\n", expression(&s, output))
 				}
 			
 			default:
