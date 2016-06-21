@@ -49,6 +49,7 @@ var Operators = map[string]Operator{
 	
 	"²":	pow( "VAR %v\nMUL %v %v %v\n", true),
 	
+	"==":	app( "PUSHSTRING %v\n PUSHSTRING %v\nRUN strings.equal\nPOP %v\n"),
 	"@":	app( "PUSHSTRING %v\nPUSH %v\nRUN hash\nPOP %v\n", true),
 	"?":	app( "PUSH %v\nPUSH %v\nRUN unhash\nPOPSTRING %v\n", true),
 	
