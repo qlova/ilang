@@ -41,7 +41,7 @@ var Operators = map[string]Operator{
 	"^": 	opp( "VAR %v\nPOW %v %v %v\n", true),
 	"&":	opp( "STRING %v\nJOIN %v %v %v\n"),
 	"=":	opp( "VAR %v\nSEQ %v %v %v\n"),
-	"!=":	opp( "VAR %v\nSNE %v %v %v\n"),
+	"~=":	opp( "VAR %v\nSNE %v %v %v\n"),
 	"<=":	opp( "VAR %v\nSLE %v %v %v\n"),
 	"<":	opp( "VAR %v\nSLT %v %v %v\n"),
 	">":	opp( "VAR %v\nSGT %v %v %v\n"),
