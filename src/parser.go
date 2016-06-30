@@ -34,6 +34,7 @@ func ParseString(s *scanner.Scanner, output io.Writer, shunting bool) string {
 	stringloop:
 	arg = strings.Replace(arg, "\\n", "\n", -1)
 	arg = strings.Replace(arg, "\\r", "\r", -1)
+	arg = strings.Replace(arg, "\\\n", "\\n", -1)
 	for _, v := range arg {
 		if v == '"' {
 			goto end

@@ -27,16 +27,21 @@ func app(a string, shunt ...bool) Operator {
 //Contains format for compliation.
 var Operators = map[string]Operator{
 	"/": 	opp( "VAR %v\nDIV %v %v %v\n", true),
+	"÷": 	opp( "VAR %v\nDIV %v %v %v\n", true),
 	"+": 	opp( "VAR %v\nADD %v %v %v\n"),
 	"-": 	opp( "VAR %v\nSUB %v %v %v\n"),
+	
+	//Should these be kept??
 	"and":	opp( "VAR %v\nMUL %v %v %v\n"),
 	"or":	opp( "VAR %v\nADD %v %v %v\n"),
+	
 	"*":	opp( "VAR %v\nMUL %v %v %v\n", true),
+	"×":	opp( "VAR %v\nMUL %v %v %v\n", true),
 	"mod": 	opp( "VAR %v\nMOD %v %v %v\n", true),
 	"^": 	opp( "VAR %v\nPOW %v %v %v\n", true),
 	"&":	opp( "STRING %v\nJOIN %v %v %v\n"),
 	"=":	opp( "VAR %v\nSEQ %v %v %v\n"),
-	"!=":	opp( "VAR %v\nSNE %v %v %v\n"),
+	"~=":	opp( "VAR %v\nSNE %v %v %v\n"),
 	"<=":	opp( "VAR %v\nSLE %v %v %v\n"),
 	"<":	opp( "VAR %v\nSLT %v %v %v\n"),
 	">":	opp( "VAR %v\nSGT %v %v %v\n"),
@@ -44,6 +49,7 @@ var Operators = map[string]Operator{
 	
 	"²":	pow( "VAR %v\nMUL %v %v %v\n", true),
 	
+	"==":	app( "PUSHSTRING %v\n PUSHSTRING %v\nRUN strings.equal\nPOP %v\n"),
 	"@":	app( "PUSHSTRING %v\nPUSH %v\nRUN hash\nPOP %v\n", true),
 	"?":	app( "PUSH %v\nPUSH %v\nRUN unhash\nPOPSTRING %v\n", true),
 	

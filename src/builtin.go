@@ -13,6 +13,61 @@ END
 `	))
 	functions["output"] = Function{Exists:true, Args:[]int{STRING}}
 
+	output.Write([]byte(
+`
+#Returns whether or not a string is equal.
+SUBROUTINE strings.equal
+	POPSTRING str1
+	POPSTRING str2
+	
+	VAR len(str1)!=len(str2)
+	SNE len(str1)!=len(str2) #str1 #str2
+	IF len(str1)!=len(str2)
+		PUSH 0
+		RETURN
+	END
+	
+	VAR iterator
+	VAR i>=len(str1)
+	VAR char1!=char2
+	LOOP
+		SGE i>=len(str1) iterator #str1
+		IF i>=len(str1)
+			PUSH 1
+			RETURN
+		END
+		INDEX str1 iterator char1
+		INDEX str2 iterator char2
+		
+		SNE char1!=char2 char1 char2
+		IF char1!=char2 
+			PUSH 0
+			RETURN
+		END
+		
+		ADD iterator iterator 1
+	REPEAT
+DONE
+` ))
+	functions["strings.equal"] = Function{Exists:true, Args:[]int{STRING, STRING}, Returns:[]int{NUMBER}}
+
+	output.Write([]byte(
+`
+STRINGDATA i_true "true"
+STRINGDATA i_false "false"
+SUBROUTINE bool
+	POP n
+	IF n
+		PUSHSTRING i_true
+		RUN copy
+		RETURN
+	END
+	PUSHSTRING i_false
+	RUN copy
+END
+`	))
+	functions["bool"] = Function{Exists:true, Args:[]int{NUMBER}, Returns:[]int{STRING}}
+
 	//Inbuilt output function.
 	output.Write([]byte(
 `
@@ -44,11 +99,13 @@ END
 SUBROUTINE copy
 	POPSTRING array
 	STRING c
+	
+	PUSHSTRING array
+	RUN len
+	POP i+output+2
+	
 	VAR i 0
 	LOOP
-		PUSHSTRING array
-		RUN len
-		POP i+output+2
 		VAR i+shunt+1
 		SGE i+shunt+1 i i+output+2
 		IF i+shunt+1
@@ -114,6 +171,11 @@ SUBROUTINE reada
 		STDIN
 		POP byte
 		
+		VAR byte==n1000
+		SEQ byte==n1000 byte -1000
+		IF byte==n1000
+			BREAK
+		END
 	
 		VAR byte==delim
 		SEQ byte==delim byte delim

@@ -78,6 +78,22 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 		fmt.Println("Empty expression!")
 		return ""
 	}
+	
+	if token == "true" {
+		if shunting {
+			return shunt("1", s, output)
+		} else {
+			return "1"
+		}
+	}
+	
+	if token == "false" {
+		if shunting {
+			return shunt("0", s, output)
+		} else {
+			return "0"
+		}
+	}
 
 	//If there is a quotation mark, parse the string. 
 	if token[0] == '"' {
@@ -226,19 +242,46 @@ func main() {
 		tok = s.Scan()
 		
 		switch s.TokenText() {
+			//LOOPS
+			
+			case "repeat", "break":
+				fmt.Fprintf(output, "%v", strings.ToUpper(s.TokenText())+"\n")
+			
+			case "do":
+				fmt.Fprintf(output, "LOOP\n")
+			
+			case "done":
+				fmt.Fprintf(output, "REPEAT\n")
+			
+			case "while":
+				s.Scan()
+				fmt.Fprintf(output, "IF %v\nERROR 0\nELSE\nBREAK\nEND\n", expression(&s, output))
+				fmt.Fprintf(output, "REPEAT\n")
+			
 			case "\n", ";":
 			
 			case "!":
 				output.Write([]byte("ERROR 0\n"))
 			
 			case "}", "end":
+				nesting, ok := Scope[len(Scope)-1]["elseif"]
+				if ok {
+					for i:=0; i < nesting; i++ {
+						output.Write([]byte("END\n"))
+					}
+				}
 				output.Write([]byte("END\n"))
 				LoseScope()
 			
 			case "else":
 				fmt.Fprintf(output, "ELSE\n")
+				nesting, ok := Scope[len(Scope)-1]["elseif"]
+				if !ok {
+					nesting = 0
+				}
 				LoseScope()
 				GainScope()
+				SetVariable("elseif", nesting)
 			
 			case "if", "elseif":
 				
@@ -247,10 +290,17 @@ func main() {
 					s.Scan()
 					fmt.Fprintf(output, "IF %v\n", expression(&s, output))
 				} else {
+					nesting, ok := Scope[len(Scope)-1]["elseif"]
+					if !ok {
+						nesting = 0
+					}
 					LoseScope()
 					GainScope()
+					SetVariable("elseif", nesting+1)
 					s.Scan()
-					fmt.Fprintf(output, "ELSEIF %v\n", expression(&s, output))
+					fmt.Fprintf(output, "ELSE\n")
+					condition := expression(&s, output)
+					fmt.Fprintf(output, "IF %v\n", condition)
 				}
 				
 				
@@ -454,7 +504,8 @@ func main() {
 				}
 				
 				CurrentFunction = function
-			case "var":
+			case "var", "for":
+				var forloop = s.TokenText() == "for"
 				s.Scan()
 				if s.TokenText() == "[" {
 					s.Scan()
@@ -498,7 +549,17 @@ func main() {
 					s.Scan()
 					s.Scan()
 					fmt.Fprintf(output, "VAR %v %v\n", name, expression(&s, output))
-					SetVariable(name, NUMBER)
+					SetVariable(name, ExpressionType)
+				}
+				if !forloop {
+					continue
+				}
+				fallthrough
+			case "loop":
+				fmt.Fprintf(output, "LOOP\n")
+				s.Scan()
+				if s.TokenText() != "\n" {
+					fmt.Fprintf(output, "IF %v\nERROR 0\nELSE\nBREAK\nEND\n", expression(&s, output))
 				}
 			
 			default:

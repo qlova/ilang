@@ -60,14 +60,12 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 		if _, err := strconv.Atoi(s.TokenText()[1:]); err == nil && s.TokenText()[0] == '.' {
 			unique++
 			output.Write([]byte("INDEX "+name+" "+s.TokenText()[1:]+" i+shunt+"+fmt.Sprint(unique)+"\n"))
-			s.Scan()
-			return "i+shunt+"+fmt.Sprint(unique)
+			return shunt("i+shunt+"+fmt.Sprint(unique), s, output)
 		} else if s.TokenText() == "." {
 			s.Scan()
 			unique++
 			output.Write([]byte("INDEX "+name+" "+s.TokenText()+" i+shunt+"+fmt.Sprint(unique)+"\n"))
-			s.Scan()
-			return "i+shunt+"+fmt.Sprint(unique)
+			return shunt("i+shunt+"+fmt.Sprint(unique), s, output)
 		}
 		
 		fmt.Println("[SHUNTING YARD] Unexpected ", s.TokenText(), "("+name+")")
