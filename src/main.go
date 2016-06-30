@@ -100,6 +100,10 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 		ExpressionType = NUMBER
 		defer s.Scan()
 		return strconv.Itoa(int('\n'))
+	} else if s.TokenText() == `'\r'` {
+		ExpressionType = NUMBER
+		defer s.Scan()
+		return strconv.Itoa(int('\r'))
 	}
 
 	

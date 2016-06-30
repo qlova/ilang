@@ -33,6 +33,7 @@ func ParseString(s *scanner.Scanner, output io.Writer, shunting bool) string {
 	//		"NO GOTO STATEMENTS, YOUR MAKING ME BLIND!"
 	stringloop:
 	arg = strings.Replace(arg, "\\n", "\n", -1)
+	arg = strings.Replace(arg, "\\r", "\r", -1)
 	for _, v := range arg {
 		if v == '"' {
 			goto end
