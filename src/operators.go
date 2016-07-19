@@ -54,6 +54,7 @@ var Operators = map[string]Operator{
 	"?":	app( "PUSH %v\nPUSH %v\nRUN unhash\nPOPSTRING %v\n", true),
 	
 	"!": Operator{},
+	"~": Operator{},
 }
 
 

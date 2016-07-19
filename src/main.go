@@ -10,21 +10,31 @@ import (
 	"flag"
 )
 
+type TYPE int
+
 //These are the 4 types in I.
 const (
-	FUNCTION = iota
+	UNDEFINED TYPE = iota
+	
+	FUNCTION
 	STRING
 	NUMBER
 	FILE
-	
-	UNDEFINED
 )
+
+func (t TYPE) String() string {
+	return map[TYPE]string{FUNCTION:"function", STRING:"string",NUMBER:"number",FILE:"file",UNDEFINED:"undefined"}[t]
+}
+
+func (t TYPE) Push() string {
+	return map[TYPE]string{FUNCTION:"PUSHFUNC", STRING:"PUSHSTRING",NUMBER:"PUSH",FILE:"PUSHIT",UNDEFINED:""}[t]
+}
 
 //This holds the definition of a function.
 type Function struct {
 	Exists bool
-	Args []int
-	Returns []int
+	Args []TYPE
+	Returns []TYPE
 	
 	//Is this a local?
 	Local bool
@@ -34,15 +44,15 @@ type Function struct {
 
 
 //Deal with scoping for variables.
-type Variables map[string]int
+type Variables map[string]TYPE
 
 var Scope []Variables
 
 func GainScope() {
-	Scope = append(Scope, make(map[string]int))
+	Scope = append(Scope, make(map[string]TYPE))
 }
 
-func GetVariable(name string) int {
+func GetVariable(name string) TYPE {
 	for i:=len(Scope)-1; i>=0; i-- {
 		if v, ok := Scope[i][name]; ok {
 			return v
@@ -51,12 +61,17 @@ func GetVariable(name string) int {
 	return UNDEFINED
 }
 
-func SetVariable(name string, sort int) {
+func SetVariable(name string, sort TYPE) {
 	Scope[len(Scope)-1][name] = sort
 }
 
 func LoseScope() {
 	Scope = Scope[:len(Scope)-1]
+}
+
+func RaiseError(s *scanner.Scanner, message string) {
+	fmt.Fprintf(os.Stderr, "[%v] %v\n", s.Pos(), message)
+	os.Exit(1)
 }
 
 var functions = make( map[string]Function)
@@ -65,7 +80,7 @@ var unique int
 
 var CurrentFunction Function
 
-var ExpressionType int
+var ExpressionType TYPE
 func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	
 	//Do we need to shunt? This is for operator precidence. (defaults to true)
@@ -80,6 +95,7 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	}
 	
 	if token == "true" {
+		ExpressionType = NUMBER
 		if shunting {
 			return shunt("1", s, output)
 		} else {
@@ -88,6 +104,7 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	}
 	
 	if token == "false" {
+		ExpressionType = NUMBER
 		if shunting {
 			return shunt("0", s, output)
 		} else {
@@ -102,7 +119,9 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	}
 	
 	if  token[0] == '[' {
-		ExpressionType = STRING
+		defer func() {
+			ExpressionType = STRING
+		}()
 		return ParseArray(s, output, shunting)
 	}
 	
@@ -116,6 +135,13 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 		ExpressionType = NUMBER
 		defer s.Scan()
 		return strconv.Itoa(int('\n'))
+	} else if len(token) > 2 && token[0] == '0' && token[1] == 'x' { 
+		ExpressionType = NUMBER
+		if shunting {
+			return shunt(token, s, output)
+		} else {
+			return token
+		}
 	}
 
 	
@@ -203,6 +229,7 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 		}
 	}
 	
+	ExpressionType = UNDEFINED
 	if shunting {
 		return shunt(s.TokenText(), s, output)
 	} else {
@@ -254,6 +281,9 @@ func main() {
 				fmt.Fprintf(output, "IF %v\nERROR 0\nELSE\nBREAK\nEND\n", expression(&s, output))
 				fmt.Fprintf(output, "REPEAT\n")
 			
+			case "exit":
+				fmt.Fprintf(output, "RETURN\n")
+			
 			case "\n", ";":
 			
 			case "!":
@@ -262,7 +292,7 @@ func main() {
 			case "}", "end":
 				nesting, ok := Scope[len(Scope)-1]["elseif"]
 				if ok {
-					for i:=0; i < nesting; i++ {
+					for i:=0; TYPE(i) < nesting; i++ {
 						output.Write([]byte("END\n"))
 					}
 				}
@@ -400,12 +430,16 @@ func main() {
 					if s.TokenText() == ")" {
 						break
 					}
+					var T TYPE
 					//String arguments.
 					if s.TokenText() == "[" {
 						//Update our function definition with a string argument.
 						function.Args = append(function.Args, STRING)
 						
 						popstring += "POPSTRING "
+						
+						T = STRING
+						
 						s.Scan()
 						if s.TokenText() != "]" {
 							fmt.Println(s.Pos(), "Expecting ] found ", s.TokenText())
@@ -420,6 +454,9 @@ func main() {
 						function.Variadic = true
 						
 						popstring += "POPSTRING "
+						
+						T = STRING
+						
 						s.Scan()
 						if s.TokenText() != "." {
 							fmt.Println(s.Pos(), "Expecting . found ", s.TokenText())
@@ -432,6 +469,8 @@ func main() {
 						//Update our function definition with a string argument.
 						function.Args = append(function.Args, FUNCTION)
 						
+						T = FUNCTION
+						
 						popstring += "POPFUNC "
 						s.Scan()
 						if s.TokenText() != ")" {
@@ -443,8 +482,12 @@ func main() {
 						//Update our function definition with a numeric argument.
 						function.Args = append(function.Args, NUMBER)
 						
+						T = NUMBER
+						
 						popstring += "POP "
 					}
+					SetVariable(s.TokenText(), T)
+					
 					popstring += s.TokenText()+"\n"
 					toReverse = append(toReverse, popstring)
 					s.Scan()
@@ -588,18 +631,19 @@ func main() {
 					case "&":
 						s.Scan()
 						output.Write([]byte("PUSH "+expression(&s, output)+" "+name+" \n"))
+						
+					//TODO Allow assigning to non-numeric types?
 					case "=":
-						/*if functions[s.TokenText()].Exists && s.Peek() != '(' {
-							
-							functions[name] = functions[s.TokenText()]
-							f := functions[name] 
-							f.Local = true
-							functions[name] = f
-							output.Write([]byte("FUNC "+name+" "+s.TokenText()+"\n"))
-							
-						}*/
 						s.Scan()
+						if GetVariable(name) != NUMBER {
+							if GetVariable(name) == UNDEFINED {
+								RaiseError(&s, name+" is undefined!")
+							} else {
+								RaiseError(&s, "Cannot assign to "+name+"! Not a numeric value.")
+							}
+						}
 						fmt.Fprintf(output, "ADD %v 0 %v\n", name, expression(&s, output))
+					
 					default:
 						if len(s.TokenText()) > 0 && s.TokenText()[0] == '.' {
 							var index = s.TokenText()[1:]

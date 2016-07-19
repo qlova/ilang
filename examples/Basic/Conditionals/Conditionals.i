@@ -11,7 +11,7 @@ software {
 		output("3!=2\n")
 	end
 	
-	if a != 2
+	if a ~= 2
 		output("verified\n")
 	else
 		output("3=2!!!\n")

@@ -113,12 +113,16 @@ func ParseFunctionReturns(token string, s *scanner.Scanner, output io.Writer, sh
 		switch functions[token].Returns[0] {
 			case STRING:
 				fmt.Fprintf(output, "POPSTRING %v\n", id)
+				ExpressionType = STRING
 			case NUMBER:
 				fmt.Fprintf(output, "POP %v\n", id)
+				ExpressionType = NUMBER
 			case FUNCTION:
 				fmt.Fprintf(output, "POPFUNC %v\n", id)
+				ExpressionType = FUNCTION
 			case FILE:
 				fmt.Fprintf(output, "POPIT %v\n", id)
+				ExpressionType = FILE
 		}
 		
 		if shunting {
@@ -144,7 +148,7 @@ func ParseFunctionReturns(token string, s *scanner.Scanner, output io.Writer, sh
 func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool) string {
 	var token = s.TokenText()
 	var method bool
-	var methodType int
+	var methodType TYPE
 	
 	//Currently variadic functions only work with numbers. Why? No reason (Lazyness).
 	if functions[token].Variadic {
@@ -203,16 +207,11 @@ func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool) string {
 				break
 			}
 		
-			if len(functions[token].Args) > i {
-				switch functions[token].Args[i] {
-					case STRING:
-						fmt.Fprintf(output, "PUSHSTRING %v\n", expression(s, output))
-					case NUMBER:
-						fmt.Fprintf(output, "PUSH %v\n", expression(s, output))
-					case FUNCTION:
-						fmt.Fprintf(output, "PUSHFUNC %v\n", expression(s, output))
-					case FILE:
-						fmt.Fprintf(output, "PUSHIT %v\n", expression(s, output))
+			if len(functions[token].Args) > 0 {
+				fmt.Fprintf(output, "%v %v\n", functions[token].Args[i].Push(), expression(s, output))
+				if ExpressionType != functions[token].Args[i] {
+					RaiseError(s, fmt.Sprintf("Type mismatch! Argument %v of '%v()' expects %v, got %v", 
+						fmt.Sprint(i+1), token, functions[token].Args[i].String(), ExpressionType.String()))
 				}
 			} 
 		

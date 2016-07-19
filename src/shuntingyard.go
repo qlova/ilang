@@ -58,10 +58,12 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 		
 		//Special case for indexing arrays.
 		if _, err := strconv.Atoi(s.TokenText()[1:]); err == nil && s.TokenText()[0] == '.' {
+			ExpressionType = NUMBER
 			unique++
 			output.Write([]byte("INDEX "+name+" "+s.TokenText()[1:]+" i+shunt+"+fmt.Sprint(unique)+"\n"))
 			return shunt("i+shunt+"+fmt.Sprint(unique), s, output)
 		} else if s.TokenText() == "." {
+			ExpressionType = NUMBER
 			s.Scan()
 			unique++
 			output.Write([]byte("INDEX "+name+" "+s.TokenText()+" i+shunt+"+fmt.Sprint(unique)+"\n"))
