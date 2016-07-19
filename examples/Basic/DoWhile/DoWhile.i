@@ -4,5 +4,5 @@ software {
 	do
 		i = i + 1
 		output(text(i)&"\n")
-	while i mod 6 != 0
+	while i mod 6 ~= 0
 }

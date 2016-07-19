@@ -11,7 +11,7 @@ SUBROUTINE output
 	STDOUT 
 END
 `	))
-	functions["output"] = Function{Exists:true, Args:[]int{STRING}}
+	functions["output"] = Function{Exists:true, Args:[]TYPE{STRING}}
 
 	output.Write([]byte(
 `
@@ -49,7 +49,7 @@ SUBROUTINE strings.equal
 	REPEAT
 DONE
 ` ))
-	functions["strings.equal"] = Function{Exists:true, Args:[]int{STRING, STRING}, Returns:[]int{NUMBER}}
+	functions["strings.equal"] = Function{Exists:true, Args:[]TYPE{STRING, STRING}, Returns:[]TYPE{NUMBER}}
 
 	output.Write([]byte(
 `
@@ -66,7 +66,7 @@ SUBROUTINE bool
 	RUN copy
 END
 `	))
-	functions["bool"] = Function{Exists:true, Args:[]int{NUMBER}, Returns:[]int{STRING}}
+	functions["bool"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
 
 	//Inbuilt output function.
 	output.Write([]byte(
@@ -75,7 +75,7 @@ SUBROUTINE load
 	LOAD
 END
 `	))
-	functions["load"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{STRING}}
+	functions["load"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}}
 	
 	//Inbuilt output function.
 	output.Write([]byte(
@@ -91,7 +91,7 @@ SUBROUTINE open
 	PUSHIT file
 END
 `	))
-	functions["open"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{FILE}}
+	functions["open"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{FILE}}
 	
 	output.Write([]byte(	
 `
@@ -119,11 +119,11 @@ SUBROUTINE copy
 	REPEAT
 END
 `	))
-	functions["copy"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{STRING}}
+	functions["copy"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}}
 
 	output.Write([]byte(	
 `	
-SUBROUTINE output_m_3
+SUBROUTINE output_m_file
 	POPSTRING text
 	POPIT self
 	PUSHSTRING text
@@ -134,7 +134,7 @@ SUBROUTINE output_m_3
 	END
 END
 `))
-	functions["output_m_3"] = Function{Exists:true, Args:[]int{STRING}}
+	functions["output_m_file"] = Function{Exists:true, Args:[]TYPE{STRING}}
 	methods["output"] = true
 
 	
@@ -147,7 +147,7 @@ SUBROUTINE close
 	CLOSE file
 END
 `	))
-	functions["close"] = Function{Exists:true, Args:[]int{FILE}}
+	functions["close"] = Function{Exists:true, Args:[]TYPE{FILE}}
 
 	//Inbuilt output function.
 	output.Write([]byte(
@@ -157,7 +157,7 @@ SUBROUTINE len
 	PUSH #data
 END
 `	))
-	functions["len"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{NUMBER}}
+	functions["len"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}}
 
 	//Inbuilt reada function.
 	output.Write([]byte(
@@ -191,7 +191,43 @@ SUBROUTINE reada
 	PUSHSTRING input
 END
 `	))
-	functions["reada"] = Function{Exists:true, Args:[]int{NUMBER}, Returns:[]int{STRING}}
+	functions["reada"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
+	
+	//Inbuilt reada function.
+	output.Write([]byte(
+`
+SUBROUTINE reada_m_file
+	POPIT file
+	POP delim
+	STRING input
+	VAR canbreak
+	LOOP
+		PUSH 1
+		IN file
+		POP byte
+		
+		VAR byte==n1000
+		SEQ byte==n1000 byte -1000
+		IF byte==n1000
+			BREAK
+		END
+	
+		VAR byte==delim
+		SEQ byte==delim byte delim
+		IF byte==delim
+			IF canbreak
+				BREAK
+			END
+		ELSE
+			ADD canbreak 0 1
+			PUSH byte input
+		END
+	REPEAT
+	PUSHSTRING input
+END
+`	))
+	functions["reada_m_file"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
+	methods["reada"] = true
 	
 	//Inbuilt num function.
 	output.Write([]byte(
@@ -251,7 +287,7 @@ SUBROUTINE num
 	PUSH number
 END
 `	))
-	functions["num"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{NUMBER}}
+	functions["num"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}}
 
 	//Inbuilt text function.
 	output.Write([]byte(
@@ -314,7 +350,7 @@ SUBROUTINE text
 	PUSHSTRING txt
 END
 `	))
-	functions["text"] = Function{Exists:true, Args:[]int{NUMBER}, Returns:[]int{STRING}}
+	functions["text"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
 	
 	//Hash function.
 	output.Write([]byte(
@@ -413,5 +449,5 @@ SUBROUTINE unhash
 	PUSHSTRING txt
 END
 `	))
-	//functions["hash"] = Function{Exists:true, Args:[]int{STRING}, Returns:[]int{NUMBER}}
+	//functions["hash"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}}
 }

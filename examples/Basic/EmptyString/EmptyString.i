@@ -5,7 +5,7 @@ software {
 		output("Empty string!\n")
 	end
 	
-	if len(s) != 0 
+	if len(s) ~= 0 
 		output("Not an empty string!\n")
 	end
 }

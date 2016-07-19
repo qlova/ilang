@@ -1,6 +1,6 @@
 
 function create( []filename ) {
-	var ~file = open(filename) 
+	var file = open(filename) 
 !	output@file("")
 	issues {
 		output("Failed to create "&filename&"\n")

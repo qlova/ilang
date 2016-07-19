@@ -1,5 +1,5 @@
 
-function numeric(n) {
+function numeric([]n) {
 !	num(n)
 	issues {
 		output(n&"  is not numeric!\n")
