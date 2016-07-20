@@ -146,10 +146,14 @@ func ParseFunctionReturns(token string, s *scanner.Scanner, output io.Writer, sh
 		PUSHSTRING i+output+id
 		RUN output
 */
-func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool) string {
+func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool, calling ...bool) string {
 	var token = s.TokenText()
-	var method bool
+	var method, call bool
 	var methodType TYPE
+	
+	if len(calling) == 0 {
+		call = true
+	}
 	
 	//Currently variadic functions only work with numbers. Why? No reason (Lazyness).
 	if functions[token].Variadic {
@@ -225,13 +229,16 @@ func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool) string {
 			}
 		}	
 	}
-		
-	if functions[token].Local {
-		output.Write([]byte("EXE "+token+"\n"))
-	} else if method {
-		fmt.Fprintf(output, "RUN %v_m_%v\n", token, methodType)
-	} else {
-		output.Write([]byte("RUN "+token+"\n"))
+	
+	if call {
+		if functions[token].Local {
+			output.Write([]byte("EXE "+token+"\n"))
+		} else if method {
+			fmt.Fprintf(output, "RUN %v_m_%v\n", token, methodType)
+		} else {
+			output.Write([]byte("RUN "+token+"\n"))
+		}
+		return ParseFunctionReturns(token, s, output, shunting)
 	}
-	return ParseFunctionReturns(token, s, output, shunting)
+	return ""
 }

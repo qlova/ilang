@@ -281,10 +281,10 @@ func main() {
 					fmt.Println(s.Pos(), "Expecting a function but instead, found ", s.TokenText())
 					return
 				}
-				expression(&s, output)
-				fmt.Fprintf(output, "FORK %v\n", s.TokenText())
+				ParseFunction(&s, output, false, true)
+				fmt.Fprintf(output, "FORK %v\n", function)
 				for _, v := range functions[function].Args {
-				
+					fmt.Fprintf(output, "POP%v\n", v.Push()[4:])
 				}
 			
 			case "do":
