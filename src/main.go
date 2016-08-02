@@ -495,6 +495,16 @@ func main() {
 							return
 						}
 						s.Scan()
+					//File arguments.
+					} else if s.TokenText() == "|" {
+						
+						//Update our function definition with a string argument.
+						function.Args = append(function.Args, FILE)
+						
+						T = FILE
+						
+						popstring += "POPIT "
+						s.Scan()
 					} else {
 						//Update our function definition with a numeric argument.
 						function.Args = append(function.Args, NUMBER)
