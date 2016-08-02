@@ -148,7 +148,7 @@ func ParseFunctionReturns(token string, s *scanner.Scanner, output io.Writer, sh
 */
 func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool, calling ...bool) string {
 	var token = s.TokenText()
-	var method, call bool
+	var call bool
 	var methodType TYPE
 	
 	if len(calling) == 0 {
@@ -188,9 +188,12 @@ func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool, calling 
 		
 			if s.TokenText() == "@" {
 				s.Scan()
-				method = true
 				sort := GetVariable(s.TokenText())
 				methodType = sort
+				if sort == UNDEFINED && (
+					s.TokenText() == "inbox" || s.TokenText() == "outbox" ){
+						methodType = FILE
+				}
 				switch sort {
 					case STRING:
 						fmt.Fprintf(output, "PUSHSTRING %v\n", s.TokenText())
@@ -202,6 +205,7 @@ func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool, calling 
 						fmt.Fprintf(output, "PUSHIT %v\n", s.TokenText())
 				}
 				s.Scan()
+				token = token+"_m_"+methodType.String()
 			}
 		
 			if s.TokenText() == ")" {
@@ -233,8 +237,6 @@ func ParseFunction(s *scanner.Scanner, output io.Writer, shunting bool, calling 
 	if call {
 		if functions[token].Local {
 			output.Write([]byte("EXE "+token+"\n"))
-		} else if method {
-			fmt.Fprintf(output, "RUN %v_m_%v\n", token, methodType)
 		} else {
 			output.Write([]byte("RUN "+token+"\n"))
 		}
