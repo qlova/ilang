@@ -228,6 +228,51 @@ END
 `	))
 	functions["reada_m_file"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
 	methods["reada"] = true
+
+	//Inbuilt reada function.
+	output.Write([]byte(
+`
+SUBROUTINE reada_m_string
+	POPSTRING str
+	POP delim
+	
+	STRING input
+	VAR canbreak
+	VAR gtzero
+	VAR i
+	LOOP
+		SGE gtzero i #str
+		IF gtzero
+			BREAK
+		END
+		INDEX str i byte
+		ADD i i 1
+		
+		VAR byte==n1000
+		SEQ byte==n1000 byte -1000
+		IF byte==n1000
+			BREAK
+		END
+	
+		VAR byte==delim
+		SEQ byte==delim byte delim
+		IF byte==delim
+			IF canbreak
+				BREAK
+			END
+		ELSE
+			ADD canbreak 0 1
+			PUSH byte input
+		END
+	REPEAT
+	PUSHSTRING input
+END
+`	))
+	functions["reada_m_string"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
+
+	//Inbuilt reada function.
+	output.Write([]byte(
+`
 SUBROUTINE info_m_file
 	INFO	
 END
