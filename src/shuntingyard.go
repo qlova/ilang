@@ -29,7 +29,7 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 				operator = Operators[s.TokenText()+string(s.Peek())]
 				s.Scan()
 				if operator.code == "" {
-					fmt.Println("[SHUNTING YARD] Invalid operator matchup: "+s.TokenText()+string(s.Peek()))
+					fmt.Println(s.Pos(), "[SHUNTING YARD] Invalid operator matchup: "+s.TokenText()+string(s.Peek()))
 					os.Exit(1)
 				}
 			}
@@ -70,7 +70,7 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 			return shunt("i+shunt+"+fmt.Sprint(unique), s, output)
 		}
 		
-		fmt.Println("[SHUNTING YARD] Unexpected ", s.TokenText(), "("+name+")")
+		fmt.Println(s.Pos(), "[SHUNTING YARD] Unexpected ", s.TokenText(), "("+name+")")
 		os.Exit(1)
 		return ""
 }
