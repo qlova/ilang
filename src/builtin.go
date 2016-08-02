@@ -228,6 +228,12 @@ END
 `	))
 	functions["reada_m_file"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
 	methods["reada"] = true
+SUBROUTINE info_m_file
+	INFO	
+END
+`	))
+	functions["info_m_file"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}}
+	methods["info"] = true
 	
 	//Inbuilt num function.
 	output.Write([]byte(
