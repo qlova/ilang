@@ -10,31 +10,14 @@ import (
 	"flag"
 )
 
-type TYPE int
-
-//These are the 4 types in I.
-const (
-	UNDEFINED TYPE = iota
-	
-	FUNCTION
-	STRING
-	NUMBER
-	FILE
-)
-
-func (t TYPE) String() string {
-	return map[TYPE]string{FUNCTION:"function", STRING:"string",NUMBER:"number",FILE:"file",UNDEFINED:"undefined"}[t]
-}
-
-func (t TYPE) Push() string {
-	return map[TYPE]string{FUNCTION:"PUSHFUNC", STRING:"PUSHSTRING",NUMBER:"PUSH",FILE:"PUSHIT",UNDEFINED:""}[t]
-}
-
 //This holds the definition of a function.
 type Function struct {
 	Exists bool
 	Args []TYPE
 	Returns []TYPE
+	
+	//Is this really not a function?
+	Ghost bool
 	
 	//Is this a local?
 	Local bool
@@ -65,7 +48,28 @@ func SetVariable(name string, sort TYPE) {
 	Scope[len(Scope)-1][name] = sort
 }
 
-func LoseScope() {
+func LoseScope(output io.Writer) {
+
+	//Erm garbage collection???
+	for name, variable := range Scope[len(Scope)-1] {
+		if variable >= USER {
+			t := GetType(variable)
+			for i, element := range t.Elements {
+				switch element {
+					case STRING, USER:
+						unique++
+						fmt.Fprintf(output, "PLACE %s\n", name)
+						fmt.Fprintf(output, "PUSH %v\n", i)
+						fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
+			
+						fmt.Fprintf(output, "MUL %s%v %s%v -1\n", "i+user+", unique, "i+user+", unique)
+						fmt.Fprintf(output, "PUSH %s%v\n", "i+user+", unique)
+						fmt.Fprintf(output, "HEAP\n")
+				}
+			}
+		}
+	}
+
 	Scope = Scope[:len(Scope)-1]
 }
 
@@ -81,11 +85,29 @@ var unique int
 var CurrentFunction Function
 
 var ExpressionType TYPE
+var FinalExpressionType TYPE
 func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	
 	//Do we need to shunt? This is for operator precidence. (defaults to true)
 	var shunting bool = len(param) <= 0 || param[0]
 	var token = s.TokenText()
+	
+	defer func() {
+		if FinalExpressionType > 0 {
+			ExpressionType = FinalExpressionType
+			FinalExpressionType = 0
+		}
+	}()
+	
+	//Types.
+	if string(s.Peek()) != "(" {
+		ExpressionType = ITYPE
+		switch token {
+			case "number":
+				return fmt.Sprint(int(NUMBER)) 
+			
+		}
+	}
 	
 	//fmt.Println("TOKEN ", token)
 	
@@ -151,7 +173,7 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	
 	//Parse method call.
 	if methods[token] && s.Peek() == '@' {
-		return ParseFunction(s, output, shunting)
+		return ParseFunction(s.TokenText(), s, output, shunting)
 	}
 	
 	//Parse function call.
@@ -160,10 +182,10 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 			ExpressionType = FUNCTION
 			unique++
 			id := "i+func+"+fmt.Sprint(unique)
-			fmt.Fprintf(output, "FUNC %v %v\n", id, token)
+			fmt.Fprintf(output, "SCOPE %v\nTAKE %v\n", token, id)
 			return id
 		}
-		return ParseFunction(s, output, shunting)
+		return ParseFunction(s.TokenText(), s, output, shunting)
 	}
 	
 	if token[0] == '-' {
@@ -178,7 +200,7 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 				return "-"+s.TokenText()
 			}
 		} else {
-			fmt.Println("Unexpected - sign.")
+			fmt.Println(s.Pos(), "Unexpected - sign.")
 			os.Exit(1)
 		}
 	}
@@ -195,7 +217,34 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	}
 	
 	if sort := GetVariable(token); sort != UNDEFINED {
-		ExpressionType = sort
+		//By default, strings are indexed as it's first element when it's a single character.
+		if (sort == STRING || sort >= USER) && len(token) == 1 && OperatorFunction {
+			if sort >= USER {
+				t := GetType(sort)
+				ExpressionType = t.Elements[0]
+			} else {
+				ExpressionType = NUMBER
+			}
+			
+			if ExpressionType == NUMBER {
+				unique++
+				id := "i+tmp+"+s.TokenText()+fmt.Sprint(unique)
+				fmt.Fprintf(output, "PLACE %v\nPUSH 0\nGET %v\n", string(rune(s.TokenText()[0])), id)
+				
+				if shunting {
+					return shunt(id, s, output)
+				} else {
+					return id
+				}
+			} else {
+				fmt.Println(s.Pos(), "Cannot access type field by default (ONLY NUMBER FIELDS ARE SUPPORTED ATM) Not ", ExpressionType)
+				os.Exit(1)
+			}
+			
+			
+		} else {
+			ExpressionType = sort
+		}
 		if shunting {
 			return shunt(token, s, output)
 		} else {
@@ -206,23 +255,63 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	//Do some special maths which people will hate about I.
 	// a=2; b=4; ab
 	// ab is 8
-	if GetVariable(string(rune(token[0]))) != UNDEFINED {
-		ExpressionType = NUMBER
-		if len(token) == 2 {
-			if GetVariable(string(rune(token[1]))) != UNDEFINED {
-				unique++
-				id := "i+tmp+"+s.TokenText()+fmt.Sprint(unique)
-				fmt.Fprintf(output, "VAR %v\n", id)
-				fmt.Fprintf(output, "MUL %v %v %v\n", id, string(rune(s.TokenText()[0])), string(rune(s.TokenText()[1])))
-				
-				if shunting {
-					return shunt(id, s, output)
-				} else {
-					return id
-				}
+	//
+	//When a is a string, it will index itself "0".
+	if OperatorFunction && GetVariable(string(rune(token[0]))) != UNDEFINED {
+	
+		var lastID, id, id2 string
+		for i:=0; i<len(token); i++ {
+		
+			isvariable := GetVariable(string(rune(token[i])))
+			if isvariable >= USER {
+				isvariable = STRING
 			}
+			if isvariable == UNDEFINED {
+				println(token)
+				goto notab
+			}
+			
+			if isvariable == STRING && len(token) > i+1 && token[i+1] == 'i' {
+				ExpressionType = NUMBER
+			
+				unique++
+				id = "i+tmp+"+s.TokenText()+fmt.Sprint(unique)
+				fmt.Fprintf(output, "PLACE %v\nPUSH 1\nGET %v\n", string(rune(token[i])), id)
+				i++
+			} else if isvariable == STRING {
+				ExpressionType = NUMBER
+			
+				unique++
+				id = "i+tmp+"+s.TokenText()+fmt.Sprint(unique)
+				fmt.Fprintf(output, "PLACE %v\nPUSH 0\nGET %v\n", string(rune(token[i])), id)
+			
+			} else if isvariable == NUMBER {
+				ExpressionType = NUMBER
+				id = string(rune(token[i+1]))
+			}
+			
+			if lastID != "" {
+			
+				unique++
+				id2 = "i+tmp+"+s.TokenText()+fmt.Sprint(unique)
+				fmt.Fprintf(output, "VAR %v\n", id2)
+				fmt.Fprintf(output, "MUL %v %v %v\n", id2, lastID, id)
+				id = id2
+			}
+		
+			lastID = id
+			
 		}
+		
+		if shunting {
+			return shunt(lastID, s, output)
+		} else {
+			return lastID
+		}
+		
+		
 	}
+	notab:
 	
 	if token[0] == '(' {
 		s.Scan()
@@ -263,7 +352,12 @@ func main() {
 	s.Init(file)
 	s.Whitespace= 1<<'\t' | 1<<'\r' | 1<<' '
 	
+	fmt.Fprintf(output, `DATA i_newline "\n"`+"\n")
+	
 	//TODO cleanup file from here forward.
+	var softwareBlock bool
+	GainScope()
+	
 	var tok rune
 	for tok != scanner.EOF {
 		tok = s.Scan()
@@ -272,6 +366,9 @@ func main() {
 			//LOOPS
 			
 			case "repeat", "break":
+				if s.TokenText() == "repeat" {
+					LoseScope(output)
+				}
 				fmt.Fprintf(output, "%v", strings.ToUpper(s.TokenText())+"\n")
 			
 			case "fork":
@@ -281,13 +378,14 @@ func main() {
 					fmt.Println(s.Pos(), "Expecting a function but instead, found ", s.TokenText())
 					return
 				}
-				ParseFunction(&s, output, false, true)
+				ParseFunction(s.TokenText(), &s, output, false, true)
 				fmt.Fprintf(output, "FORK %v\n", function)
-				for _, v := range functions[function].Args {
-					fmt.Fprintf(output, "POP%v\n", v.Push()[4:])
+				for _, v := range functions[function].Returns {
+					fmt.Fprintf(output, "PULL %v\n", v.Push()[4:])
 				}
 			
 			case "do":
+				GainScope()
 				fmt.Fprintf(output, "LOOP\n")
 			
 			case "done":
@@ -297,9 +395,10 @@ func main() {
 				s.Scan()
 				fmt.Fprintf(output, "IF %v\nERROR 0\nELSE\nBREAK\nEND\n", expression(&s, output))
 				fmt.Fprintf(output, "REPEAT\n")
+				GainScope()
 			
 			case "exit":
-				fmt.Fprintf(output, "RETURN\n")
+				fmt.Fprintf(output, "EXIT\n")
 			
 			case "\n", ";":
 			
@@ -313,16 +412,31 @@ func main() {
 						output.Write([]byte("END\n"))
 					}
 				}
-				output.Write([]byte("END\n"))
-				LoseScope()
+				if len(Scope) > 2 {
+					LoseScope(output)
+					output.Write([]byte("END\n"))
+				} else if softwareBlock {
+					softwareBlock = false
+					LoseScope(output)
+					output.Write([]byte("EXIT\n"))
+				} else {
+					if OperatorFunction {
+						OperatorFunction = false
+						output.Write([]byte("SHARE c\n"))
+					}
+					LoseScope(output)
+					output.Write([]byte("RETURN\n"))
+				}
+				
 			
 			case "else":
-				fmt.Fprintf(output, "ELSE\n")
+				
 				nesting, ok := Scope[len(Scope)-1]["elseif"]
 				if !ok {
 					nesting = 0
 				}
-				LoseScope()
+				LoseScope(output)
+				fmt.Fprintf(output, "ELSE\n")
 				GainScope()
 				SetVariable("elseif", nesting)
 			
@@ -337,7 +451,7 @@ func main() {
 					if !ok {
 						nesting = 0
 					}
-					LoseScope()
+					LoseScope(output)
 					GainScope()
 					SetVariable("elseif", nesting+1)
 					s.Scan()
@@ -351,7 +465,17 @@ func main() {
 			case ".":
 				s.Scan()
 				output.Write([]byte(strings.ToUpper(s.TokenText())))
+				
+				var data bool
+				if s.TokenText() == "data" {
+					data = true
+				}
+				
 				for tok = s.Scan(); tok != scanner.EOF; {
+					if data {
+						SetVariable(s.TokenText(), STRING)
+					}
+				
 					if s.TokenText() == "\n" {
 						output.Write([]byte("\n"))
 						break
@@ -363,25 +487,46 @@ func main() {
 			case "return":
 				s.Scan()
 				if CurrentFunction.Exists {
+					GainScope()
 					if s.TokenText() != "\n" {
 						if len(CurrentFunction.Returns) > 0 {
 							switch CurrentFunction.Returns[0] {
 								case NUMBER:
 									output.Write([]byte("PUSH "+expression(&s, output)+"\n"))
 								case STRING:
-									output.Write([]byte("PUSHSTRING "+expression(&s, output)+"\n"))
+									output.Write([]byte("SHARE "+expression(&s, output)+"\n"))
 								case FUNCTION:
-									output.Write([]byte("PUSHFUNC "+expression(&s, output)+"\n"))
+									output.Write([]byte("RELAY "+expression(&s, output)+"\n"))
 								case FILE:
-									output.Write([]byte("PUSHIT "+expression(&s, output)+"\n"))
+									output.Write([]byte("RELAY "+expression(&s, output)+"\n"))
 							}
 						}
 					}
+					Scope = Scope[:len(Scope)-1]
 				}
-				output.Write([]byte("RETURN\n"))
+				LoseScope(output)
+				GainScope()
+				if len(Scope) > 2 {
+					output.Write([]byte("RETURN\n"))
+				}
 			
 			case "software":
-				output.Write([]byte("ROUTINE\n"))
+				output.Write([]byte("SOFTWARE\n"))
+				s.Scan()
+				if s.TokenText() != "{" {
+					fmt.Println(s.Pos(), "Expecting { found ", s.TokenText())
+					return
+				}
+				s.Scan()
+				if s.TokenText() != "\n" {
+					fmt.Println(s.Pos(), "Expecting newline found ", s.TokenText())
+					return
+				}
+				GainScope()
+				softwareBlock = true
+			
+			case "issues":
+				output.Write([]byte("IF ERROR\nERROR 0\n"))
 				s.Scan()
 				if s.TokenText() != "{" {
 					fmt.Println(s.Pos(), "Expecting { found ", s.TokenText())
@@ -394,229 +539,79 @@ func main() {
 				}
 				GainScope()
 			
-			case "issues":
-				output.Write([]byte("IF ERROR\nADD ERROR 0 0\n"))
-				s.Scan()
-				if s.TokenText() != "{" {
-					fmt.Println(s.Pos(), "Expecting { found ", s.TokenText())
-					return
+			case "print":
+				ParseFunction("text", &s, output, false, true, true)
+				fmt.Fprintf(output, "STDOUT\n")
+				
+				for s.TokenText() == "," {
+					ParseFunction("text", &s, output, false, true, true)
+					fmt.Fprintf(output, "STDOUT\n")
 				}
-				s.Scan()
-				if s.TokenText() != "\n" {
-					fmt.Println(s.Pos(), "Expecting newline found ", s.TokenText())
-					return
-				}
-				GainScope()
+				
+				
+				fmt.Fprintf(output, "SHARE i_newline\n")
+				fmt.Fprintf(output, "STDOUT\n")
+			
+			//New type decleration.
+			case "type":
+				ParseTypeDef(&s, output)
 				
 			//Compiles function declerations.
 			case "function", "method":
 				GainScope()
-				var name string
-				var function Function
+				ParseFunctionDef(&s, output)
 				
-				var method bool = s.TokenText() == "method"
-				var methodType = NUMBER
-				
-				
-				// function name(param1, param2) returns {
-				output.Write([]byte("SUBROUTINE "))
-				s.Scan()
-				if method {
-					switch s.TokenText() {
-						case "~":
-							methodType = FILE
-							s.Scan()
-					}
-				}
-				if method {
-					fmt.Fprintf(output, "%v_m_%v\n", s.TokenText(), methodType)
-				} else {
-					output.Write([]byte(s.TokenText()+"\n"))
-				}
-				name = s.TokenText()
-				s.Scan()
-				if s.TokenText() != "(" {
-					fmt.Println(s.Pos(), "Expecting ( found ", s.TokenText())
-					return
-				}
-				
-				//We need to reverse the POP's because of stack pain.
-				var toReverse []string
-				for tok = s.Scan(); tok != scanner.EOF; {
-					var popstring string
-					if s.TokenText() == ")" {
-						break
-					}
-					var T TYPE
-					//String arguments.
-					if s.TokenText() == "[" {
-						//Update our function definition with a string argument.
-						function.Args = append(function.Args, STRING)
-						
-						popstring += "POPSTRING "
-						
-						T = STRING
-						
-						s.Scan()
-						if s.TokenText() != "]" {
-							fmt.Println(s.Pos(), "Expecting ] found ", s.TokenText())
-							return
-						}
-						s.Scan()
-					//Other type of string argument. (Variadic)
-					} else if s.TokenText() == "." {
-						
-						//Update our function definition with a string argument.
-						function.Args = append(function.Args, STRING)
-						function.Variadic = true
-						
-						popstring += "POPSTRING "
-						
-						T = STRING
-						
-						s.Scan()
-						if s.TokenText() != "." {
-							fmt.Println(s.Pos(), "Expecting . found ", s.TokenText())
-							return
-						}
-						s.Scan()
-					//Function arguments.
-					} else if s.TokenText() == "(" {
-						
-						//Update our function definition with a string argument.
-						function.Args = append(function.Args, FUNCTION)
-						
-						T = FUNCTION
-						
-						popstring += "POPFUNC "
-						s.Scan()
-						if s.TokenText() != ")" {
-							fmt.Println(s.Pos(), "Expecting ) found ", s.TokenText())
-							return
-						}
-						s.Scan()
-					//File arguments.
-					} else if s.TokenText() == "|" {
-						
-						//Update our function definition with a string argument.
-						function.Args = append(function.Args, FILE)
-						
-						T = FILE
-						
-						popstring += "POPIT "
-						s.Scan()
-					} else {
-						//Update our function definition with a numeric argument.
-						function.Args = append(function.Args, NUMBER)
-						
-						T = NUMBER
-						
-						popstring += "POP "
-					}
-					SetVariable(s.TokenText(), T)
-					
-					popstring += s.TokenText()+"\n"
-					toReverse = append(toReverse, popstring)
-					s.Scan()
-					if s.TokenText() == ")" {
-						break
-					}
-					if s.TokenText() != "," {
-						fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
-						return
-					}
-					s.Scan()
-				}
-				for i := len(toReverse)-1; i>=0; i-- {
-					output.Write([]byte(toReverse[i]))
-				}
-				if method {
-					switch methodType {
-						case FILE:
-							fmt.Fprintf(output, "POPIT self\n")
-					}
-				}
-				s.Scan()
-				if s.TokenText() != "{" {
-					if s.TokenText() != "[" {
-						function.Returns = append(function.Returns, NUMBER)
-					} else {
-						function.Returns = append(function.Returns, STRING)
-						s.Scan()
-						if s.TokenText() != "]" {
-							fmt.Println(s.Pos(), "Expecting ] found ", s.TokenText())
-							return
-						}
-					}
-					s.Scan()
-					if s.TokenText() != "{" {	
-						fmt.Println(s.Pos(), "Expecting { found ", s.TokenText())
-						return
-					}
-				}
-				s.Scan()
-				if s.TokenText() != "\n" {
-					fmt.Println(s.Pos(), "Expecting newline found ", s.TokenText())
-					return
-				}
-				
-				function.Exists = true
-				
-				if method {
-					methods[name] = true
-					functions[name+"_m_"+fmt.Sprint(methodType)] = function	
-				} else {
-					functions[name] = function
-				}
-				
-				CurrentFunction = function
 			case "var", "for":
 				var forloop = s.TokenText() == "for"
 				s.Scan()
-				if s.TokenText() == "[" {
+				
+				var name = s.TokenText()
+				s.Scan()
+				if s.TokenText() == "is" {
 					s.Scan()
-					if s.TokenText() != "]" {
-						fmt.Println(s.Pos(), "Expecting ] found ", s.TokenText())
-						return
+					fmt.Fprintf(output, "ARRAY %v\n", name)
+					stringtype := s.TokenText()
+					
+					if _, ok := StringToType[stringtype]; !ok {
+						RaiseError(&s, stringtype+" is an unrecognised type!")
 					}
+					
 					s.Scan()
-					var name = s.TokenText()
-					s.Scan()
-					s.Scan()
-					n := expression(&s, output)
-					fmt.Fprintf(output, "PUSHSTRING %v\n", n)
-					fmt.Fprintf(output, "POPSTRING %v\n", name)
-					SetVariable(name, STRING)
-				} else if s.TokenText() == "(" {
-					s.Scan()
-					if s.TokenText() != ")" {
-						fmt.Println(s.Pos(), "Expecting ) found ", s.TokenText())
-						return
+					//This is effectively a constructor.
+					if s.TokenText() == "(" {
+						for {
+							s.Scan()
+							fmt.Fprintf(output, "PUT %s\n", s.TokenText())
+							s.Scan()
+							if s.TokenText() == ")" {
+								break
+							} else if s.TokenText() != "," {
+								RaiseError(&s, "Expecting , found "+s.TokenText())
+							}
+						}
+					} else {
+						for range DefinedTypes[StringToType[stringtype]-USER].Elements {
+							fmt.Fprintf(output, "PUT 0\n")
+						}
 					}
-					s.Scan()
-					var name = s.TokenText()
-					s.Scan()
-					s.Scan()
-					n := expression(&s, output)
-					fmt.Fprintf(output, "PUSHFUNC %v\n", n)
-					fmt.Fprintf(output, "POPFUNC %v\n", name)
-					SetVariable(name, FUNCTION)
-				} else if s.TokenText() == "~" {
-					s.Scan()
-					var name = s.TokenText()
-					s.Scan()
-					s.Scan()
-					n := expression(&s, output)
-					fmt.Fprintf(output, "PUSHIT %v\n", n)
-					fmt.Fprintf(output, "POPIT %v\n", name)
-					SetVariable(name, FILE)
-				} else {
-					var name = s.TokenText()
-					s.Scan()
-					s.Scan()
-					fmt.Fprintf(output, "VAR %v %v\n", name, expression(&s, output))
-					SetVariable(name, ExpressionType)
+					SetVariable(name, StringToType[stringtype])
+					continue
 				}
+				s.Scan()
+				var set = expression(&s, output)
+				if ExpressionType == NUMBER {
+					fmt.Fprintf(output, "VAR %v\nADD %v 0 %v\n", name, name, set)
+				}
+				if ExpressionType == STRING {
+					fmt.Fprintf(output, "SHARE %v\nGRAB %v\n", set, name)
+				}
+				if ExpressionType == FUNCTION || ExpressionType == FILE {
+					fmt.Fprintf(output, "RELAY %v\nTAKE %v\n", set, name)
+				}
+				if ExpressionType >= USER {
+					fmt.Fprintf(output, "SHARE %v\nGRAB %v\n", set, name)
+				}
+				SetVariable(name, ExpressionType)
 				if !forloop {
 					continue
 				}
@@ -627,10 +622,16 @@ func main() {
 				if s.TokenText() != "\n" {
 					fmt.Fprintf(output, "IF %v\nERROR 0\nELSE\nBREAK\nEND\n", expression(&s, output))
 				}
+				GainScope()
 			
 			default:
 			
 				var name = s.TokenText()
+				
+				if _, ok := StringToType[name]; ok {
+					ParseOperator(&s, output)
+					continue
+				}
 				
 				//Method lines.
 				if methods[name] && s.Peek() == '@' {
@@ -657,30 +658,117 @@ func main() {
 						output.Write([]byte("EXE "+name+" \n"))
 					case "&":
 						s.Scan()
-						output.Write([]byte("PUSH "+expression(&s, output)+" "+name+" \n"))
+						variable := expression(&s, output)
+						if ExpressionType == NUMBER {
+							fmt.Fprintf(output, "PLACE %v\n", name)
+							fmt.Fprintf(output, "PUT %v\n", variable)
+						} else if ExpressionType == STRING {
+							output.Write([]byte("JOIN "+name+" "+name+" "+variable+" \n"))
+						}
 						
 					//TODO Allow assigning to non-numeric types?
 					case "=":
-						s.Scan()
-						if GetVariable(name) != NUMBER {
-							if GetVariable(name) == UNDEFINED {
-								RaiseError(&s, name+" is undefined!")
+						
+						//Set array in operator function.
+						if OperatorFunction && GetVariable(string(rune(name[0]))) >= USER  {
+							s.Scan()
+							if len(name) == 1 {
+								fmt.Fprintf(output, "PLACE %v\nPUSH 0\nSET %v\n", name, expression(&s, output))
+							}
+							if len(name) == 2 && name[1] == 'i' {
+								fmt.Fprintf(output, "PLACE %v\nPUSH 1\nSET %v\n", string(rune(name[0])), expression(&s, output))
+							}
+							
+						} else {
+						
+							s.Scan()
+							if GetVariable(name) != NUMBER {
+								if GetVariable(name) == UNDEFINED {
+									RaiseError(&s, name+" is undefined!")
+									
+								//Asigning to "Something", requires that a data field is filled with a pointer or value.
+								} else if GetVariable(name) == SOMETHING {
+									something := expression(&s, output)
+									switch ExpressionType {
+										case NUMBER:
+											fmt.Fprintf(output, "PLACE %v\nPUSH 0\nSET %v\nPUSH 1\nSET %v\n", name, something, int(NUMBER))
+											//methods := GenMethodList(output, NUMBER)
+									}
+									
+								} else {
+									fmt.Fprintf(output, "SHARE %v\nRENAME %v\n", expression(&s, output), name)
+									//RaiseError(&s, "Cannot assign to "+name+"! Not a numeric value.")
+								}
 							} else {
-								RaiseError(&s, "Cannot assign to "+name+"! Not a numeric value.")
+								fmt.Fprintf(output, "ADD %v 0 %v\n", name, expression(&s, output))
+							}
+							if GetVariable(name) != SOMETHING && ExpressionType != GetVariable(name) {
+								RaiseError(&s, "Cannot assign "+ExpressionType.String()+" to "+GetVariable(name).String())
 							}
 						}
-						fmt.Fprintf(output, "ADD %v 0 %v\n", name, expression(&s, output))
 					
 					default:
-						if len(s.TokenText()) > 0 && s.TokenText()[0] == '.' {
-							var index = s.TokenText()[1:]
-							s.Scan()
-							if s.TokenText() != "=" {
-								fmt.Println(s.Pos(), "Expecting = found ", s.TokenText())
-								return
+						if s.TokenText() == "[" {
+							t := GetVariable(name)
+							if t == STRING {
+								s.Scan()
+								var index = expression(&s, output, false)
+								
+								s.Scan()
+								s.Scan()
+								if s.TokenText() != "=" {
+									RaiseError(&s, "Expecting =, found "+s.TokenText())
+								} 
+								s.Scan()
+								fmt.Fprintf(output, "PLACE %v\nPUSH %v\nSET %v\n", name, index, expression(&s, output))
+							} else {
+								RaiseError(&s, "Cannot index "+name+", not an array!!! ("+t.String()+")")
 							}
-							s.Scan()
-							output.Write([]byte("SET "+name+" "+index+" "+expression(&s, output)+"\n"))
+							continue
+						}
+					
+						if (len(s.TokenText()) > 0 && s.TokenText()[0] == '.') || s.TokenText() == "." {
+						
+							
+							//Index structures.
+							// Like type Complex { real, imag }
+							// Complex.real = 2
+							
+							if t := GetVariable(name); t >= USER {
+								
+								s.Scan()
+								
+								structure := GetType(t)
+								stringdex := s.TokenText()
+								
+								if index, ok := structure.Table[stringdex]; ok {
+								
+									s.Scan()
+									if s.TokenText() != "=" {
+										fmt.Println(s.Pos(), "Expecting = found ", s.TokenText())
+										os.Exit(1)
+									}
+									s.Scan()
+									
+									value := expression(&s, output)
+									
+									if ExpressionType != structure.Elements[index] {
+										RaiseError(&s, "Type mismatch! "+name+"."+stringdex+" is a "+structure.Elements[index].String()+", not a "+ExpressionType.String())
+									}
+									
+									switch structure.Elements[index] {
+										case NUMBER:
+											fmt.Fprintf(output, "PLACE %v\nPUSH %v\nSET %v\n", name, index, value)
+										case STRING:
+											unique++
+											fmt.Fprintf(output, "SHARE %v\n PUSH 0\nHEAP\nPULL %v\n", value, fmt.Sprint("i+elem+",unique))
+											fmt.Fprintf(output, "PLACE %v\nPUSH %v\nSET %v\n", name, index, fmt.Sprint("i+elem+",unique))
+										default:
+											RaiseError(&s, name+" cannot set "+stringdex+", type is unsettable!!!")
+									}
+								}
+								
+							} 
 							
 						} else {
 					

@@ -5,7 +5,8 @@ import (
 	"text/scanner"
 	"io"
 	"os"
-	"strconv"
+	//"strconv"
+	"strings"
 )
 
 //This is an expression shunter. It takes the current identifyer and shunts it into the next operator.
@@ -21,52 +22,81 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 				return name
 		}
 		
+		var token = s.TokenText()
+		
 		//I love doing the shunting.
-		if operator, ok := Operators[s.TokenText()]; ok {
+		if IsOperator(token+string(s.Peek())) {
+			token += string(s.Peek())
+			s.Scan()
+		}
 		
-			//Multi-opps.
-			if _, ok := Operators[string(s.Peek())]; ok {
-				operator = Operators[s.TokenText()+string(s.Peek())]
-				s.Scan()
-				if operator.code == "" {
-					fmt.Println(s.Pos(), "[SHUNTING YARD] Invalid operator matchup: "+s.TokenText()+string(s.Peek()))
-					os.Exit(1)
-				}
-			}
-		
-			//Here we create the unique name for the shunting result.
+		//What a shunting mess.
+		if IsOperator(token) {
+			s.Scan()
+			//fmt.Println(s.TokenText())
+			
 			unique++
 			id := "i+shunt+"+fmt.Sprint(unique)
 			
-			//Operators have some defined formats (can be found in operators.go)
-			s.Scan()
-			switch operator.mode {
-				case 0:
-					fmt.Fprintf(output, operator.code, id, id, name, expression(s, output, operator.shunt))
-				case 1:
-					fmt.Fprintf(output, operator.code, id, id, name, name)
-				case 2:
-					fmt.Fprintf(output, operator.code, name, expression(s, output, operator.shunt), id)
-			}
+			var operator Operator
+			var ok bool
 			
-			//This is for operator precidence.
-			if !operator.shunt {
-				return shunt(id, s, output)
+			var A = ExpressionType
+			var B TYPE
+			var next string
+			if operator, ok = GetOperator(token, ExpressionType, UNDEFINED); !ok {
+			
+				next = expression(s, output, OperatorPrecident(token))
+				B = ExpressionType
+				operator, ok = GetOperator(token, A, B)
+				if token == "=" && A == STRING && B == STRING {
+					ExpressionType = NUMBER
+				}
+			} else if token == "²" {
+				next = name
+				B = ExpressionType
+				operator, ok = GetOperator("*", A, B)
+				token = "*"
 			}
-			return id
+
+			if ok {
+				
+				asm := operator.Assembly
+				asm = strings.Replace(asm, "%a", name, -1)
+				asm = strings.Replace(asm, "%b", next, -1)
+				asm = strings.Replace(asm, "%c", id, -1)
+				
+				fmt.Fprint(output, asm, "\n")
+				
+				if !OperatorPrecident(token) {
+					return shunt(id, s, output)
+				}
+				return id
+				
+			} else {
+				fmt.Println(s.Pos(), "Invalid Operator Matchup! ", A , token, B, "(types do not support the opperator)")
+				os.Exit(1)
+			}
 		}
 		
-		//Special case for indexing arrays.
-		if _, err := strconv.Atoi(s.TokenText()[1:]); err == nil && s.TokenText()[0] == '.' {
-			ExpressionType = NUMBER
-			unique++
-			output.Write([]byte("INDEX "+name+" "+s.TokenText()[1:]+" i+shunt+"+fmt.Sprint(unique)+"\n"))
-			return shunt("i+shunt+"+fmt.Sprint(unique), s, output)
-		} else if s.TokenText() == "." {
-			ExpressionType = NUMBER
+		if s.TokenText() == "." {
 			s.Scan()
+			return shunt(IndexUserType(s, output, name, s.TokenText()), s, output)
+		}
+		
+		if s.TokenText() == "[" {
+			s.Scan()
+			if ExpressionType != STRING && ExpressionType < USER {
+				RaiseError(s, "Cannot index "+name+", not an array! ("+ExpressionType.String()+")")
+			}	
+			
+			var index = expression(s, output)
+			
+			ExpressionType = NUMBER
+			
 			unique++
-			output.Write([]byte("INDEX "+name+" "+s.TokenText()+" i+shunt+"+fmt.Sprint(unique)+"\n"))
+			
+			fmt.Fprintf(output, "PLACE %v\nPUSH %v\nGET %v\n", name, index, "i+shunt+"+fmt.Sprint(unique))
 			return shunt("i+shunt+"+fmt.Sprint(unique), s, output)
 		}
 		
