@@ -12,3 +12,6 @@
 *.lua
 *.bash
 *.class
+*.pyc
+*
+!*.*
