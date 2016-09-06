@@ -1,4 +1,4 @@
 software {
-	output(text(num("a")+48) &"\n")
-	output([97] &"\n")
+	print(number("a")+48)
+	print([97])
 }

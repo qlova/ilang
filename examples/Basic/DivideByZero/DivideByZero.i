@@ -1,10 +1,10 @@
 function isdivbyzero(a, b) {
 	var c = a/b
-	if (c = 0) or ( a = 0  and  c >= 0)
-		output(text(a)&"/"&text(b)&" is a divivision by zero.\n")
+	if (c = 0) + (a = 0)*(c >= 0)
+		print( a, "/", b, " is a divivision by zero.")
 		return
 	end
-	output(text(a)&"/"&text(b)&" is not divivision by zero.\n")
+	print( a, "/", b, " is not divivision by zero.")
 }
 
 software {

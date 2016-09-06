@@ -1,11 +1,11 @@
 software {
-	var []s = ""
+	var s = ""
 	
 	if len(s) = 0 
-		output("Empty string!\n")
+		print("Empty string!")
 	end
 	
-	if len(s) ~= 0 
-		output("Not an empty string!\n")
+	if len(s) != 0 
+		print("Not an empty string!")
 	end
 }

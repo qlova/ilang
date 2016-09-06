@@ -2,18 +2,18 @@ software {
 	var a = 3
 	
 	if a = 3 
-		output("3=3\n")
+		print("3=3")
 	end
 	
 	if a = 2 
-		output("WHAT?\n")
+		print("WHAT?")
 	else
-		output("3!=2\n")
+		print("3!=2")
 	end
 	
-	if a ~= 2
-		output("verified\n")
+	if a != 2
+		print("verified")
 	else
-		output("3=2!!!\n")
+		print("3=2!!!")
 	end
 }

@@ -4,6 +4,6 @@ software {
 	
 	a = 2
 	
-	output(text(a))	
+	print(a)
 	
 }

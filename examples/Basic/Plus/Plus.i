@@ -1,7 +1,6 @@
 software {
-	var a = num(reada(' '))
-	var b = num(reada('\n'))
+	var a = number(reada(' '))
+	var b = number(reada('\n'))
 	
-	output(text( a+b ))
-	output("\n")
+	print( a+b )
 }

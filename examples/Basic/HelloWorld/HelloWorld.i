@@ -1,3 +1,3 @@
 software {
-	output("Hello World\n")
+	print("Hello World")
 }

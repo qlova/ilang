@@ -1,10 +1,10 @@
 function exists([]filename) {
-	var ~file = open(filename)
+!	var file = open(filename)
 	issues {
-		output(filename&" does not exist"&"\n")
+		print(filename+" does not exist")
 		return
 	}
-	output(filename&" exists"&"\n")
+	print(filename+" exists")
 	close(file)
 }
 

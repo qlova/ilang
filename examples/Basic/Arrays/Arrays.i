@@ -1,9 +1,9 @@
 software {
-	var []a = []
+	var a = []
 	a & 2
-	output(text(a.0)&"\n")
+	print(a[0])
 	
-	a.0 = 4
+	a[0] = 4
 	
-	output(text(a.0)&"\n")
+	print(a[0])
 }

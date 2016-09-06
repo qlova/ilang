@@ -3,5 +3,5 @@ function multiply(a, b) r {
 }
 
 software {
-	output(text(multiply(2, 3))&"\n")
+	print(multiply(2, 3))
 }

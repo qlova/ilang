@@ -11,9 +11,9 @@ function factorial(n) r {
 }
 
 software {
-	output(text(factorial(0))&"\n")
-	output(text(factorial(1))&"\n")
-	output(text(factorial(2))&"\n")
-	output(text(factorial(3))&"\n")
-	output(text(factorial(22))&"\n")
+	print(factorial(0))
+	print(factorial(1))
+	print(factorial(2))
+	print(factorial(3))
+	print(factorial(22))
 }

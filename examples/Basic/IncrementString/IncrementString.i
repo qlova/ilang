@@ -1,4 +1,4 @@
 
 software {
-	output(text(num("100")+1)&"\n")
+	print(number("100")+1)
 }

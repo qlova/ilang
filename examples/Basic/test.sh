@@ -15,7 +15,7 @@ function runit {
 			python3 $1.py <<< $(echo -e "$2")
 		;;
 		go)
-			go run $1.go <<< $(echo -e "$2")
+			go build && ./$1 <<< $(echo -e "$2")
 		;;
 		bash) 
 			./$1.bash <<< $(echo -e "$2")
@@ -94,8 +94,8 @@ BasicTest IntCompare "2 is smaller than 3" "2 3\n"
 BasicTest Bases "68\n68\n68"
 BasicTest Wierd "true\ntrue\ntrue\nfalse"
 BasicTest Logic "false and true is false\nfalse or true is true\nfalse xor true is true\nnot false is true"
-BasicTest DoWhile "1\n2\n3\n4\n5\n6"
 BasicTest DownwardFor "10\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0"
 BasicTest For "*\n**\n***\n****\n*****"
 BasicTest ForStep "2,4,6,8,10,"
-
+BasicTest Sort "2\n3\n4\n5\n6"
+BasicTest Binary "111111011001000\n0\n-1"

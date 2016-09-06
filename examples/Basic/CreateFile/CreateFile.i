@@ -1,12 +1,12 @@
 
 function create( []filename ) {
-	var file = open(filename) 
-!	output@file("")
+!	var file = open(filename) 
+	output@file("")
 	issues {
-		output("Failed to create "&filename&"\n")
+		print("Failed to create "+filename)
 		return
 	}
-	output(filename&" created!\n")
+	print(filename+" created!")
 	close(file)
 }
 

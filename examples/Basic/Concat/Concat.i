@@ -1,6 +1,6 @@
 software {
-	var []a = "This string "
-	var []b = "is joined!\n"
+	var a = "This string "
+	var b = "is joined!"
 	
-	output(a & b)
+	print(a + b)
 }

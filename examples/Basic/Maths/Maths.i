@@ -9,7 +9,7 @@ software {
 	
 	var e = 2
 	
-	var []c = [ae, 32, a+b, 32, 98]
+	var c = [a*e, 32, a+b, 32, 98]
 	
-	output(c&"\n")
+	print(c)
 }

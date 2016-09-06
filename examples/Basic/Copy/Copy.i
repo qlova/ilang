@@ -1,9 +1,9 @@
 software {
-	var []a = [1, 2, 3]
-	var []b = copy(a)
+	var a = [1, 2, 3]
+	var b = copy(a)
 	
-	a.0 = 2
+	a[0] = 2
 	
-	output(text(a.0)&"\n")
-	output(text(b.0)&"\n")
+	print(a[0])
+	print(b[0])
 }

@@ -1,5 +1,5 @@
 function f() {
-	output("hi\n")
+	print("hi")
 }
 
 function call( ()a ) {
@@ -15,7 +15,7 @@ function printchars( ..x ) {
 }
 
 software {
-	var ()b = f
+	var b = f
 	b()
 	call(b)
 	printchars(add(40, 59), 98, 97, 10)

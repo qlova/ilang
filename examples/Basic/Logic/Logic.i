@@ -1,8 +1,8 @@
 function logic(a, b) {
-	output(bool(a)&" and "&bool(b)&" is "&bool(a×b)&"\n")
-	output(bool(a)&" or "&bool(b)&" is "&bool(a+b)&"\n")
-	output(bool(a)&" xor "&bool(b)&" is "&bool(a-b)&"\n")
-	output("not "&bool(a)&" is "&bool(a×0)&"\n")
+	print(bool(a), " and ", bool(b) ," is ", bool(a×b))
+	print(bool(a), " or ", bool(b) ," is ", bool(a+b))
+	print(bool(a), " xor ", bool(b) ," is ", bool(a-b))
+	print("not ", bool(a) ," is ", bool(a/0))
 }
 
 software {

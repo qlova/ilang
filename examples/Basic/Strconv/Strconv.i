@@ -1,11 +1,11 @@
 
 function numeric([]n) {
-!	num(n)
+!	number(n)
 	issues {
-		output(n&"  is not numeric!\n")
+		print(n, "  is not numeric!")
 		return
 	}
-	output(n&"  is numeric :)\n")
+	print(n, "  is numeric :)")
 }
 
 software {

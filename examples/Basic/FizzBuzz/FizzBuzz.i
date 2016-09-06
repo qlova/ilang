@@ -4,13 +4,13 @@ software {
 		i = i + 1
 		
 		if i mod 15 = 0
-			output("FizzBuzz\n")
+			print("FizzBuzz")
 		elseif i mod 3 = 0
-			output("Fizz\n")
+			print("Fizz")
 		elseif i mod 5 = 0
-			output("Buzz\n")
+			print("Buzz")
 		else
-			output(text(i)&"\n")
+			print(i)
 		end
 		
 		if i >= 100

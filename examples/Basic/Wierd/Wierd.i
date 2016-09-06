@@ -1,6 +1,6 @@
 software {
-	output(bool(0/0)&"\n")
-	output(bool(0*0)&"\n")
-	output(bool(0^3)&"\n")
-	output(bool(0^8)&"\n")
+	print(bool(0/0))
+	print(bool(0*0))
+	print(bool(0^3))
+	print(bool(0^8))
 }
