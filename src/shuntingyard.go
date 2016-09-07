@@ -68,6 +68,10 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 				
 				fmt.Fprint(output, asm, "\n")
 				
+				if operator.ExpressionType != 0 {
+					ExpressionType = operator.ExpressionType
+				}
+				
 				if !OperatorPrecident(token) {
 					return shunt(id, s, output)
 				}
@@ -82,6 +86,60 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 		if s.TokenText() == "." {
 			s.Scan()
 			return shunt(IndexUserType(s, output, name, s.TokenText()), s, output)
+		}
+		
+		//Slicing strings.
+		if s.TokenText() == ":" {
+			if string(s.Peek()) == ":" {
+				s.Scan()
+				s.Scan()
+				if ExpressionType != STRING {
+					RaiseError(s, "Cannot slice "+name+", not an array! ("+ExpressionType.String()+")")
+				}	
+				
+				var end = expression(s, output)
+				if ExpressionType != NUMBER {
+					RaiseError(s, "Cannot slice "+name+", with non-numeric value! ("+ExpressionType.String()+")")
+				}	
+				
+				ExpressionType = STRING
+				
+				unique++
+			
+				fmt.Fprintf(output, "SHARE %s\nPUSH %v\nPUSH 0\nSLICE\nGRAB %s\n", name, end, "i+shunt+"+fmt.Sprint(unique))
+				return shunt("i+shunt+"+fmt.Sprint(unique), s, output)
+			} else {
+				s.Scan()
+				
+				var start = expression(s, output, false)
+				if ExpressionType != NUMBER {
+					RaiseError(s, "Cannot slice "+name+", with non-numeric value! ("+ExpressionType.String()+")")
+				}	
+				
+				var end = ""
+				
+				s.Scan()
+				s.Scan()
+				if s.TokenText() != ";" {
+					end = expression(s, output, false)
+					if ExpressionType != NUMBER {
+						RaiseError(s, "Cannot slice "+name+", with non-numeric value! ("+ExpressionType.String()+")")
+					}
+					s.Scan()
+				}
+				
+				ExpressionType = STRING
+				
+				unique++
+				
+				if end == "" {
+					fmt.Fprintf(output, "SHARE %s\nPUSH #%s\nPUSH %s\nSLICE\nGRAB %s\n", name, name, start, "i+shunt+"+fmt.Sprint(unique))
+				} else {
+					fmt.Fprintf(output, "SHARE %s\nPUSH %v\nPUSH %v\nSLICE\nGRAB %s\n", name, end, start, "i+shunt+"+fmt.Sprint(unique))
+				}
+				
+				return shunt("i+shunt+"+fmt.Sprint(unique), s, output)
+			}
 		}
 		
 		if s.TokenText() == "[" {
