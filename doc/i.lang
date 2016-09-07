@@ -186,6 +186,8 @@
       <keyword>fallthrough</keyword>
       <keyword>for</keyword>
       
+      <keyword>exit</keyword>
+      
       <keyword>software</keyword>
       <keyword>function</keyword>
       <keyword>method</keyword>
