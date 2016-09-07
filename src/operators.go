@@ -15,17 +15,24 @@ type Operator struct {
 	Precidence bool
 	
 	A, B TYPE
+	
+	ExpressionType TYPE
 }
 
 var Operations = make(map[string]map[TYPE]map[TYPE]Operator)
 
 //Opp is a standard arithmetic operator.
-func NewOperator(a TYPE, o string, b TYPE, asm string, p bool) {
+func NewOperator(a TYPE, o string, b TYPE, asm string, p bool, args ...TYPE) {
+	var typ TYPE = 0
+	if len(args) > 0 {
+		typ = args[0]
+	}
 	opp := Operator{
 		A:a,
 		B:b,
 		Assembly:asm,
 		Precidence:p,
+		ExpressionType:typ,
 	}
 	if _, ok := Operations[o]; !ok {
 		Operations[o] = make(map[TYPE]map[TYPE]Operator)
@@ -90,7 +97,7 @@ func init() {
 	NewOperator(NUMBER, "²", UNDEFINED, "VAR %c\nPOW %c %a %a", true)
 	
 	NewOperator(STRING, "#", NUMBER, "SHARE %a\nPUSH %b\nRUN hash\nPULL %c\n", true)
-	NewOperator(NUMBER, "?", NUMBER, "PUSH %a\nPUSH %b\nRUN unhash\nGRAB %c\n", true)
+	NewOperator(NUMBER, "?", NUMBER, "PUSH %a\nPUSH %b\nRUN unhash\nGRAB %c\n", true,  STRING)
 }
 
 var OperatorFunction bool
