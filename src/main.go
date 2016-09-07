@@ -323,6 +323,8 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	}
 	
 	ExpressionType = UNDEFINED
+	RaiseError(s, "'"+s.TokenText()+"' is undefined!")
+	
 	if shunting {
 		return shunt(s.TokenText(), s, output)
 	} else {
@@ -774,13 +776,35 @@ func main() {
 							} 
 							
 						} else {
+						
+							//i++ 
+							if GetVariable(name) == NUMBER {
+								if s.TokenText() == "+" {
+									s.Scan()
+									if s.TokenText() == "+" {
+										fmt.Fprintf(output, "ADD %v %v 1\n", name, name)
+									} else {
+										RaiseError(&s, "Unexpected "+s.TokenText()+", expecting '+'")
+									}
+								} else if s.TokenText() == "-" {
+									s.Scan()
+									if s.TokenText() == "-" {
+										fmt.Fprintf(output, "ADD %v %v 1\n", name, name)
+									} else {
+										RaiseError(&s, "Unexpected "+s.TokenText()+", expecting '-'")
+									}
+								} else {
+									fmt.Println(s.Pos(), "Unexpected ", s.TokenText())
+									return	
+								}
+							} else {
 					
-					
-							if name == "" {
+								if name == "" {
+									return	
+								}
+								fmt.Println(s.Pos(), "Unexpected ", name)
 								return	
 							}
-							fmt.Println(s.Pos(), "Unexpected ", name)
-							return
 						}
 				}
 				
