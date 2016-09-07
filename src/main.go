@@ -125,6 +125,15 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 		}
 	}
 	
+	if token == "error" {
+		ExpressionType = NUMBER
+		if shunting {
+			return shunt("ERROR", s, output)
+		} else {
+			return "ERROR"
+		}
+	}
+	
 	if token == "false" {
 		ExpressionType = NUMBER
 		if shunting {
