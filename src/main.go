@@ -695,9 +695,12 @@ func main() {
 											//methods := GenMethodList(output, NUMBER)
 									}
 									
+								} else if GetVariable(name) == FILE {
+									fmt.Fprintf(output, "RELAY %v\nRELOAD %v\n", expression(&s, output), name)
+								} else if GetVariable(name) == STRING || GetVariable(name) >= USER {
+									fmt.Fprintf(output, "PLACE %v\nRENAME %v\n", expression(&s, output), name)
 								} else {
-									fmt.Fprintf(output, "SHARE %v\nRENAME %v\n", expression(&s, output), name)
-									//RaiseError(&s, "Cannot assign to "+name+"! Not a numeric value.")
+									RaiseError(&s, "Cannot assign to "+name+"! Not an assignable type!.")
 								}
 							} else {
 								fmt.Fprintf(output, "ADD %v 0 %v\n", name, expression(&s, output))
