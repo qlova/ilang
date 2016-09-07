@@ -12,6 +12,24 @@ FUNCTION output
 END
 `	))
 	functions["output"] = Function{Exists:true, Args:[]TYPE{STRING}}
+	
+	//Inbuilt output function.
+	output.Write([]byte(
+`
+FUNCTION link
+	LINK 
+END
+`	))
+	functions["link"] = Function{Exists:true, Args:[]TYPE{STRING, NUMBER}}
+	
+	//Inbuilt output function.
+	output.Write([]byte(
+`
+FUNCTION connect
+	CONNECT 
+END
+`	))
+	functions["connect"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}}
 
 	output.Write([]byte(
 `
@@ -182,35 +200,10 @@ END
 	output.Write([]byte(
 `
 FUNCTION reada_m_file
-	TAKE file
 	PULL delim
-	ARRAY input
-	VAR canbreak
-	LOOP
-		PUSH 1
-		RELAY file
-		IN
-		PULL byte
-		
-		VAR byte==n1000
-		SEQ byte==n1000 byte -1000
-		IF byte==n1000
-			BREAK
-		END
-	
-		VAR byte==delim
-		SEQ byte==delim byte delim
-		IF byte==delim
-			IF canbreak
-				BREAK
-			END
-		ELSE
-			ADD canbreak 0 1
-			PLACE input
-				PUT byte
-		END
-	REPEAT
-	SHARE input
+	MUL delim delim -1
+	PUSH delim
+	IN
 END
 `	))
 	functions["reada_m_file"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
@@ -261,43 +254,89 @@ END
 	output.Write([]byte(
 `
 FUNCTION reada_m_string
-	GRAB str
-	PULL delim
-	
-	ARRAY input
-	VAR canbreak
-	VAR gtzero
+	GRAB s
+	PULL n
+
+	ARRAY i+string+1
+	SHARE i+string+1
+	GRAB result
 	VAR i
+	ADD i 0 0
 	LOOP
-		SGE gtzero i #str
-		IF gtzero
-			BREAK
-		END
-		PLACE str
-			PUSH i
-			GET byte
-		ADD i i 1
-		
-		VAR byte==n1000
-		SEQ byte==n1000 byte -1000
-		IF byte==n1000
-			BREAK
-		END
-	
-		VAR byte==delim
-		SEQ byte==delim byte delim
-		IF byte==delim
-			IF canbreak
-				BREAK
-			END
+		SHARE s
+		RUN len
+		PULL i+output+3
+		VAR i+shunt+2
+		SLT i+shunt+2 i i+output+3
+		IF i+shunt+2
+			ERROR 0
 		ELSE
-			ADD canbreak 0 1
-			PLACE input
-				PUT byte
+			BREAK
 		END
+		PLACE s
+		PUSH i
+		GET i+shunt+4
+		VAR i+shunt+5
+		SEQ i+shunt+5 i+shunt+4 n
+		IF i+shunt+5
+			VAR j
+			ADD j 0 1
+			LOOP
+				SHARE s
+				RUN len
+				PULL i+output+7
+				VAR i+shunt+6
+				SLT i+shunt+6 j i+output+7
+				IF i+shunt+6
+					ERROR 0
+				ELSE
+					BREAK
+				END
+				VAR i+shunt+8
+				SUB i+shunt+8 j 1
+				VAR i+shunt+9
+				ADD i+shunt+9 j i
+				PLACE s
+				PUSH i+shunt+9
+				GET i+shunt+10
+				PLACE s
+				PUSH i+shunt+8
+				SET i+shunt+10
+				VAR i+shunt+11
+				ADD i+shunt+11 j 1
+				ADD j 0 i+shunt+11
+			REPEAT
+			ADD j 0 0
+			LOOP
+				VAR i+shunt+12
+				SLE i+shunt+12 j i
+				IF i+shunt+12
+					ERROR 0
+				ELSE
+					BREAK
+				END
+				PLACE s
+				POP z
+				MUL z z 0
+				VAR i+shunt+13
+				ADD i+shunt+13 j 1
+				ADD j 0 i+shunt+13
+			REPEAT
+			SHARE result
+			RETURN
+		END
+		PLACE s
+		PUSH i
+		GET i+shunt+14
+		PLACE result
+		PUT i+shunt+14
+		VAR i+shunt+15
+		ADD i+shunt+15 i 1
+		ADD i 0 i+shunt+15
 	REPEAT
-	SHARE input
-END
+	ERROR 1
+	SHARE result
+RETURN
 `	))
 	functions["reada_m_string"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
 
