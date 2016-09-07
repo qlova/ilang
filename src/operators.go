@@ -93,6 +93,7 @@ func init() {
 	
 	NewOperator(STRING, "+", STRING, "ARRAY %c\nJOIN %c %a %b", false)
 	NewOperator(STRING, "=", STRING, "SHARE %a\n SHARE %b\nRUN strings.equal\nPULL %c\n", false)
+	NewOperator(STRING, "!=", STRING, "SHARE %a\n SHARE %b\nRUN strings.equal\nPULL %c\nDIV %c %c 0\n", false)
 	
 	NewOperator(NUMBER, "²", UNDEFINED, "VAR %c\nPOW %c %a %a", true)
 	
