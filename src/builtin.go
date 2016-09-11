@@ -766,4 +766,198 @@ FUNCTION unhash
 END
 `	))
 	//functions["hash"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}}
+
+output.Write([]byte(
+`
+FUNCTION watch
+	GRAB id
+	
+	ARRAY i+tmp+1
+	SHARE i+tmp+1
+	RUN open
+	TAKE i+output+2
+	RELAY i+output+2
+	TAKE grabserver
+	
+	RELOAD grabserver
+	RELAY grabserver
+	ARRAY i+tmp+3
+		PUT 87
+		PUT 65
+		PUT 84
+		PUT 67
+		PUT 72
+		PUT 32
+	ARRAY i+tmp+6
+	PUT 10
+	ARRAY i+shunt+5
+	JOIN i+shunt+5 id i+tmp+6
+	ARRAY i+shunt+4
+	JOIN i+shunt+4 i+tmp+3 i+shunt+5
+	SHARE i+shunt+4
+	RUN output_m_file
+	RELAY grabserver
+RETURN`))
+	functions["watch"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{}}
+
+output.Write([]byte(
+`
+FUNCTION grab
+	GRAB id
+	
+	ARRAY i+tmp+1
+	SHARE i+tmp+1
+	RUN open
+	TAKE i+output+2
+	RELAY i+output+2
+	TAKE grabserver
+	
+	RELOAD grabserver
+	ERROR 0
+	RELAY grabserver
+	ARRAY i+tmp+9
+		PUT 71
+		PUT 82
+		PUT 65
+		PUT 66
+		PUT 32
+	ARRAY i+tmp+12
+	PUT 10
+	ARRAY i+shunt+11
+	JOIN i+shunt+11 id i+tmp+12
+	ARRAY i+shunt+10
+	JOIN i+shunt+10 i+tmp+9 i+shunt+11
+	SHARE i+shunt+10
+	RUN output_m_file
+	RELAY grabserver
+	RELAY grabserver
+	PUSH 1
+	RUN reada_m_file
+	RELAY grabserver
+	GRAB i+output+13
+	PUSH -1
+	RUN reada_m_file
+	GRAB a
+	SHARE i+output+13
+RETURN
+`))
+	functions["grab"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}}
+
+output.Write([]byte(
+`
+FUNCTION gui
+	GRAB design
+	ARRAY i+tmp+14
+	PUT 116
+	PUT 99
+	PUT 112
+	PUT 58
+	PUT 47
+	PUT 47
+	PUT 108
+	PUT 111
+	PUT 99
+	PUT 97
+	PUT 108
+	PUT 104
+	PUT 111
+	PUT 115
+	PUT 116
+	PUT 58
+	PUT 50
+	PUT 50
+	PUT 50
+	PUT 50
+	SHARE i+tmp+14
+	RUN open
+	TAKE i+output+15
+	RELAY i+output+15
+	TAKE server
+	IF ERROR
+		ARRAY i+tmp+16
+			PUT 67
+			PUT 111
+			PUT 117
+			PUT 108
+			PUT 100
+			PUT 32
+			PUT 110
+			PUT 111
+			PUT 116
+			PUT 32
+			PUT 99
+			PUT 114
+			PUT 101
+			PUT 97
+			PUT 116
+			PUT 101
+			PUT 32
+			PUT 103
+			PUT 117
+			PUT 105
+			PUT 33
+		SHARE i+tmp+16
+		STDOUT
+		SHARE i_newline
+		STDOUT
+		EXIT
+	END
+	RELAY server
+	ARRAY i+tmp+17
+		PUT 68
+		PUT 65
+		PUT 84
+		PUT 65
+		PUT 32
+	ARRAY i+tmp+20
+	PUT 10
+	ARRAY i+shunt+19
+	JOIN i+shunt+19 design i+tmp+20
+	ARRAY i+shunt+18
+	JOIN i+shunt+18 i+tmp+17 i+shunt+19
+	SHARE i+shunt+18
+	RUN output_m_file
+	RELAY server
+RETURN
+`))
+	functions["gui"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{}}
+
+	output.Write([]byte(`
+FUNCTION edit
+	GRAB txt
+	GRAB id
+	ARRAY i+tmp+1
+	SHARE i+tmp+1
+	RUN open
+	TAKE i+output+2
+	RELAY i+output+2
+	TAKE grabserver
+	RELOAD grabserver
+	RELAY grabserver
+	ARRAY i+tmp+3
+		PUT 69
+		PUT 68
+		PUT 73
+		PUT 84
+		PUT 32
+	ARRAY i+tmp+6
+		PUT 32
+	ARRAY i+tmp+9
+		PUT 10
+		PUT 1
+		PUT 10
+	ARRAY i+shunt+8
+	JOIN i+shunt+8 txt i+tmp+9
+	ARRAY i+shunt+7
+	JOIN i+shunt+7 i+tmp+6 i+shunt+8
+	ARRAY i+shunt+5
+	JOIN i+shunt+5 id i+shunt+7
+	ARRAY i+shunt+4
+	JOIN i+shunt+4 i+tmp+3 i+shunt+5
+	SHARE i+shunt+4
+	RUN output_m_file
+	RELAY grabserver
+RETURN
+`))
+	functions["edit"] = Function{Exists:true, Args:[]TYPE{STRING, STRING}, Returns:[]TYPE{}}
 }

@@ -241,6 +241,11 @@
       <keyword>real</keyword>
       <keyword>recover</keyword>
       
+      <keyword>edit</keyword>
+      <keyword>watch</keyword>
+      <keyword>gui</keyword>
+      <keyword>grab</keyword>
+      
       <keyword>load</keyword>
       <keyword>sort</keyword>
       <keyword>open</keyword>

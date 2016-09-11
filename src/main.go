@@ -523,6 +523,9 @@ func main() {
 			
 			case "software":
 				output.Write([]byte("SOFTWARE\n"))
+				if GUIEnabled {
+					output.Write([]byte("SHARE gui_main\nRUN gui\n"))
+				}
 				s.Scan()
 				if s.TokenText() != "{" {
 					fmt.Println(s.Pos(), "Expecting { found ", s.TokenText())
@@ -635,6 +638,12 @@ func main() {
 				}
 				GainScope()
 			
+			case "gui":
+				if !softwareBlock {
+					ParseGUIDef(&s, output)
+					continue
+				}
+				fallthrough
 			default:
 			
 				var name = s.TokenText()
