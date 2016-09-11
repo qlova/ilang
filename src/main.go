@@ -7,6 +7,7 @@ import (
 	"strings"
 	"strconv"
 	"io"
+	"io/ioutil"
 	"flag"
 )
 
@@ -46,6 +47,12 @@ func GetVariable(name string) TYPE {
 
 func SetVariable(name string, sort TYPE) {
 	Scope[len(Scope)-1][name] = sort
+}
+
+func Expecting(s *scanner.Scanner, token string) {
+	if s.TokenText() != token {
+		RaiseError(s, "Expecting "+token+" found "+s.TokenText())
+	}
 }
 
 func LoseScope(output io.Writer) {
@@ -160,16 +167,34 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	//	eg. 'a' -> 97
 	if len(token) == 3 && token[0] == '\'' && token[2] == '\'' {
 		ExpressionType = NUMBER
-		defer s.Scan()
-		return strconv.Itoa(int(s.TokenText()[1]))
+		
+		var value = strconv.Itoa(int(s.TokenText()[1]))
+		
+		if shunting {
+			return shunt(value, s, output)
+		} else {
+			return value
+		}
 	} else if s.TokenText() == `'\n'` {
 		ExpressionType = NUMBER
-		defer s.Scan()
-		return strconv.Itoa(int('\n'))
+		
+		var value = strconv.Itoa(int('\n'))
+		
+		if shunting {
+			return shunt(value, s, output)
+		} else {
+			return value
+		}
 	} else if s.TokenText() == `'\r'` {
 		ExpressionType = NUMBER
-		defer s.Scan()
-		return strconv.Itoa(int('\r'))
+		
+		var value = strconv.Itoa(int('\r'))
+
+		if shunting {
+			return shunt(value, s, output)
+		} else {
+			return value
+		}
 	} else if len(token) > 2 && token[0] == '0' && token[1] == 'x' { 
 		ExpressionType = NUMBER
 		if shunting {
@@ -260,6 +285,15 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 			return token
 		}
 	}
+	
+	if sort := GetVariable("gui_"+token); sort != UNDEFINED {
+		ExpressionType = sort
+		if shunting {
+			return shunt("gui_"+token, s, output)
+		} else {
+			return "gui_"+token
+		}
+	}
 		
 	//Do some special maths which people will hate about I.
 	// a=2; b=4; ab
@@ -341,6 +375,8 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	}
 }
 
+var FirstIssue, Issues bool
+
 func main() {
 	flag.Parse()
 
@@ -355,19 +391,17 @@ func main() {
 		return
 	}
 	
-	//Add builtin functions to file.
-	builtin(output)
+	builtin(ioutil.Discard)
 	
 	//Startup the scanner.
 	var s scanner.Scanner
 	s.Init(file)
 	s.Whitespace= 1<<'\t' | 1<<'\r' | 1<<' '
 	
-	fmt.Fprintf(output, `DATA i_newline "\n"`+"\n")
-	
 	//TODO cleanup file from here forward.
 	var softwareBlock bool
 	GainScope()
+	SetVariable("error", NUMBER)
 	
 	var tok rune
 	for tok != scanner.EOF {
@@ -437,6 +471,13 @@ func main() {
 					}
 					LoseScope(output)
 					output.Write([]byte("RETURN\n"))
+				}
+				if Issues && !FirstIssue {
+					LoseScope(output)
+					output.Write([]byte("END\n"))
+					Issues = false
+				} else if Issues {
+					Issues = false
 				}
 				
 			
@@ -522,6 +563,11 @@ func main() {
 				}
 			
 			case "software":
+					
+				//Add builtin functions to file.
+				builtin(output)
+				fmt.Fprintf(output, `DATA i_newline "\n"`+"\n")
+			
 				output.Write([]byte("SOFTWARE\n"))
 				if GUIEnabled {
 					output.Write([]byte("SHARE gui_main\nRUN gui\n"))
@@ -538,9 +584,11 @@ func main() {
 				}
 				GainScope()
 				softwareBlock = true
+				
+				
 			
 			case "issues":
-				output.Write([]byte("IF ERROR\nERROR 0\n"))
+				output.Write([]byte("IF ERROR\n"))
 				s.Scan()
 				if s.TokenText() != "{" {
 					fmt.Println(s.Pos(), "Expecting { found ", s.TokenText())
@@ -552,6 +600,33 @@ func main() {
 					return
 				}
 				GainScope()
+				FirstIssue = true
+				Issues = true
+			
+			case "issue":
+				
+				if FirstIssue {
+					GainScope()
+					s.Scan()
+					unique++
+					fmt.Fprintf(output, "VAR %v\n", "i+issue+"+fmt.Sprint(unique))
+					fmt.Fprintf(output, "SEQ %v ERROR %v\n", "i+issue+"+fmt.Sprint(unique), expression(&s, output))
+					fmt.Fprintf(output, "IF %v\n", "i+issue+"+fmt.Sprint(unique))
+					FirstIssue = false
+				} else {
+					nesting, ok := Scope[len(Scope)-1]["elseif"]
+					if !ok {
+						nesting = 0
+					}
+					LoseScope(output)
+					GainScope()
+					SetVariable("elseif", nesting+1)
+					s.Scan()
+					fmt.Fprintf(output, "ELSE\n")
+					fmt.Fprintf(output, "VAR %v\n", "i+issue+"+fmt.Sprint(unique))
+					fmt.Fprintf(output, "SEQ %v ERROR %v\n", "i+issue+"+fmt.Sprint(unique), expression(&s, output))
+					fmt.Fprintf(output, "IF %v\n", "i+issue+"+fmt.Sprint(unique))
+				}
 			
 			case "print":
 				ParseFunction("text", &s, output, false, true, true)
@@ -722,11 +797,15 @@ func main() {
 								} else {
 									RaiseError(&s, "Cannot assign to "+name+"! Not an assignable type!.")
 								}
-							} else {
+							} else if GetVariable(name) == NUMBER {
+								if name == "error" {
+									name = "ERROR"
+								}
 								fmt.Fprintf(output, "ADD %v 0 %v\n", name, expression(&s, output))
-							}
-							if GetVariable(name) != SOMETHING && ExpressionType != GetVariable(name) {
-								RaiseError(&s, "Cannot assign "+ExpressionType.String()+" to "+GetVariable(name).String())
+							} else {
+								//if GetVariable(name) != SOMETHING && ExpressionType != GetVariable(name) {
+									RaiseError(&s, "Cannot assign "+ExpressionType.String()+" to "+GetVariable(name).String())
+								//}
 							}
 						}
 					

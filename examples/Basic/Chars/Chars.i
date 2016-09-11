@@ -1,4 +1,4 @@
 software {
-	print(number("a")+48)
+	print('a')
 	print([97])
 }

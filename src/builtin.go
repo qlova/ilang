@@ -4,6 +4,7 @@ import "io"
 
 //TODO optimise some of the functions to be inline.
 func builtin(output io.Writer) {
+	
 	//Inbuilt output function.
 	output.Write([]byte(
 `
@@ -16,11 +17,29 @@ END
 	//Inbuilt output function.
 	output.Write([]byte(
 `
+FUNCTION execute
+	EXECUTE 
+END
+`	))
+	functions["execute"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}}
+	
+	//Inbuilt output function.
+	output.Write([]byte(
+`
 FUNCTION link
 	LINK 
 END
 `	))
 	functions["link"] = Function{Exists:true, Args:[]TYPE{STRING, NUMBER}}
+	
+	//Inbuilt output function.
+	output.Write([]byte(
+`
+FUNCTION delete
+	DELETE
+END
+`	))
+	functions["delete"] = Function{Exists:true, Args:[]TYPE{STRING}}
 	
 	//Inbuilt output function.
 	output.Write([]byte(
@@ -399,7 +418,10 @@ FUNCTION number
 		ADD __invalid __toobig __toosmall
 		IF __invalid
 			ERROR 1
+			PUSH 0
+			RETURN
 		END
+		
 		#Convert from unicode.
 		SUB tens*i tens*i 48
 		MUL tens*i tens tens*i
