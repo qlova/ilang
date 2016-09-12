@@ -395,6 +395,9 @@ func main() {
 	
 	//Startup the scanner.
 	var s scanner.Scanner
+	//Keeping track of multiple files when importing.
+	var scanners []scanner.Scanner
+	
 	s.Init(file)
 	s.Whitespace= 1<<'\t' | 1<<'\r' | 1<<' '
 	
@@ -404,10 +407,33 @@ func main() {
 	SetVariable("error", NUMBER)
 	
 	var tok rune
-	for tok != scanner.EOF {
+	for {
 		tok = s.Scan()
 		
+		if tok == scanner.EOF {
+			if len(scanners) > 0 {
+				s = scanners[len(scanners)-1]
+				scanners = scanners[:len(Scope)-1]
+				continue
+			} else {
+				return
+			}
+		}
+		
 		switch s.TokenText() {
+			case "import":
+				s.Scan()
+				file, err := os.Open(s.TokenText()+".i")
+				if err != nil {
+					RaiseError(&s, "Cannot import "+s.TokenText()+", does not exist!")
+				}
+				scanners = append(scanners, s)
+				
+				s = scanner.Scanner{}
+				s.Init(file)
+				s.Whitespace= 1<<'\t' | 1<<'\r' | 1<<' '
+				continue
+				
 			//LOOPS
 			
 			case "repeat", "break":
