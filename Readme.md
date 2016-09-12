@@ -7,8 +7,13 @@ Hello World:
 			output("Hello World")
 		}
 
-There are no official releases yet as the language is in a aplha state but you can grab the source and start hacking!  
+There are no official releases yet as the language is in a alpha state but you can grab the source and start hacking!  
 Hacking instructions: (Linux and Mac)
+	
+		#OPTIONAL GUI SUPPORT
+		git clone https://github.com/Qlova/grab
+		cd grab && make && sudo make install
+		grab #Needs to be started manually for now.
 	
 		#You need UCT.
 		git clone https://github.com/Qlova/uct
