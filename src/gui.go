@@ -7,15 +7,22 @@ import (
 	"strings"
 )
 
-var GUIEnabled bool
+var GUIMain, GUIEnabled bool
 
 // gui main { <button> </button> }
 func ParseGUIDef(s *scanner.Scanner, output io.Writer) {
 	s.Scan()
 	
-	fmt.Fprintf(output, "DATA gui_%s \"", s.TokenText())
-	SetVariable("gui_"+s.TokenText(), STRING)
-	s.Scan()
+	var name = s.TokenText()
+	if s.TokenText() == "{" {
+		name = "main"
+		GUIMain = true
+	} else {
+		s.Scan()
+	}
+	
+	fmt.Fprintf(output, "DATA gui_%s \"", name)
+	SetVariable("gui_"+name, STRING)
 	
 	Expecting(s, "{")
 	

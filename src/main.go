@@ -415,7 +415,27 @@ func main() {
 	s.Whitespace= 1<<'\t' | 1<<'\r' | 1<<' '
 	
 	//TODO cleanup file from here forward.
-	var softwareBlock bool
+	var software, softwareBlock bool
+	
+	defer func() {
+		if !software && GUIEnabled && GUIMain {
+			output.Write([]byte("SOFTWARE\n"))
+			output.Write([]byte("SHARE gui_main\nRUN gui\n"))
+			output.Write([]byte("LOOP\n"))
+			output.Write([]byte("SHARE i_newline\n"))
+			output.Write([]byte("RUN grab\n"))
+			output.Write([]byte("IF ERROR\n"))
+			output.Write([]byte("EXIT\n"))
+			output.Write([]byte("END\n"))
+			output.Write([]byte("REPEAT\n"))
+			output.Write([]byte("EXIT\n"))
+			LoadFunction("grab")
+			LoadFunction("gui")
+			LoadFunction("output_m_file")
+			LoadFunction("reada_m_file")
+		}
+	}()
+	
 	GainScope()
 	SetVariable("error", NUMBER)
 	
@@ -605,10 +625,13 @@ func main() {
 				}
 			
 			case "software":
+				software = true
 				
 				output.Write([]byte("SOFTWARE\n"))
 				if GUIEnabled {
 					output.Write([]byte("SHARE gui_main\nRUN gui\n"))
+					LoadFunction("gui")
+					LoadFunction("output_m_file")
 				}
 				s.Scan()
 				if s.TokenText() != "{" {
@@ -708,6 +731,91 @@ func main() {
 				
 				var name = s.TokenText()
 				s.Scan()
+				
+				var name2 string
+				if forloop && s.TokenText() == "," {
+					s.Scan()
+					name2 = s.TokenText()
+					s.Scan()
+				}
+				
+				if forloop && s.TokenText() == "in" {
+					s.Scan()
+					array := expression(&s, output)
+					
+					unique ++
+					test := "i+in+"+fmt.Sprint(unique)
+					unique ++
+					var i, v string
+					if name2 != "" {
+						i = name
+						v = name2
+					} else {
+						i = "i+in+"+fmt.Sprint(unique)
+						v = name
+					}
+					
+					fmt.Fprintf(output, `
+VAR %s
+LOOP
+	PLACE %s
+		PUSH %s
+		GET %s
+	SGE %s %s #%s
+	IF %s
+		BREAK
+	END
+	ADD %s %s 1
+	
+`, i, array, i, v, test, i, array, test, i, i)
+
+					GainScope()
+					SetVariable(i, NUMBER)
+					SetVariable(v, NUMBER)
+					continue
+				}
+				
+				//Over in a for loop.
+				if forloop && s.TokenText() == "over" {
+					s.Scan()
+					Expecting(&s, "[")
+					s.Scan()
+					
+					low := expression(&s, output)
+					s.Scan()
+					high := expression(&s, output)
+					
+					Expecting(&s, "]")
+					s.Scan()
+					
+					unique ++
+					test := "i+over+"+fmt.Sprint(unique)
+					unique ++
+					backup := "i+back+"+fmt.Sprint(unique)
+					fmt.Fprintf(output, `
+VAR %s
+VAR %s
+ADD %s 0 %s
+ADD %s 0 %s
+LOOP
+	SNE %s %s %s
+	ADD %s 0 %s
+	IF %s
+		SLT %s %s %s
+		IF %s
+			ADD %s %s 1
+		ELSE
+			SUB %s %s 1
+		END
+	ELSE
+		BREAK
+	END
+`, name, backup, backup, low, name, low, test, name, high, name, backup, test, test, name, high, test, backup, name, backup, name)
+					GainScope()
+					SetVariable(name, NUMBER)
+					continue
+				}
+				
 				if s.TokenText() == "is" {
 					s.Scan()
 					fmt.Fprintf(output, "ARRAY %v\n", name)

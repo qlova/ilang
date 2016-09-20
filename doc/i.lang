@@ -200,6 +200,9 @@
       <keyword>end</keyword>
       <keyword>elseif</keyword>
       
+      <keyword>over</keyword>
+      <keyword>in</keyword>
+      
       <keyword>go</keyword>
       <keyword>goto</keyword>
       <keyword>if</keyword>

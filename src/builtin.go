@@ -684,7 +684,7 @@ FUNCTION watch
 	
 	ARRAY i+tmp+1
 	SHARE i+tmp+1
-	RUN open
+	OPEN
 	TAKE i+output+2
 	RELAY i+output+2
 	TAKE grabserver
@@ -705,7 +705,7 @@ FUNCTION watch
 	ARRAY i+shunt+4
 	JOIN i+shunt+4 i+tmp+3 i+shunt+5
 	SHARE i+shunt+4
-	RUN output_m_file
+	OUT
 	RELAY grabserver
 RETURN`}
 
@@ -716,7 +716,7 @@ FUNCTION grab
 	
 	ARRAY i+tmp+1
 	SHARE i+tmp+1
-	RUN open
+	OPEN
 	TAKE i+output+2
 	RELAY i+output+2
 	TAKE grabserver
@@ -737,7 +737,7 @@ FUNCTION grab
 	ARRAY i+shunt+10
 	JOIN i+shunt+10 i+tmp+9 i+shunt+11
 	SHARE i+shunt+10
-	RUN output_m_file
+	OUT
 	RELAY grabserver
 	RELAY grabserver
 	PUSH 1
@@ -776,7 +776,7 @@ FUNCTION gui
 	PUT 50
 	PUT 50
 	SHARE i+tmp+14
-	RUN open
+	OPEN
 	TAKE i+output+15
 	RELAY i+output+15
 	TAKE server
@@ -824,7 +824,7 @@ FUNCTION gui
 	ARRAY i+shunt+18
 	JOIN i+shunt+18 i+tmp+17 i+shunt+19
 	SHARE i+shunt+18
-	RUN output_m_file
+	OUT
 	RELAY server
 RETURN
 `}
@@ -835,7 +835,7 @@ FUNCTION edit
 	GRAB id
 	ARRAY i+tmp+1
 	SHARE i+tmp+1
-	RUN open
+	OPEN
 	TAKE i+output+2
 	RELAY i+output+2
 	TAKE grabserver
@@ -862,7 +862,7 @@ FUNCTION edit
 	ARRAY i+shunt+4
 	JOIN i+shunt+4 i+tmp+3 i+shunt+5
 	SHARE i+shunt+4
-	RUN output_m_file
+	OUT
 	RELAY grabserver
 RETURN
 `}

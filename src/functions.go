@@ -8,6 +8,16 @@ import (
 	"strings"
 )
 
+var loaded = make(map[string]bool)
+
+func LoadFunction(name string) {
+	if functions[name].Data != "" && !loaded[name] && !functions[name].Inline {
+		IFILE.Write([]byte(functions[name].Data))
+	
+		loaded[name] = true
+	}
+}
+
 func ParseFunctionDef(s *scanner.Scanner, output io.Writer) {
 	var name string
 	var function Function
@@ -373,12 +383,7 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 		
 		//Write the function to the ifile if it is builtin.
 		//println(token, functions[token].Data != "", !functions[token].Loaded, !functions[token].Inline)
-		if functions[token].Data != "" && !functions[token].Loaded && !functions[token].Inline {
-			IFILE.Write([]byte(functions[token].Data))
-			f := functions[token]
-			f.Loaded = true
-			functions[token] = f
-		}
+		LoadFunction(token)
 		
 		if !noreturns {
 			return ParseFunctionReturns(token, s, output, shunting)
