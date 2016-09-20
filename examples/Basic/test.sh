@@ -56,7 +56,7 @@ function BasicTest {
 
 cd Plus
 if [ "$2" != "" ]; then
-	for l in py go java lua rb bash cs; do
+	for l in rb py go java lua rb bash cs; do
 		LANGUAGE=$l
 		echo $l
 		BasicTest "$1" "$2" "$3" 
@@ -64,15 +64,15 @@ if [ "$2" != "" ]; then
 	exit
 fi
 
-BasicTest Plus "4" "2 2\n"
-BasicTest Arithmetic "Sum: 8\nDifference: -2\nProduct: 15\nQuotient: 0\nModulus: 3\nExponent: 243" "3 5\n"
-BasicTest Arrays "2\n4"
+BasicTest HelloWorld "Hello World"
 BasicTest Chars "97\na"
+BasicTest Arrays "2\n4"
 BasicTest Concat "This string is joined!"
 BasicTest Functions "hi\nhi\ncba"
-BasicTest HelloWorld "Hello World"
 BasicTest Length "2"
 BasicTest OrderOfOperation "405"
+BasicTest Plus "4" "2 2\n"
+BasicTest Arithmetic "Sum: 8\nDifference: -2\nProduct: 15\nQuotient: 0\nModulus: 3\nExponent: 243" "3 5\n"
 BasicTest FileExists "input.txt exists\n/input.txt does not exist\ndocs exists\n/docs does not exist"
 BasicTest Maths "d d b"
 BasicTest Conditionals "3=3\n3!=2\nverified"
@@ -104,4 +104,6 @@ BasicTest Links "1\n2\n3\n"
 BasicTest Slices "Hello\nbob\nmy\n"
 BasicTest Universal "Hello World\n"
 BasicTest Issues "Issue 2\n"
-BasicTest Import "Did something\n"
+BasicTest Import "Did something!\n"
+BasicTest Constant "42\n"
+BasicTest ReadFile "This is the contents of the file!"
