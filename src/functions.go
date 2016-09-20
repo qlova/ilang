@@ -292,6 +292,9 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 			}
 		
 			if s.TokenText() == ")" {
+				if len(functions[token].Args) > i {
+					RaiseError(s, token+" requires "+fmt.Sprint(len(functions[token].Args))+" arguments!")
+				}
 				return token
 			}
 			
@@ -301,7 +304,14 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 			
 			s.Scan()
 			if s.TokenText() == ")" {
+				if len(functions[token].Args) > i {
+					RaiseError(s, token+" requires "+fmt.Sprint(len(functions[token].Args))+" arguments!")
+				}
 				break
+			}
+						
+			if len(functions[token].Args) < i {
+				RaiseError(s, token+" requires "+fmt.Sprint(len(functions[token].Args))+" arguments!")
 			}
 		
 			if len(functions[token].Args) > i {
@@ -368,15 +378,18 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 				break
 			}
 			endTypeCheck:
+			i++
 		
 			if s.TokenText() == ")" {
+				if len(functions[token].Args) > i {
+					RaiseError(s, token+" requires "+fmt.Sprint(len(functions[token].Args))+" arguments!")
+				}
 				break
 			}
 			if s.TokenText() != "," {
 				fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
 				os.Exit(1)
 			}
-			i++
 		}	
 	}
 	
