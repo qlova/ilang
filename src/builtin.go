@@ -125,11 +125,6 @@ END
 `
 FUNCTION open
 	OPEN
-	PULL status
-	
-	IF status
-		ERROR 1
-	END
 END
 `	))
 	functions["open"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{FILE}}
@@ -172,10 +167,6 @@ FUNCTION output_m_file
 	GRAB text
 	SHARE text
 	OUT
-	PULL status
-	IF status
-		ERROR 1
-	END
 END
 `))
 	functions["output_m_file"] = Function{Exists:true, Args:[]TYPE{STRING}}
@@ -218,6 +209,16 @@ END
 	//Inbuilt reada function.
 	output.Write([]byte(
 `
+FUNCTION read
+	PUSH 0
+	STDIN
+END
+`	))
+	functions["read"] = Function{Exists:true, Returns:[]TYPE{STRING}}
+	
+	//Inbuilt reada function.
+	output.Write([]byte(
+`
 FUNCTION reada_m_file
 	PULL delim
 	MUL delim delim -1
@@ -227,6 +228,17 @@ END
 `	))
 	functions["reada_m_file"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
 	methods["reada"] = true
+	
+	//Inbuilt reada function.
+	output.Write([]byte(
+`
+FUNCTION read_m_file
+	PUSH 0
+	IN
+END
+`	))
+	functions["read_m_file"] = Function{Exists:true, Returns:[]TYPE{STRING}}
+	methods["read"] = true
 	
 	//Inbuilt reada function.
 	output.Write([]byte(
@@ -896,6 +908,7 @@ FUNCTION gui
 	RELAY i+output+15
 	TAKE server
 	IF ERROR
+		
 		ARRAY i+tmp+16
 			PUT 67
 			PUT 111
