@@ -513,6 +513,13 @@ func main() {
 				output.Write([]byte("ERROR 0\n"))
 			
 			case "}", "end":
+				_, ok := Scope[len(Scope)-1]["loop"]
+				if ok {
+					LoseScope(output)
+					output.Write([]byte("REPEAT\n"))
+					continue
+				}
+			
 				nesting, ok := Scope[len(Scope)-1]["elseif"]
 				if ok {
 					for i:=0; TYPE(i) < nesting; i++ {
@@ -754,10 +761,14 @@ func main() {
 						i = "i+in+"+fmt.Sprint(unique)
 						v = name
 					}
+					unique ++
+					backup := "i+in+"+fmt.Sprint(unique)
 					
 					fmt.Fprintf(output, `
 VAR %s
+VAR %s
 LOOP
+	ADD %s 0 %s
 	PLACE %s
 		PUSH %s
 		GET %s
@@ -767,11 +778,12 @@ LOOP
 	END
 	ADD %s %s 1
 	
-`, i, array, i, v, test, i, array, test, i, i)
+`, i,backup, i, backup, array, i, v, test, i, array, test, backup, i)
 
 					GainScope()
 					SetVariable(i, NUMBER)
 					SetVariable(v, NUMBER)
+					SetVariable("loop", 1)
 					continue
 				}
 				
@@ -813,6 +825,7 @@ LOOP
 `, name, backup, backup, low, name, low, test, name, high, name, backup, test, test, name, high, test, backup, name, backup, name)
 					GainScope()
 					SetVariable(name, NUMBER)
+					SetVariable("loop", 1)
 					continue
 				}
 				
@@ -872,6 +885,7 @@ LOOP
 					fmt.Fprintf(output, "IF %v\nERROR 0\nELSE\nBREAK\nEND\n", expression(&s, output))
 				}
 				GainScope()
+				SetVariable("loop", 1)
 			
 			case "gui":
 				if !softwareBlock {
@@ -1036,20 +1050,24 @@ LOOP
 						
 							//i++ 
 							if GetVariable(name) == NUMBER {
-								if s.TokenText() == "+" {
+								if s.TokenText() == "+" && string(s.Peek()) != "=" {
 									s.Scan()
 									if s.TokenText() == "+" {
 										fmt.Fprintf(output, "ADD %v %v 1\n", name, name)
 									} else {
 										RaiseError(&s, "Unexpected "+s.TokenText()+", expecting '+'")
 									}
-								} else if s.TokenText() == "-" {
+								} else if s.TokenText() == "-" && string(s.Peek()) != "=" {
 									s.Scan()
 									if s.TokenText() == "-" {
 										fmt.Fprintf(output, "ADD %v %v 1\n", name, name)
 									} else {
 										RaiseError(&s, "Unexpected "+s.TokenText()+", expecting '-'")
 									}
+								} else if string(s.Peek()) == "=" {
+									s.Scan()
+									s.Scan()
+									fmt.Fprintf(output, "ADD %v %v %v\n", name, name, expression(&s, output))
 								} else {
 									fmt.Println(s.Pos(), "Unexpected ", s.TokenText())
 									return	

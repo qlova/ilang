@@ -347,7 +347,15 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 								token, ExpressionType.String()))
 						}
 						
-						fmt.Fprintf(output, "SHARE %v\n", argument)
+						switch ExpressionType {
+							case NUMBER:
+								fmt.Fprintf(output, "PUSH %v\n", argument)
+							case FILE:
+								fmt.Fprintf(output, "RELAY %v\n", argument)
+							default:
+								fmt.Fprintf(output, "SHARE %v\n", argument)
+						}
+						
 						goto endTypeCheck
 						
 					} else {	
