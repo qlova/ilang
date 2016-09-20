@@ -21,6 +21,9 @@ func builtin(output io.Writer) {
 	functions["load"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Inline:true, Data:"LOAD"}
 	
 	functions["open"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{FILE}, Inline:true, Data:"OPEN"}
+	
+	functions["len_m_number"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"MAKE"}
+	methods["len"] = true
 
 	functions["strings.equal"] = Function{Exists:true, Args:[]TYPE{STRING, STRING}, Returns:[]TYPE{NUMBER}, Data:`
 #Returns whether or not a string is equal.
