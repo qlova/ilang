@@ -2,56 +2,27 @@ package main
 
 import "io"
 
+var IFILE io.Writer
+
 //TODO optimise some of the functions to be inline.
 func builtin(output io.Writer) {
-	
-	//Inbuilt output function.
-	output.Write([]byte(
-`
-FUNCTION output
-	STDOUT 
-END
-`	))
-	functions["output"] = Function{Exists:true, Args:[]TYPE{STRING}}
-	
-	//Inbuilt output function.
-	output.Write([]byte(
-`
-FUNCTION execute
-	EXECUTE 
-END
-`	))
-	functions["execute"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}}
-	
-	//Inbuilt output function.
-	output.Write([]byte(
-`
-FUNCTION link
-	LINK 
-END
-`	))
-	functions["link"] = Function{Exists:true, Args:[]TYPE{STRING, NUMBER}}
-	
-	//Inbuilt output function.
-	output.Write([]byte(
-`
-FUNCTION delete
-	DELETE
-END
-`	))
-	functions["delete"] = Function{Exists:true, Args:[]TYPE{STRING}}
-	
-	//Inbuilt output function.
-	output.Write([]byte(
-`
-FUNCTION connect
-	CONNECT 
-END
-`	))
-	functions["connect"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}}
+	IFILE = output
 
-	output.Write([]byte(
-`
+	functions["output"] = Function{Exists:true, Args:[]TYPE{STRING}, Inline:true, Data:"STDOUT"}
+
+	functions["execute"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Inline:true, Data:"EXECUTE"}
+	
+	functions["link"] = Function{Exists:true, Args:[]TYPE{STRING, NUMBER}, Inline:true, Data:"LINK"}
+	
+	functions["delete"] = Function{Exists:true, Args:[]TYPE{STRING}, Inline:true, Data:"DELETE"}
+	
+	functions["connect"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}, Inline:true, Data:"CONNECT"}
+	
+	functions["load"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Inline:true, Data:"LOAD"}
+	
+	functions["open"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{FILE}, Inline:true, Data:"OPEN"}
+
+	functions["strings.equal"] = Function{Exists:true, Args:[]TYPE{STRING, STRING}, Returns:[]TYPE{NUMBER}, Data:`
 #Returns whether or not a string is equal.
 FUNCTION strings.equal
 	GRAB str1
@@ -91,59 +62,32 @@ FUNCTION strings.equal
 		ADD iterator iterator 1
 	REPEAT
 RETURN
-` ))
-	functions["strings.equal"] = Function{Exists:true, Args:[]TYPE{STRING, STRING}, Returns:[]TYPE{NUMBER}}
+`}
 
-	output.Write([]byte(
-`
+
+	functions["bool"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
 DATA i_true "true"
 DATA i_false "false"
 FUNCTION bool
 	PULL n
 	IF n
 		SHARE i_true
-		RUN copy
 		RETURN
 	END
 	SHARE i_false
-	RUN copy
 END
-`	))
-	functions["bool"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
-
-	//Inbuilt output function.
-	output.Write([]byte(
-`
-FUNCTION load
-	LOAD
-END
-`	))
-	functions["load"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}}
+`}
 	
-	//Inbuilt output function.
-	output.Write([]byte(
-`
-FUNCTION open
-	OPEN
-END
-`	))
-	functions["open"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{FILE}}
-	
-	output.Write([]byte(	
-`
+	functions["copy"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Data:`
 #Compiled with IC.
 FUNCTION copy
 	GRAB array
 	ARRAY c
 	
-	SHARE array
-	RUN len
-	PULL i+output+2
-	
 	VAR i
 	LOOP
 		VAR i+shunt+1
-		SGE i+shunt+1 i i+output+2
+		SGE i+shunt+1 i #array
 		IF i+shunt+1
 			SHARE c
 			RETURN
@@ -158,91 +102,53 @@ FUNCTION copy
 		ADD i i 1
 	REPEAT
 END
-`	))
-	functions["copy"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}}
+`}
 
-	output.Write([]byte(	
-`	
-FUNCTION output_m_file
-	GRAB text
-	SHARE text
-	OUT
-END
-`))
-	functions["output_m_file"] = Function{Exists:true, Args:[]TYPE{STRING}}
+	functions["output_m_file"] = Function{Exists:true, Args:[]TYPE{STRING}, Inline:true, Data:"OUT"}
 	methods["output"] = true
-
-	
 	
 	//Inbuilt output function.
-	output.Write([]byte(
-`
+	functions["close"] = Function{Exists:true, Args:[]TYPE{FILE}, Data:`
 FUNCTION close
 	TAKE file
 	CLOSE file
 END
-`	))
-	functions["close"] = Function{Exists:true, Args:[]TYPE{FILE}}
+`}
 
-	//Inbuilt output function.
-	output.Write([]byte(
-`
+	functions["len"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}, Data:`
 FUNCTION len
 	GRAB data
 	PUSH #data
 END
-`	))
-	functions["len"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}}
+`}
 
-	//Inbuilt reada function.
-	output.Write([]byte(
-`
+
+	functions["reada"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
 FUNCTION reada
 	PULL delim
 	MUL delim delim -1
 	PUSH delim
 	STDIN
 END
-`	))
-	functions["reada"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
+`}
 	
-	//Inbuilt reada function.
-	output.Write([]byte(
-`
-FUNCTION read
-	PUSH 0
-	STDIN
-END
-`	))
-	functions["read"] = Function{Exists:true, Returns:[]TYPE{STRING}}
+	functions["read"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"PUSH 0\nSTDIN"}
 	
-	//Inbuilt reada function.
-	output.Write([]byte(
-`
+	functions["reada_m_file"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
 FUNCTION reada_m_file
 	PULL delim
 	MUL delim delim -1
 	PUSH delim
 	IN
 END
-`	))
-	functions["reada_m_file"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
+`}
 	methods["reada"] = true
 	
-	//Inbuilt reada function.
-	output.Write([]byte(
-`
-FUNCTION read_m_file
-	PUSH 0
-	IN
-END
-`	))
-	functions["read_m_file"] = Function{Exists:true, Returns:[]TYPE{STRING}}
+	functions["read_m_file"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"PUSH 0\nIN"}
 	methods["read"] = true
 	
 	//Inbuilt reada function.
-	output.Write([]byte(
-`
+	functions["input_m_file"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
 FUNCTION input_m_file
 	TAKE file
 	PULL delim
@@ -277,13 +183,11 @@ FUNCTION input_m_file
 	REPEAT
 	SHARE input
 END
-`	))
-	functions["input_m_file"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
+`}
 	methods["input"] = true
 
 	//Inbuilt reada function.
-	output.Write([]byte(
-`
+	functions["reada_m_string"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
 FUNCTION reada_m_string
 	GRAB s
 	PULL n
@@ -294,11 +198,8 @@ FUNCTION reada_m_string
 	VAR i
 	ADD i 0 0
 	LOOP
-		SHARE s
-		RUN len
-		PULL i+output+3
 		VAR i+shunt+2
-		SLT i+shunt+2 i i+output+3
+		SLT i+shunt+2 i #s
 		IF i+shunt+2
 			ERROR 0
 		ELSE
@@ -313,11 +214,8 @@ FUNCTION reada_m_string
 			VAR j
 			ADD j 0 1
 			LOOP
-				SHARE s
-				RUN len
-				PULL i+output+7
 				VAR i+shunt+6
-				SLT i+shunt+6 j i+output+7
+				SLT i+shunt+6 j #s
 				IF i+shunt+6
 					ERROR 0
 				ELSE
@@ -368,22 +266,13 @@ FUNCTION reada_m_string
 	ERROR 1
 	SHARE result
 RETURN
-`	))
-	functions["reada_m_string"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
+`}
 
-	//Inbuilt reada function.
-	output.Write([]byte(
-`
-FUNCTION info_m_file
-	STAT
-END
-`	))
-	functions["info_m_file"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}}
+	functions["info_m_file"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Inline:true, Data:"STAT"}
 	methods["info"] = true
 	
 	//Inbuilt num function.
-	output.Write([]byte(
-`
+	functions["number"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}, Data:`
 FUNCTION number
 	GRAB string
 	
@@ -445,12 +334,10 @@ FUNCTION number
 	
 	PUSH num
 END
-`	))
-	functions["number"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}}
+`}
 
 	//Inbuilt text function.
-	output.Write([]byte(
-`
+	functions["text"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
 FUNCTION text
 	PULL num
 	ARRAY txt
@@ -511,13 +398,11 @@ FUNCTION text
 	REPEAT
 	SHARE txt
 END
-`	))
-	functions["text"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
+`}
 	methods["text"] = true
 	
 	//Inbuilt text function.
-	output.Write([]byte(
-`
+	functions["binary"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
 FUNCTION binary
 	PULL num
 	ARRAY txt
@@ -578,8 +463,7 @@ FUNCTION binary
 	REPEAT
 	SHARE txt
 END
-`	))
-	functions["binary"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}}
+`}
 	
 	functions["text_m_string"] = Function{Exists:true, Args:[]TYPE{}, Returns:[]TYPE{STRING}, Ghost:true}
 	
@@ -630,8 +514,8 @@ FUNCTION hash
 END
 `	))
 
-	output.Write([]byte(
-`
+
+	functions["sort"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{}, Data:`
 FUNCTION i_part
 PULL back
 PULL start
@@ -724,26 +608,19 @@ END
 RETURN
 FUNCTION sort
 GRAB alist
-SHARE alist
-RUN len
-PULL i+output+19
 VAR i+shunt+20
-SLE i+shunt+20 i+output+19 1
+SLE i+shunt+20 #alist 1
 IF i+shunt+20
 RETURN
 END
 SHARE alist
 PUSH 0
-SHARE alist
-RUN len
-PULL i+output+21
 VAR i+shunt+22
-SUB i+shunt+22 i+output+21 1
+SUB i+shunt+22 #alist 1
 PUSH i+shunt+22
 RUN i_part
 RETURN
-`))
-	functions["sort"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{}}
+`}
 
 //Hash function.
 	output.Write([]byte(
@@ -801,8 +678,7 @@ END
 `	))
 	//functions["hash"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}}
 
-output.Write([]byte(
-`
+	functions["watch"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{}, Data:`
 FUNCTION watch
 	GRAB id
 	
@@ -831,11 +707,10 @@ FUNCTION watch
 	SHARE i+shunt+4
 	RUN output_m_file
 	RELAY grabserver
-RETURN`))
-	functions["watch"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{}}
+RETURN`}
 
-output.Write([]byte(
-`
+
+	functions["grab"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Data:`
 FUNCTION grab
 	GRAB id
 	
@@ -874,11 +749,9 @@ FUNCTION grab
 	GRAB a
 	SHARE i+output+13
 RETURN
-`))
-	functions["grab"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}}
+`}
 
-output.Write([]byte(
-`
+	functions["gui"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{}, Data:`
 FUNCTION gui
 	GRAB design
 	ARRAY i+tmp+14
@@ -954,10 +827,9 @@ FUNCTION gui
 	RUN output_m_file
 	RELAY server
 RETURN
-`))
-	functions["gui"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{}}
+`}
 
-	output.Write([]byte(`
+	functions["edit"] = Function{Exists:true, Args:[]TYPE{STRING, STRING}, Returns:[]TYPE{}, Data:`
 FUNCTION edit
 	GRAB txt
 	GRAB id
@@ -993,6 +865,5 @@ FUNCTION edit
 	RUN output_m_file
 	RELAY grabserver
 RETURN
-`))
-	functions["edit"] = Function{Exists:true, Args:[]TYPE{STRING, STRING}, Returns:[]TYPE{}}
+`}
 }

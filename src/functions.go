@@ -365,9 +365,21 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 	if call && !functions[token].Ghost {
 		if functions[token].Local {
 			output.Write([]byte("EXE "+token+"\n"))
+		} else if functions[token].Inline {
+			 output.Write([]byte(functions[token].Data+"\n"))
 		} else {
 			output.Write([]byte("RUN "+token+"\n"))
 		}
+		
+		//Write the function to the ifile if it is builtin.
+		//println(token, functions[token].Data != "", !functions[token].Loaded, !functions[token].Inline)
+		if functions[token].Data != "" && !functions[token].Loaded && !functions[token].Inline {
+			IFILE.Write([]byte(functions[token].Data))
+			f := functions[token]
+			f.Loaded = true
+			functions[token] = f
+		}
+		
 		if !noreturns {
 			return ParseFunctionReturns(token, s, output, shunting)
 		}

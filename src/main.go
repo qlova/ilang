@@ -7,7 +7,6 @@ import (
 	"strings"
 	"strconv"
 	"io"
-	"io/ioutil"
 	"flag"
 	"path"
 )
@@ -23,6 +22,10 @@ type Function struct {
 	
 	//Is this a local?
 	Local bool
+	
+	Inline bool
+	Data string
+	Loaded bool
 	
 	Variadic bool
 }
@@ -399,7 +402,9 @@ func main() {
 		return
 	}
 	
-	builtin(ioutil.Discard)
+	//Add builtin functions to file.
+	builtin(ifile)
+			
 	
 	//Startup the scanner.
 	var s scanner.Scanner
@@ -600,10 +605,7 @@ func main() {
 				}
 			
 			case "software":
-					
-				//Add builtin functions to file.
-				builtin(ifile)
-			
+				
 				output.Write([]byte("SOFTWARE\n"))
 				if GUIEnabled {
 					output.Write([]byte("SHARE gui_main\nRUN gui\n"))
