@@ -676,6 +676,20 @@ func main() {
 				GainScope()
 				ParseFunctionDef(&s, output)
 				
+			//ParseConstant
+			case "const":
+				s.Scan()
+				var name = s.TokenText()
+				s.Scan()
+				Expecting(&s, "=")
+				s.Scan()
+				var value = expression(&s, output, false)
+				if ExpressionType != NUMBER {
+					RaiseError(&s, "Constant must be a numerical value!")
+				} 
+				fmt.Fprintf(output, ".const %s %s\n", name, value)
+				SetVariable(name, NUMBER)
+				
 			case "var", "for":
 				var forloop = s.TokenText() == "for"
 				s.Scan()
