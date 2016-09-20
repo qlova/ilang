@@ -1065,20 +1065,30 @@ LOOP
 										RaiseError(&s, "Unexpected "+s.TokenText()+", expecting '-'")
 									}
 								} else if string(s.Peek()) == "=" {
+									var op = s.TokenText()
 									s.Scan()
 									s.Scan()
-									fmt.Fprintf(output, "ADD %v %v %v\n", name, name, expression(&s, output))
+									switch op {
+										case "+":
+											fmt.Fprintf(output, "ADD %v %v %v\n", name, name, expression(&s, output))
+										case "-":
+											fmt.Fprintf(output, "SUB %v %v %v\n", name, name, expression(&s, output))
+										case "*":
+											fmt.Fprintf(output, "MUL %v %v %v\n", name, name, expression(&s, output))	
+										case "/":
+											fmt.Fprintf(output, "DIV %v %v %v\n", name, name, expression(&s, output))	
+										default:
+											RaiseError(&s, "Unexpected "+s.TokenText())
+									}
 								} else {
-									fmt.Println(s.Pos(), "Unexpected ", s.TokenText())
-									return	
+									RaiseError(&s, "Unexpected "+s.TokenText())
 								}
 							} else {
 					
 								if name == "" {
 									return	
 								}
-								fmt.Println(s.Pos(), "Unexpected ", name)
-								return	
+								RaiseError(&s, "Unexpected "+s.TokenText())
 							}
 						}
 				}
