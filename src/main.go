@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"flag"
+	"path"
 )
 
 //This holds the definition of a function.
@@ -93,6 +94,8 @@ var CurrentFunction Function
 
 var ExpressionType TYPE
 var FinalExpressionType TYPE
+
+//TODO put this in a different file. (expression.go?)
 func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	
 	//Do we need to shunt? This is for operator precidence. (defaults to true)
@@ -391,6 +394,11 @@ func main() {
 		return
 	}
 	
+	ifile, err := os.Create(path.Dir(flag.Arg(0))+"/ilang.u")
+	if err != nil {
+		return
+	}
+	
 	builtin(ioutil.Discard)
 	
 	//Startup the scanner.
@@ -405,6 +413,9 @@ func main() {
 	var softwareBlock bool
 	GainScope()
 	SetVariable("error", NUMBER)
+	
+	fmt.Fprintf(ifile, `DATA i_newline "\n"`+"\n")
+	fmt.Fprintf(output, `.import ilang`+"\n")
 	
 	var tok rune
 	for {
@@ -423,7 +434,7 @@ func main() {
 		switch s.TokenText() {
 			case "import":
 				s.Scan()
-				file, err := os.Open(s.TokenText()+".i")
+			file, err := os.Open(s.TokenText()+".i")
 				if err != nil {
 					RaiseError(&s, "Cannot import "+s.TokenText()+", does not exist!")
 				}
@@ -449,7 +460,7 @@ func main() {
 					fmt.Println(s.Pos(), "Expecting a function but instead, found ", s.TokenText())
 					return
 				}
-				ParseFunction(s.TokenText(), &s, output, false, true)
+				ParseFunction(s.TokenText(), &s, output, false, false)
 				fmt.Fprintf(output, "FORK %v\n", function)
 				for _, v := range functions[function].Returns {
 					fmt.Fprintf(output, "PULL %v\n", v.Push()[4:])
@@ -591,8 +602,7 @@ func main() {
 			case "software":
 					
 				//Add builtin functions to file.
-				builtin(output)
-				fmt.Fprintf(output, `DATA i_newline "\n"`+"\n")
+				builtin(ifile)
 			
 				output.Write([]byte("SOFTWARE\n"))
 				if GUIEnabled {
