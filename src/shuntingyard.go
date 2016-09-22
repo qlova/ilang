@@ -18,7 +18,7 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 		
 		//If it is one of these characters, then we have finished our shunt.
 		switch s.TokenText() {
-			case ")", ",", "\n", "]", ";":
+			case ")", ",", "\n", "]", ";", "{":
 				return name
 		}
 		
@@ -93,7 +93,7 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 			if string(s.Peek()) == ":" {
 				s.Scan()
 				s.Scan()
-				if ExpressionType != STRING {
+				if ExpressionType != STRING && ExpressionType != ARRAY{
 					RaiseError(s, "Cannot slice "+name+", not an array! ("+ExpressionType.String()+")")
 				}	
 				
@@ -144,13 +144,17 @@ func shunt(name string, s *scanner.Scanner, output io.Writer) string {
 		
 		if s.TokenText() == "[" {
 			s.Scan()
-			if ExpressionType != STRING && ExpressionType < USER {
+			if ExpressionType != STRING && ExpressionType < USER && ExpressionType != ARRAY {
 				RaiseError(s, "Cannot index "+name+", not an array! ("+ExpressionType.String()+")")
 			}	
 			
 			var index = expression(s, output)
 			
+
 			ExpressionType = NUMBER
+			if ExpressionType == STRING {
+				ExpressionType = LETTER
+			}
 			
 			unique++
 			

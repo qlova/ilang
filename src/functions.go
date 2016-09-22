@@ -48,73 +48,18 @@ func ParseFunctionDef(s *scanner.Scanner, output io.Writer) {
 		if s.TokenText() == ")" {
 			break
 		}
-		var T TYPE
-		//String arguments.
-		if s.TokenText() == "[" {
-			//Update our function definition with a string argument.
-			function.Args = append(function.Args, STRING)
-			
-			popstring += "GRAB "
-			
-			T = STRING
-			
-			s.Scan()
-			if s.TokenText() != "]" {
-				fmt.Println(s.Pos(), "Expecting ] found ", s.TokenText())
-				return
-			}
-			s.Scan()
-		//Other type of string argument. (Variadic)
-		} else if s.TokenText() == "." {
-			
-			//Update our function definition with a string argument.
-			function.Args = append(function.Args, STRING)
+		
+		//Identfy the type and add it to the function.
+		var ArgumentType = ParseSymbolicType(s)
+		
+		if ArgumentType == MULTIPLE {
 			function.Variadic = true
-			
-			popstring += "GRAB "
-			
-			T = STRING
-			
-			s.Scan()
-			if s.TokenText() != "." {
-				fmt.Println(s.Pos(), "Expecting . found ", s.TokenText())
-				return
-			}
-			s.Scan()
-		//Function arguments.
-		} else if s.TokenText() == "(" {
-			
-			//Update our function definition with a string argument.
-			function.Args = append(function.Args, FUNCTION)
-			
-			T = FUNCTION
-			
-			popstring += "TAKE "
-			s.Scan()
-			if s.TokenText() != ")" {
-				fmt.Println(s.Pos(), "Expecting ) found ", s.TokenText())
-				return
-			}
-			s.Scan()
-		//File arguments.
-		} else if s.TokenText() == "|" {
-			
-			//Update our function definition with a string argument.
-			function.Args = append(function.Args, FILE)
-			
-			T = FILE
-			
-			popstring += "TAKE "
-			s.Scan()
-		} else {
-			//Update our function definition with a numeric argument.
-			function.Args = append(function.Args, NUMBER)
-			
-			T = NUMBER
-			
-			popstring += "PULL "
+			ArgumentType = ARRAY
 		}
-		SetVariable(s.TokenText(), T)
+		function.Args = append(function.Args, ArgumentType)
+		popstring += ArgumentType.Pop()+" "
+		
+		SetVariable(s.TokenText(), ArgumentType)
 		
 		popstring += s.TokenText()+"\n"
 		toReverse = append(toReverse, popstring)
@@ -137,27 +82,22 @@ func ParseFunctionDef(s *scanner.Scanner, output io.Writer) {
 		name := LastDefinedType.String()
 		fmt.Fprintf(output, "GRAB %s\n", name)
 		SetVariable(name, LastDefinedType)
+		SetVariable(name+".", 1)
 	}
 	
 	
 	s.Scan()
-	if s.TokenText() != "{" {
-		if s.TokenText() != "[" {
-			function.Returns = append(function.Returns, NUMBER)
-		} else {
-			function.Returns = append(function.Returns, STRING)
+	
+	//Find out the return value.
+	if s.TokenText() != "{" || (s.TokenText() == "{" && s.Peek() == '}') {
+		var ReturnType = ParseSymbolicType(s)
+		function.Returns = append(function.Returns, ReturnType)
+		if ReturnType == NUMBER {
 			s.Scan()
-			if s.TokenText() != "]" {
-				fmt.Println(s.Pos(), "Expecting ] found ", s.TokenText())
-				return
-			}
-		}
-		s.Scan()
-		if s.TokenText() != "{" {	
-			fmt.Println(s.Pos(), "Expecting { found ", s.TokenText())
-			return
 		}
 	}
+	Expecting(s, "{")
+	
 	s.Scan()
 	if s.TokenText() != "\n" {
 		fmt.Println(s.Pos(), "Expecting newline found ", s.TokenText())
@@ -181,20 +121,11 @@ func ParseFunctionReturns(token string, s *scanner.Scanner, output io.Writer, sh
 	if len(functions[token].Returns) > 0 {
 		unique++
 		id := "i+output+"+fmt.Sprint(unique)
-		switch functions[token].Returns[0] {
-			case STRING:
-				fmt.Fprintf(output, "GRAB %v\n", id)
-				ExpressionType = STRING
-			case NUMBER:
-				fmt.Fprintf(output, "PULL %v\n", id)
-				ExpressionType = NUMBER
-			case FUNCTION:
-				fmt.Fprintf(output, "TAKE %v\n", id)
-				ExpressionType = FUNCTION
-			case FILE:
-				fmt.Fprintf(output, "TAKE %v\n", id)
-				ExpressionType = FILE
-		}
+		
+		var ReturnType = functions[token].Returns[0]
+		
+		fmt.Fprintf(output, "%s %v\n", ReturnType.Pop(), id)
+		ExpressionType = ReturnType
 		
 		if shunting {
 			return shunt(id, s, output)
@@ -274,19 +205,10 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 					name == "inbox" || name == "outbox" ){
 						methodType = FILE
 				}
-				switch sort {
-					case STRING:
-						fmt.Fprintf(output, "SHARE %v\n", name)
-					case NUMBER:
-						fmt.Fprintf(output, "PUSH %v\n", name)
-					case FUNCTION:
-						fmt.Fprintf(output, "RELAY %v\n", name)
-					case FILE:
-						fmt.Fprintf(output, "RELAY %v\n", name)
-						
-					default:
-						fmt.Fprintf(output, "SHARE %v\n", name)
-				}
+				
+				//PUSH type
+				fmt.Fprintf(output, "%s %v\n", sort.Push(), name)
+
 				s.Scan()
 				token = token+"_m_"+methodType.String()
 			}
@@ -357,14 +279,8 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 								token, ExpressionType.String()))
 						}
 						
-						switch ExpressionType {
-							case NUMBER:
-								fmt.Fprintf(output, "PUSH %v\n", argument)
-							case FILE:
-								fmt.Fprintf(output, "RELAY %v\n", argument)
-							default:
-								fmt.Fprintf(output, "SHARE %v\n", argument)
-						}
+						//PUSH type.
+						fmt.Fprintf(output, "%s %v\n", ExpressionType.Push(), argument)
 						
 						goto endTypeCheck
 						
@@ -405,6 +321,7 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 		//Write the function to the ifile if it is builtin.
 		//println(token, functions[token].Data != "", !functions[token].Loaded, !functions[token].Inline)
 		LoadFunction(token)
+		LoadFunction(functions[token].Load)
 		
 		if !noreturns {
 			return ParseFunctionReturns(token, s, output, shunting)

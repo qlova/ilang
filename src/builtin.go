@@ -9,6 +9,7 @@ func builtin(output io.Writer) {
 	IFILE = output
 
 	functions["output"] = Function{Exists:true, Args:[]TYPE{STRING}, Inline:true, Data:"STDOUT"}
+	functions["output_m_array"] = Function{Exists:true, Inline:true, Data:"STDOUT"}
 
 	functions["execute"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Inline:true, Data:"EXECUTE"}
 	
@@ -22,10 +23,15 @@ func builtin(output io.Writer) {
 	
 	functions["open"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{FILE}, Inline:true, Data:"OPEN"}
 	
+	functions["text_m_text"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:""}
+	functions["text_m_array"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:""}
+	functions["text_m_letter"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"RUN text", Load:"text"}
+	
+	functions["len_m_array"] = Function{Exists:true, Returns:[]TYPE{NUMBER}, Load:"len", Inline:true, Data:"RUN len"}
 	functions["len_m_number"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"MAKE"}
 	methods["len"] = true
 
-	functions["strings.equal"] = Function{Exists:true, Args:[]TYPE{STRING, STRING}, Returns:[]TYPE{NUMBER}, Data:`
+	output.Write([]byte(`
 #Returns whether or not a string is equal.
 FUNCTION strings.equal
 	GRAB str1
@@ -65,7 +71,7 @@ FUNCTION strings.equal
 		ADD iterator iterator 1
 	REPEAT
 RETURN
-`}
+`))
 
 
 	functions["bool"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
@@ -81,6 +87,8 @@ FUNCTION bool
 END
 `}
 	
+	functions["copy_m_array"] = Function{Exists:true, Returns:[]TYPE{ARRAY}, Inline: true, Load:"copy", Data:"RUN copy"}
+	methods["copy"] = true
 	functions["copy"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Data:`
 #Compiled with IC.
 FUNCTION copy
@@ -107,7 +115,7 @@ FUNCTION copy
 END
 `}
 
-	functions["output_m_file"] = Function{Exists:true, Args:[]TYPE{STRING}, Inline:true, Data:"OUT"}
+	functions["output_m_pipe"] = Function{Exists:true, Args:[]TYPE{STRING}, Inline:true, Data:"OUT"}
 	methods["output"] = true
 	
 	//Inbuilt output function.
@@ -126,7 +134,7 @@ END
 `}
 
 
-	functions["reada"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
+	functions["reada"] = Function{Exists:true, Args:[]TYPE{LETTER}, Returns:[]TYPE{STRING}, Data:`
 FUNCTION reada
 	PULL delim
 	MUL delim delim -1
@@ -137,8 +145,8 @@ END
 	
 	functions["read"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"PUSH 0\nSTDIN"}
 	
-	functions["reada_m_file"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
-FUNCTION reada_m_file
+	functions["reada_m_pipe"] = Function{Exists:true, Args:[]TYPE{LETTER}, Returns:[]TYPE{STRING}, Data:`
+FUNCTION reada_m_pipe
 	PULL delim
 	MUL delim delim -1
 	PUSH delim
@@ -147,12 +155,12 @@ END
 `}
 	methods["reada"] = true
 	
-	functions["read_m_file"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"PUSH 0\nIN"}
+	functions["read_m_pipe"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"PUSH 0\nIN"}
 	methods["read"] = true
 	
 	//Inbuilt reada function.
-	functions["input_m_file"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
-FUNCTION input_m_file
+	functions["input_m_pipe"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
+FUNCTION input_m_pipe
 	TAKE file
 	PULL delim
 	ARRAY input
@@ -190,8 +198,8 @@ END
 	methods["input"] = true
 
 	//Inbuilt reada function.
-	functions["reada_m_string"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
-FUNCTION reada_m_string
+	functions["reada_m_text"] = Function{Exists:true, Args:[]TYPE{LETTER}, Returns:[]TYPE{STRING}, Data:`
+FUNCTION reada_m_text
 	GRAB s
 	PULL n
 
@@ -271,7 +279,7 @@ FUNCTION reada_m_string
 RETURN
 `}
 
-	functions["info_m_file"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Inline:true, Data:"STAT"}
+	functions["info_m_pipe"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Inline:true, Data:"STAT"}
 	methods["info"] = true
 	
 	//Inbuilt num function.
@@ -468,7 +476,7 @@ FUNCTION binary
 END
 `}
 	
-	functions["text_m_string"] = Function{Exists:true, Args:[]TYPE{}, Returns:[]TYPE{STRING}, Ghost:true}
+	functions["text_m_text"] = Function{Exists:true, Args:[]TYPE{}, Returns:[]TYPE{STRING}, Ghost:true}
 	
 	//Hash function.
 	output.Write([]byte(
@@ -518,7 +526,7 @@ END
 `	))
 
 
-	functions["sort"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{}, Data:`
+	functions["sort"] = Function{Exists:true, Args:[]TYPE{ARRAY}, Returns:[]TYPE{}, Data:`
 FUNCTION i_part
 PULL back
 PULL start
@@ -744,11 +752,11 @@ FUNCTION grab
 	RELAY grabserver
 	RELAY grabserver
 	PUSH 1
-	RUN reada_m_file
+	RUN reada_m_pipe
 	RELAY grabserver
 	GRAB i+output+13
 	PUSH -1
-	RUN reada_m_file
+	RUN reada_m_pipe
 	GRAB a
 	SHARE i+output+13
 RETURN

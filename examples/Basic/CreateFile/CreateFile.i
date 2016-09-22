@@ -1,5 +1,5 @@
 
-function create( []filename ) {
+function create( ""filename ) {
 !	var file = open(filename) 
 	output@file("")
 	issues {

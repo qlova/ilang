@@ -26,6 +26,7 @@ type Function struct {
 	Inline bool
 	Data string
 	Loaded bool
+	Load string
 	
 	Variadic bool
 }
@@ -59,25 +60,42 @@ func Expecting(s *scanner.Scanner, token string) {
 	}
 }
 
+func Collect(output io.Writer, name string, typ TYPE) {
+	if typ >= USER {
+		t := GetType(typ)
+		for i, element := range t.Elements {
+			if element == STRING || element >= USER {
+				fmt.Fprintf(output, "#<GC>\n")
+	
+				unique++
+				var id = unique
+				fmt.Fprintf(output, "PLACE %s\n", name)
+				fmt.Fprintf(output, "PUSH %v\n", i)
+				fmt.Fprintf(output, "GET %s%v\n", "i+gc+", unique)
+				fmt.Fprintf(output, "IF %s%v\n", "i+gc+", id)
+				if element >= USER {
+					fmt.Fprintf(output, "PUSH %s%v\n", "i+gc+", unique)
+					fmt.Fprintf(output, "HEAP\n")
+					unique++
+					fmt.Fprintf(output, "GRAB %s%v\n", "i+gc+", unique)
+					Collect(output, fmt.Sprint("i+gc+", unique), element)
+				}
+				fmt.Fprintf(output, "MUL %s%v %s%v -1\n", "i+gc+", id, "i+gc+", id)
+				fmt.Fprintf(output, "PUSH %s%v\n", "i+gc+", id)
+				fmt.Fprintf(output, "HEAP\nEND\n")
+		
+				fmt.Fprintf(output, "#</GC>\n")
+			}
+		}
+	}
+}
+
 func LoseScope(output io.Writer) {
 
 	//Erm garbage collection???
 	for name, variable := range Scope[len(Scope)-1] {
-		if variable >= USER {
-			t := GetType(variable)
-			for i, element := range t.Elements {
-				switch element {
-					case STRING, USER:
-						unique++
-						fmt.Fprintf(output, "PLACE %s\n", name)
-						fmt.Fprintf(output, "PUSH %v\n", i)
-						fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
-			
-						fmt.Fprintf(output, "MUL %s%v %s%v -1\n", "i+user+", unique, "i+user+", unique)
-						fmt.Fprintf(output, "PUSH %s%v\n", "i+user+", unique)
-						fmt.Fprintf(output, "HEAP\n")
-				}
-			}
+		if Scope[len(Scope)-1][name+"."] != 1 { //Protected variables
+			Collect(output, name, variable)
 		}
 	}
 
@@ -92,6 +110,9 @@ func RaiseError(s *scanner.Scanner, message string) {
 var functions = make( map[string]Function)
 var methods = make( map[string]bool)
 var unique int
+
+//This means that the result should not be garbage collected at the end of the scope.
+var Protected bool
 
 var CurrentFunction Function
 
@@ -113,14 +134,14 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	}()
 	
 	//Types.
-	if string(s.Peek()) != "(" {
-		ExpressionType = ITYPE
+	/*if string(s.Peek()) != "(" {
+		//ExpressionType = ITYPE
 		switch token {
 			case "number":
 				return fmt.Sprint(int(NUMBER)) 
 			
 		}
-	}
+	}*/
 	
 	//fmt.Println("TOKEN ", token)
 	
@@ -164,7 +185,7 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	
 	if  token[0] == '[' {
 		defer func() {
-			ExpressionType = STRING
+			ExpressionType = ARRAY
 		}()
 		return ParseArray(s, output, shunting)
 	}
@@ -172,7 +193,7 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	//Deal with runes. 
 	//	eg. 'a' -> 97
 	if len(token) == 3 && token[0] == '\'' && token[2] == '\'' {
-		ExpressionType = NUMBER
+		ExpressionType = LETTER
 		
 		var value = strconv.Itoa(int(s.TokenText()[1]))
 		
@@ -182,7 +203,7 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 			return value
 		}
 	} else if s.TokenText() == `'\n'` {
-		ExpressionType = NUMBER
+		ExpressionType = LETTER
 		
 		var value = strconv.Itoa(int('\n'))
 		
@@ -192,7 +213,7 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 			return value
 		}
 	} else if s.TokenText() == `'\r'` {
-		ExpressionType = NUMBER
+		ExpressionType = LETTER
 		
 		var value = strconv.Itoa(int('\r'))
 
@@ -381,7 +402,7 @@ func expression(s *scanner.Scanner, output io.Writer, param ...bool) string {
 	}
 }
 
-var FirstIssue, Issues bool
+var FirstIssue, Issues, Switching bool
 
 func main() {
 	flag.Parse()
@@ -435,6 +456,9 @@ func main() {
 			LoadFunction("reada_m_file")
 		}
 	}()
+	
+	var SwitchCase string
+	var FirstSwitch bool
 	
 	GainScope()
 	SetVariable("error", NUMBER)
@@ -549,6 +573,14 @@ func main() {
 					Issues = false
 				}
 				
+				if Switching && !FirstSwitch {
+					LoseScope(output)
+					output.Write([]byte("END\n"))
+					Switching = false
+				} else if Switching {
+					Switching = false
+				}
+				
 			
 			case "else":
 				
@@ -611,16 +643,16 @@ func main() {
 					GainScope()
 					if s.TokenText() != "\n" {
 						if len(CurrentFunction.Returns) > 0 {
-							switch CurrentFunction.Returns[0] {
-								case NUMBER:
-									output.Write([]byte("PUSH "+expression(&s, output)+"\n"))
-								case STRING:
-									output.Write([]byte("SHARE "+expression(&s, output)+"\n"))
-								case FUNCTION:
-									output.Write([]byte("RELAY "+expression(&s, output)+"\n"))
-								case FILE:
-									output.Write([]byte("RELAY "+expression(&s, output)+"\n"))
-							}
+							var ReturnType = CurrentFunction.Returns[0]
+							
+							if ReturnType != USER {
+								fmt.Fprintf(output, "%s %v\n", ReturnType.Push(), expression(&s, output))
+							} else {
+								var name = expression(&s, output)
+								output.Write([]byte("SHARE "+name+"\n"))
+								CurrentFunction.Returns[0] = ExpressionType
+								Scope[len(Scope)-2][name] = 0
+							} 
 						}
 					}
 					Scope = Scope[:len(Scope)-1]
@@ -670,6 +702,40 @@ func main() {
 				GainScope()
 				FirstIssue = true
 				Issues = true
+			
+			case "switch":	
+				s.Scan()
+				SwitchCase = expression(&s, output)
+				GainScope()
+				Expecting(&s, "{")
+				s.Scan()
+				FirstSwitch = true
+				Switching = true
+			
+			case "case":
+				
+				if FirstSwitch {
+					GainScope()
+					s.Scan()
+					unique++
+					fmt.Fprintf(output, "VAR %v\n", "i+issue+"+fmt.Sprint(unique))
+					fmt.Fprintf(output, "SEQ %v %v %v\n", "i+issue+"+fmt.Sprint(unique), SwitchCase, expression(&s, output))
+					fmt.Fprintf(output, "IF %v\n", "i+issue+"+fmt.Sprint(unique))
+					FirstSwitch = false
+				} else {
+					nesting, ok := Scope[len(Scope)-1]["elseif"]
+					if !ok {
+						nesting = 0
+					}
+					LoseScope(output)
+					GainScope()
+					SetVariable("elseif", nesting+1)
+					s.Scan()
+					fmt.Fprintf(output, "ELSE\n")
+					fmt.Fprintf(output, "VAR %v\n", "i+issue+"+fmt.Sprint(unique))
+					fmt.Fprintf(output, "SEQ %v %v %v\n", "i+issue+"+fmt.Sprint(unique), SwitchCase, expression(&s, output))
+					fmt.Fprintf(output, "IF %v\n", "i+issue+"+fmt.Sprint(unique))
+				}
 			
 			case "issue":
 				
@@ -726,13 +792,16 @@ func main() {
 				Expecting(&s, "=")
 				s.Scan()
 				var value = expression(&s, output, false)
-				if ExpressionType != NUMBER {
+				if ExpressionType != NUMBER && ExpressionType != LETTER {
 					RaiseError(&s, "Constant must be a numerical value!")
 				} 
 				fmt.Fprintf(output, ".const %s %s\n", name, value)
-				SetVariable(name, NUMBER)
+				SetVariable(name, ExpressionType)
 				
 			case "var", "for":
+				//RESET protection
+				Protected =false
+			
 				var forloop = s.TokenText() == "for"
 				s.Scan()
 				
@@ -832,39 +901,15 @@ LOOP
 				if s.TokenText() == "is" {
 					s.Scan()
 					fmt.Fprintf(output, "ARRAY %v\n", name)
-					stringtype := s.TokenText()
-					
-					if _, ok := StringToType[stringtype]; !ok {
-						RaiseError(&s, stringtype+" is an unrecognised type!")
-					}
-					
-					s.Scan()
-					//This is effectively a constructor.
-					if s.TokenText() == "(" {
-						for {
-							s.Scan()
-							fmt.Fprintf(output, "PUT %s\n", s.TokenText())
-							s.Scan()
-							if s.TokenText() == ")" {
-								break
-							} else if s.TokenText() != "," {
-								RaiseError(&s, "Expecting , found "+s.TokenText())
-							}
-						}
-					} else {
-						for range DefinedTypes[StringToType[stringtype]-USER].Elements {
-							fmt.Fprintf(output, "PUT 0\n")
-						}
-					}
-					SetVariable(name, StringToType[stringtype])
+					SetVariable(name, ParseConstructor(&s, output))
 					continue
 				}
 				s.Scan()
 				var set = expression(&s, output)
-				if ExpressionType == NUMBER {
+				if ExpressionType == NUMBER || ExpressionType == LETTER {
 					fmt.Fprintf(output, "VAR %v\nADD %v 0 %v\n", name, name, set)
 				}
-				if ExpressionType == STRING {
+				if ExpressionType == STRING || ExpressionType == ARRAY {
 					fmt.Fprintf(output, "SHARE %v\nGRAB %v\n", set, name)
 				}
 				if ExpressionType == FUNCTION || ExpressionType == FILE {
@@ -872,6 +917,9 @@ LOOP
 				}
 				if ExpressionType >= USER {
 					fmt.Fprintf(output, "SHARE %v\nGRAB %v\n", set, name)
+				}
+				if Protected {
+					SetVariable(name+".", 1)
 				}
 				SetVariable(name, ExpressionType)
 				if !forloop {
@@ -928,7 +976,7 @@ LOOP
 					case "&":
 						s.Scan()
 						variable := expression(&s, output)
-						if ExpressionType == NUMBER {
+						if ExpressionType == NUMBER || ExpressionType == LETTER {
 							fmt.Fprintf(output, "PLACE %v\n", name)
 							fmt.Fprintf(output, "PUT %v\n", variable)
 						} else if ExpressionType == STRING {
@@ -951,7 +999,7 @@ LOOP
 						} else {
 						
 							s.Scan()
-							if GetVariable(name) != NUMBER {
+							if GetVariable(name) != NUMBER && GetVariable(name) != LETTER {
 								if GetVariable(name) == UNDEFINED {
 									RaiseError(&s, name+" is undefined!")
 									
@@ -966,12 +1014,12 @@ LOOP
 									
 								} else if GetVariable(name) == FILE {
 									fmt.Fprintf(output, "RELAY %v\nRELOAD %v\n", expression(&s, output), name)
-								} else if GetVariable(name) == STRING || GetVariable(name) >= USER {
+								} else if GetVariable(name) == STRING || GetVariable(name) >= USER || GetVariable(name) == ARRAY {
 									fmt.Fprintf(output, "PLACE %v\nRENAME %v\n", expression(&s, output), name)
 								} else {
 									RaiseError(&s, "Cannot assign to "+name+"! Not an assignable type!.")
 								}
-							} else if GetVariable(name) == NUMBER {
+							} else if GetVariable(name) == NUMBER ||  GetVariable(name) == LETTER {
 								if name == "error" {
 									name = "ERROR"
 								}
@@ -986,7 +1034,7 @@ LOOP
 					default:
 						if s.TokenText() == "[" {
 							t := GetVariable(name)
-							if t == STRING {
+							if t == STRING || t == ARRAY {
 								s.Scan()
 								var index = expression(&s, output, false)
 								
@@ -1020,6 +1068,34 @@ LOOP
 								if index, ok := structure.Table[stringdex]; ok {
 								
 									s.Scan()
+									//We are inferring the type now, we are being smarticles.
+									if s.TokenText() == "is" {
+										s.Scan()
+										unique++
+										value := fmt.Sprint("i+elem+",unique)
+										fmt.Fprintf(output, "ARRAY %v\n", fmt.Sprint("i+elem+",unique))
+										typ := ParseConstructor(&s, output)
+										
+										if structure.Elements[index] == USER {
+											structure.Elements[index] = typ
+										}
+										
+										if typ != structure.Elements[index] {
+											RaiseError(&s, "Type mismatch! "+name+"."+stringdex+" is a "+structure.Elements[index].String()+", not a "+typ.String())
+										}
+										
+										unique++
+										fmt.Fprintf(output, "SHARE %v\n PUSH 0\nHEAP\nPULL %v\n", value, fmt.Sprint("i+elem+",unique))
+										fmt.Fprintf(output, "PLACE %v\nPUSH %v\nSET %v\n", name, index, fmt.Sprint("i+elem+",unique))
+										continue
+									}
+									
+									if s.TokenText() == "." {
+										s.Scan()
+										fmt.Printf("%v Cannot assign to %s.%s.%s\n",s.Pos(),  name, stringdex, s.TokenText())
+										os.Exit(1)
+									}
+									
 									if s.TokenText() != "=" {
 										fmt.Println(s.Pos(), "Expecting = found ", s.TokenText())
 										os.Exit(1)
@@ -1033,9 +1109,9 @@ LOOP
 									}
 									
 									switch structure.Elements[index] {
-										case NUMBER:
+										case NUMBER, LETTER:
 											fmt.Fprintf(output, "PLACE %v\nPUSH %v\nSET %v\n", name, index, value)
-										case STRING:
+										case STRING, ARRAY:
 											unique++
 											fmt.Fprintf(output, "SHARE %v\n PUSH 0\nHEAP\nPULL %v\n", value, fmt.Sprint("i+elem+",unique))
 											fmt.Fprintf(output, "PLACE %v\nPUSH %v\nSET %v\n", name, index, fmt.Sprint("i+elem+",unique))

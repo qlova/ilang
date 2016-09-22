@@ -13,11 +13,15 @@ type TYPE int
 const (
 	UNDEFINED TYPE = iota
 	
+	MULTIPLE
+	
 	ITYPE
 	
 	FUNCTION
 	STRING
+	ARRAY
 	NUMBER
+	LETTER
 	FILE
 	
 	USER
@@ -29,14 +33,49 @@ func (t TYPE) String() string {
 	if t >= USER {
 		return DefinedTypes[t-USER].Name
 	}
-	return map[TYPE]string{FUNCTION:"function", STRING:"string",NUMBER:"number", ITYPE: "type", FILE:"file", UNDEFINED:"undefined"}[t]
+	return map[TYPE]string{
+		FUNCTION:"function", 
+		STRING: "text",
+		ARRAY:  "array",
+		LETTER: "letter",
+		NUMBER:"number", 
+		ITYPE: "type", 
+		FILE: "pipe", 
+		SOMETHING: "Something",
+		UNDEFINED:"undefined",
+	}[t]
 }
 
 func (t TYPE) Push() string {
 	if t >= USER {
 		return "SHARE"
 	}
-	return map[TYPE]string{FUNCTION:"RELAY", STRING:"SHARE",NUMBER:"PUSH",FILE:"RELAY",UNDEFINED:""}[t]
+	return map[TYPE]string{
+		FUNCTION:"RELAY", 
+		ITYPE:"PUSH", 
+		ARRAY:"SHARE", 
+		STRING:"SHARE",
+		LETTER:"PUSH", 
+		NUMBER:"PUSH",
+		FILE:"RELAY",
+		UNDEFINED:"",
+	}[t]
+}
+
+func (t TYPE) Pop() string {
+	if t >= USER {
+		return "GRAB"
+	}
+	return map[TYPE]string{
+		FUNCTION:"TAKE", 
+		STRING:"GRAB",
+		NUMBER:"PULL",
+		ITYPE: "PULL",
+		ARRAY: "GRAB",
+		LETTER: "PULL",
+		FILE:"TAKE",
+		UNDEFINED:"",
+	}[t]
 }
 
 var MethodListHeaped = map[TYPE][]int{}
@@ -118,12 +157,18 @@ func GetType(t TYPE) UserType {
 	if t >= USER {
 		return DefinedTypes[t-USER]
 	} else {
-		panic(t.String()+" is a fundamental type, it cannot be indexed!")
+		return UserType{}
+		//panic(t.String()+" is a fundamental type, it cannot be indexed!")
 	}
 }
 
 func IndexUserType(s *scanner.Scanner, output io.Writer, name, element string) string {
-	t := GetType(GetVariable(name))
+	var t UserType
+	if GetVariable(name) > 0 {
+		t = GetType(GetVariable(name))
+	} else {
+		t = GetType(ExpressionType)
+	}
 	
 	//Deal with indexing Something types.
 	if GetVariable(name) == SOMETHING {
@@ -143,13 +188,13 @@ func IndexUserType(s *scanner.Scanner, output io.Writer, name, element string) s
 		ExpressionType = t.Elements[index]
 	
 		switch t.Elements[index] {
-			case NUMBER, ITYPE:
+			case NUMBER, ITYPE, LETTER:
 				fmt.Fprintf(output, "PLACE %s\n", name)
 				fmt.Fprintf(output, "PUSH %v\n", index)
 				fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
 				return "i+user+"+fmt.Sprint(unique)
 			
-			case STRING, USER:
+			case STRING, USER, ARRAY:
 				fmt.Fprintf(output, "PLACE %s\n", name)
 				fmt.Fprintf(output, "PUSH %v\n", index)
 				fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
@@ -161,7 +206,22 @@ func IndexUserType(s *scanner.Scanner, output io.Writer, name, element string) s
 				
 				return "i+elem+"+fmt.Sprint(unique)
 				
+				
 			default:
+				if t.Elements[index] >= USER {
+					fmt.Fprintf(output, "PLACE %s\n", name)
+					fmt.Fprintf(output, "PUSH %v\n", index)
+					fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
+				
+					fmt.Fprintf(output, "PUSH %s%v\n", "i+user+", unique)
+					fmt.Fprintf(output, "HEAP\n")
+					unique++
+					fmt.Fprintf(output, "GRAB %s%v\n", "i+elem+", unique)
+					
+					Protected = true
+				
+					return "i+elem+"+fmt.Sprint(unique)
+				}
 				fmt.Println(s.Pos(), name+" cannot index "+element+", type is unindexable!!!")
 				os.Exit(1)
 		}
@@ -170,6 +230,78 @@ func IndexUserType(s *scanner.Scanner, output io.Writer, name, element string) s
 		os.Exit(1)
 	}
 	return ""
+}
+
+func ParseSymbolicType(s *scanner.Scanner) TYPE {
+	var result TYPE
+	var symbol = s.TokenText()
+	switch symbol {
+		case "{":
+			result = USER
+			s.Scan()
+			Expecting(s, "}")
+		case "[":
+			result = ARRAY
+			s.Scan()
+			Expecting(s, "]")
+		case "\"\"":
+			result = STRING
+		case "'":
+			result = LETTER
+			s.Scan()
+			Expecting(s, "'")
+		case "|":
+			result = FILE
+			s.Scan()
+			Expecting(s, "|")
+		case "(":
+			result = FUNCTION
+			s.Scan()
+			Expecting(s, ")")
+		case "<":
+			result = ITYPE
+			s.Scan()
+			Expecting(s, ">")
+		case ".":
+			result = MULTIPLE
+			s.Scan()
+			Expecting(s, ".")
+		default:
+			result = NUMBER
+			return result
+	}
+	s.Scan()
+	return result
+}
+
+//Returns the type.
+//Requires an "ARRAY name" before this is called.
+func ParseConstructor(s *scanner.Scanner, output io.Writer) TYPE {
+	stringtype := s.TokenText()
+					
+	if _, ok := StringToType[stringtype]; !ok {
+		RaiseError(s, stringtype+" is an unrecognised type!")
+	}
+	
+	s.Scan()
+	//This is effectively a constructor.
+	if s.TokenText() == "(" {
+		for {
+			s.Scan()
+			fmt.Fprintf(output, "PUT %s\n", s.TokenText())
+			s.Scan()
+			if s.TokenText() == ")" {
+				break
+			} else if s.TokenText() != "," {
+				RaiseError(s, "Expecting , found "+s.TokenText())
+			}
+		}
+	} else {
+		for range DefinedTypes[StringToType[stringtype]-USER].Elements {
+			fmt.Fprintf(output, "PUT 0\n")
+		}
+	}
+	return StringToType[stringtype]
 }
 
 //We have a new type.
@@ -186,26 +318,8 @@ func ParseTypeDef(s *scanner.Scanner, output io.Writer) {
 		if s.TokenText() == "}" {
 			break
 		}
-		//What type is the element?
-		switch s.TokenText() {
-			case "[":
-				s.Scan()
-				s.Scan()
-				t.Elements = append(t.Elements, STRING)
-			
-			case "|":
-				s.Scan()
-				s.Scan()
-				t.Elements = append(t.Elements, FILE)
-			
-			case "(":
-				s.Scan()
-				s.Scan()
-				t.Elements = append(t.Elements, FUNCTION)
-			
-			default:
-				t.Elements = append(t.Elements, NUMBER)
-		}
+		t.Elements = append(t.Elements, ParseSymbolicType(s))
+
 		if s.TokenText() != "," {
 			t.Table[s.TokenText()] = len(t.Elements)-1
 			s.Scan()

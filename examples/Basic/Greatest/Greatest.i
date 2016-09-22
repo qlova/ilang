@@ -1,5 +1,5 @@
 
-function largest([]l) r {
+function largest(""l) r {
 	var i = 0
 	var r = l[0]
 	loop

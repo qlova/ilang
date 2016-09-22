@@ -1,4 +1,4 @@
-function exists([]filename) {
+function exists(""filename) {
 !	var file = open(filename)
 	issues {
 		print(filename+" does not exist")
