@@ -8,6 +8,27 @@ import (
 	"strings"
 )
 
+//This holds the definition of a function.
+type Function struct {
+	Exists bool
+	Args []TYPE
+	Returns []TYPE
+	
+	//Is this really not a function?
+	Ghost bool
+	
+	//Is this a local?
+	Local bool
+	
+	Inline bool
+	Data string
+	Loaded bool
+	Load string
+	
+	Variadic bool
+}
+
+
 var loaded = make(map[string]bool)
 
 var CurrentFunctionName string
