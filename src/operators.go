@@ -76,8 +76,12 @@ func init() {
 	NewOperator(NUMBER, "+", NUMBER, "VAR %c\nADD %c %a %b", false)
 	NewOperator(NUMBER, "-", NUMBER, "VAR %c\nSUB %c %a %b", false)
 	
-	NewOperator(NUMBER, "*", NUMBER, "VAR %c\nMUL %c %a %b", true)
+	NewOperator(NUMBER, "or", NUMBER, "VAR %c\nADD %c %a %b", false)
+	
+	NewOperator(NUMBER, "*", NUMBER, "VAR %c\nMUL %c %a %b", true, NUMBER)
 	NewOperator(NUMBER, "×", NUMBER, "VAR %c\nMUL %c %a %b", true)
+	
+	NewOperator(NUMBER, "and", NUMBER, "VAR %c\nMUL %c %a %b", true)
 	
 	NewOperator(NUMBER, "mod", NUMBER, "VAR %c\nMOD %c %a %b", true)
 	NewOperator(NUMBER, "^",   NUMBER, "VAR %c\nPOW %c %a %b", true)

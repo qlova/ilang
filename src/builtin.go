@@ -23,9 +23,21 @@ func builtin(output io.Writer) {
 	
 	functions["open"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{FILE}, Inline:true, Data:"OPEN"}
 	
+	functions["text"] = Function{Exists:true, Returns:[]TYPE{STRING}, Data:`
+FUNCTION text
+	ARRAY a
+	SHARE a
+RETURN
+	`}
 	functions["text_m_text"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:""}
+	
+	functions["number"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"PUSH 0"}
+	functions["number_m_number"] = Function{Exists:true, Returns:[]TYPE{NUMBER}, Inline:true, Data:""}
+	functions["number_m_array"] = Function{Exists:true, Returns:[]TYPE{NUMBER}, Load:"number_m_text", Inline:true, Data:"RUN number_m_text"}
+	methods["number"] = true
+	
 	functions["text_m_array"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:""}
-	functions["text_m_letter"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"RUN text", Load:"text"}
+	functions["text_m_letter"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"RUN text_m_number", Load:"text_m_number"}
 	
 	functions["len_m_array"] = Function{Exists:true, Returns:[]TYPE{NUMBER}, Load:"len", Inline:true, Data:"RUN len"}
 	functions["len_m_number"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"MAKE"}
@@ -159,42 +171,7 @@ END
 	methods["read"] = true
 	
 	//Inbuilt reada function.
-	functions["input_m_pipe"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
-FUNCTION input_m_pipe
-	TAKE file
-	PULL delim
-	ARRAY input
-	
-	VAR i
-	
-	PUSH delim
-	RELAY file
-	IN
-	
-	VAR condition
-	
-	LOOP
-		ADD i i 1
-		SGT condition i delim
-		IF condition
-			BREAK
-		END
-		
-		PULL byte
-		
-		VAR byte==n1000
-		SEQ byte==n1000 byte -1000
-		IF byte==n1000
-			ERROR 1
-			BREAK
-		END
-		
-		PLACE input
-				PUT byte
-	REPEAT
-	SHARE input
-END
-`}
+	functions["input_m_pipe"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING},Inline:true, Data:"IN"}
 	methods["input"] = true
 
 	//Inbuilt reada function.
@@ -283,8 +260,8 @@ RETURN
 	methods["info"] = true
 	
 	//Inbuilt num function.
-	functions["number"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}, Data:`
-FUNCTION number
+	functions["number_m_text"] = Function{Exists:true, Returns:[]TYPE{NUMBER}, Data:`
+FUNCTION number_m_text
 	GRAB string
 	
 	VAR num
@@ -334,13 +311,21 @@ FUNCTION number
 			RETURN
 		END
 		
-		#Convert from unicode.
-		SUB tens*i tens*i 48
-		MUL tens*i tens tens*i
+		SLT __condition tens*i 48
 		
-		ADD num num tens*i
+		IF __condition
+			ADD num 0 0
+			ADD tens 0 1
+		ELSE
 		
-		MUL tens tens 10
+			#Convert from unicode.
+			SUB tens*i tens*i 48
+			MUL tens*i tens tens*i
+	
+			ADD num num tens*i
+	
+			MUL tens tens 10
+		END
 	REPEAT
 	
 	PUSH num
@@ -348,8 +333,8 @@ END
 `}
 
 	//Inbuilt text function.
-	functions["text"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
-FUNCTION text
+	functions["text_m_number"] = Function{Exists:true, Returns:[]TYPE{STRING}, Data:`
+FUNCTION text_m_number
 	PULL num
 	ARRAY txt
 	
@@ -475,8 +460,6 @@ FUNCTION binary
 	SHARE txt
 END
 `}
-	
-	functions["text_m_text"] = Function{Exists:true, Args:[]TYPE{}, Returns:[]TYPE{STRING}, Ghost:true}
 	
 	//Hash function.
 	output.Write([]byte(

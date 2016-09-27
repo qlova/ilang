@@ -1,9 +1,9 @@
 
 software {
-	var array = [4, 5, 6, 3, 2]
-	sort(array)
+	var a = [4, 5, 6, 3, 2]
+	sort(a)
 	
-	for i = -1; i < len(array)-1; i = i + 1
-		print(array[i])
+	for i = -1; i < len(a)-1; i = i + 1
+		print(a[i])
 	repeat
 }

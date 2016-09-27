@@ -1,8 +1,5 @@
 software {
-	var i = 0
-	loop
-		i = i + 1
-		
+	for i over [1,100]		
 		if i mod 15 = 0
 			print("FizzBuzz")
 		elseif i mod 3 = 0
@@ -12,9 +9,5 @@ software {
 		else
 			print(i)
 		end
-		
-		if i >= 100
-			break
-		end
-	repeat
+	end
 }

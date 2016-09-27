@@ -10,12 +10,37 @@ import (
 
 var loaded = make(map[string]bool)
 
+var CurrentFunctionName string
+
 func LoadFunction(name string) {
 	if functions[name].Data != "" && !loaded[name] && !functions[name].Inline {
 		IFILE.Write([]byte(functions[name].Data))
 	
 		loaded[name] = true
 	}
+}
+
+func ParseConstructDef(s *scanner.Scanner, output io.Writer) {
+	name := NextToken(s, Iname)
+	fmt.Fprintf(output, "FUNCTION %s\n", name)
+	fmt.Fprintf(output, "ARRAY %v\n", LastDefinedType.String())
+	
+	for range DefinedTypes[LastDefinedType-USER].Elements {
+		fmt.Fprintf(output, "PUT 0\n")
+	}
+	
+	SetVariable(LastDefinedType.String(), LastDefinedType)
+	SetVariable(LastDefinedType.String()+".", 1)
+	
+	var function Function
+	function.Exists = true
+	function.Returns = []TYPE{LastDefinedType}
+	functions[name] = function
+	CurrentFunction = function
+
+	s.Scan()	
+	Expecting(s, "{")
+	s.Scan()
 }
 
 func ParseFunctionDef(s *scanner.Scanner, output io.Writer) {
@@ -114,6 +139,7 @@ func ParseFunctionDef(s *scanner.Scanner, output io.Writer) {
 	}
 	
 	CurrentFunction = function
+	CurrentFunctionName = name
 }
 
 //Parse the return value for a function.
@@ -154,6 +180,7 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 	
 	var call = len(calling) == 0 || calling[0]
 	var noreturns = len(calling) > 1 && calling[1]
+	var noargs = len(calling) > 2 && calling[2]
 
 	//Currently variadic functions only work with numbers. Why? No reason (Lazyness).
 	if functions[token].Variadic {
@@ -187,7 +214,8 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 		if s.TokenText() != "," {
 			s.Scan()
 		}
-		for {
+		
+		for !noargs {
 			
 			if s.TokenText() == "@" {
 				s.Scan()
@@ -236,10 +264,10 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 				RaiseError(s, token+" requires "+fmt.Sprint(len(functions[token].Args))+" arguments!")
 			}
 		
-			if len(functions[token].Args) > i {
+			if methods[token] || len(functions[token].Args) > i {
 				var argument = expression(s, output)
 				
-				if ExpressionType != functions[token].Args[i] {
+				if methods[token] && ExpressionType != UNDEFINED && len(functions[token].Args) == 0 {
 					if methods[token] {
 					
 						//Special something calls.
@@ -249,15 +277,36 @@ func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting b
 							fmt.Fprintf(output, "PLACE %v\n", argument)
 							fmt.Fprintf(output, "PUSH 1\nGET itype\nIF 1\nVAR itypetest\nIF itypetest\nERROR 1\n")
 							var ends = 0
-							for key, f := range functions {
+							for key, _ := range functions {
 								split := strings.Split(key, "_m_")
-								if len(f.Args) == 1 && len(split) > 0 && split[0] == token {
-									fmt.Fprintf(output, "ELSE\nSEQ itypetest itype %v\nIF itypetest\n", int(f.Args[0]))
-									switch f.Args[0] {
-										case NUMBER:
+								if len(split) > 1 && split[0] == token {
+									fmt.Fprintf(output, "ELSE\nSEQ itypetest itype %v\nIF itypetest\n", int(StringToType[split[1]]))
+									switch StringToType[split[1]] {
+										case NUMBER, LETTER, ITYPE:
 											fmt.Fprintf(output,"PUSH 0\nGET data\nPUSH data\n")
+										case STRING, ARRAY:
+											unique++
+											fmt.Fprintf(output, "PUSH %v\n", 0)
+											fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
+				
+											fmt.Fprintf(output, "PUSH %s%v\n", "i+user+", unique)
+											fmt.Fprintf(output, "HEAP\n")
+										default:
+											if ExpressionType >= USER {
+												unique++
+												fmt.Fprintf(output, "PUSH %v\n", 0)
+												fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
+				
+												fmt.Fprintf(output, "PUSH %s%v\n", "i+user+", unique)
+												fmt.Fprintf(output, "HEAP\n")
+											}
 									}
-									fmt.Fprintf(output,"RUN %s\n", key)
+									if functions[key].Inline {
+										output.Write([]byte(functions[key].Data+"\n"))
+									} else {
+										//println(key, functions[key].Exists)
+										output.Write([]byte("RUN "+key+"\n"))
+									}
 									ends++
 								}
 							}

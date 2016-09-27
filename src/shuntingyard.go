@@ -11,10 +11,12 @@ import (
 
 //This is an expression shunter. It takes the current identifyer and shunts it into the next operator.
 //I don't think this has anything to do with the shunting yard algorithim, I just like the term.
-func shunt(name string, s *scanner.Scanner, output io.Writer) string {
+func shunt(name string, s *scanner.Scanner, output io.Writer, scan ...bool) string {
 
-		//Scan the next token.
-		s.Scan()
+		if len(scan) == 0 {
+			//Scan the next token.
+			s.Scan()
+		}
 		
 		//If it is one of these characters, then we have finished our shunt.
 		switch s.TokenText() {

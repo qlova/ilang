@@ -5,7 +5,7 @@ software {
 		print("Empty string!")
 	end
 	
-	if len(s) != 0 
+	if s != "" 
 		print("Not an empty string!")
 	end
 }

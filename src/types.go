@@ -129,12 +129,21 @@ var DefinedTypes = []UserType{
 		}
 	*/	
 	UserType{
-		Name: "something",
+		Name: "Something",
 		Elements: []TYPE{ UNDEFINED, ITYPE, UNDEFINED},
 		Table: map[string]int{"type":1, "data":0},
 	},
 }
-var StringToType map[string]TYPE = map[string]TYPE{"something":SOMETHING}
+var StringToType map[string]TYPE = map[string]TYPE{
+	"Something":SOMETHING, 
+	"number":NUMBER, 
+	"text":STRING, 
+	"array":ARRAY, 
+	"letter":LETTER,
+	"pipe":FILE,
+	"function":FUNCTION,
+	"type": ITYPE,
+}
 
 //This is so methods know what type they are acting on.
 var LastDefinedType TYPE
@@ -162,6 +171,64 @@ func GetType(t TYPE) UserType {
 	}
 }
 
+func AssignToUserType(s *scanner.Scanner, output io.Writer, name, element string) {
+	structure := GetType(GetVariable(name))
+	if index, ok := structure.Table[element]; !ok {
+		RaiseError(s, name+" does not have an element named "+element)
+	} else {
+
+		//We are inferring the type now, we are being smarticles.
+		if s.TokenText() == "is" {
+			s.Scan()
+			unique++
+			value := fmt.Sprint("i+elem+",unique)
+			fmt.Fprintf(output, "ARRAY %v\n", fmt.Sprint("i+elem+",unique))
+			typ := ParseConstructor(s, output)
+			
+			if structure.Elements[index] == USER {
+				structure.Elements[index] = typ
+			}
+			
+			if typ != structure.Elements[index] {
+				RaiseError(s, "Type mismatch! "+name+"."+element+" is a "+structure.Elements[index].String()+", not a "+typ.String())
+			}
+			
+			unique++
+			fmt.Fprintf(output, "SHARE %v\n PUSH 0\nHEAP\nPULL %v\n", value, fmt.Sprint("i+elem+",unique))
+			fmt.Fprintf(output, "PLACE %v\nPUSH %v\nSET %v\n", name, index, fmt.Sprint("i+elem+",unique))
+			return
+		}
+		
+		if s.TokenText() == "." {
+			s.Scan()
+			fmt.Printf("%v Cannot assign to %s.%s.%s\n",s.Pos(),  name, element, s.TokenText())
+			os.Exit(1)
+		}
+		
+		if s.TokenText() != "=" {
+			fmt.Println(s.Pos(), "Expecting = found ", s.TokenText())
+			os.Exit(1)
+		}
+		s.Scan()
+		
+		value := expression(s, output)
+		
+		if ExpressionType != structure.Elements[index] {
+			RaiseError(s, "Type mismatch! "+name+"."+element+" is a "+structure.Elements[index].String()+", not a "+ExpressionType.String())
+		}
+		
+		switch structure.Elements[index] {
+			case NUMBER, LETTER:
+				fmt.Fprintf(output, "PLACE %v\nPUSH %v\nSET %v\n", name, index, value)
+			case STRING, ARRAY:
+				unique++
+				fmt.Fprintf(output, "SHARE %v\n PUSH 0\nHEAP\nPULL %v\n", value, fmt.Sprint("i+elem+",unique))
+				fmt.Fprintf(output, "PLACE %v\nPUSH %v\nSET %v\n", name, index, fmt.Sprint("i+elem+",unique))
+			default:
+				RaiseError(s, name+" cannot set "+element+", type is unsettable!!!")
+		}
+	}
+}							
 func IndexUserType(s *scanner.Scanner, output io.Writer, name, element string) string {
 	var t UserType
 	if GetVariable(name) > 0 {
@@ -286,14 +353,21 @@ func ParseConstructor(s *scanner.Scanner, output io.Writer) TYPE {
 	s.Scan()
 	//This is effectively a constructor.
 	if s.TokenText() == "(" {
+		var i int
 		for {
 			s.Scan()
-			fmt.Fprintf(output, "PUT %s\n", s.TokenText())
-			s.Scan()
+			var add = expression(s, output)
+			fmt.Fprintf(output, "PUT %s\n", add)
 			if s.TokenText() == ")" {
 				break
 			} else if s.TokenText() != "," {
 				RaiseError(s, "Expecting , found "+s.TokenText())
+			}
+			i++
+		}
+		for j := range DefinedTypes[StringToType[stringtype]-USER].Elements {
+			if j > i {
+				fmt.Fprintf(output, "PUT 0\n")
 			}
 		}
 	} else {
