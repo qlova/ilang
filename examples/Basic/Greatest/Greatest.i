@@ -2,7 +2,7 @@
 function largest(""l) r {
 	var i = 0
 	var r = l[0]
-	loop
+	loop {
 		if i >= len(l)
 			return r 
 		end
@@ -12,7 +12,7 @@ function largest(""l) r {
 		end
 		
 		i = i + 1
-	repeat
+	}
 }
 
 software {

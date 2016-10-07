@@ -3,7 +3,7 @@ software {
 	var a = [4, 5, 6, 3, 2]
 	sort(a)
 	
-	for i = -1; i < len(a)-1; i = i + 1
+	for i over [0, len(a)-1]
 		print(a[i])
-	repeat
+	end
 }

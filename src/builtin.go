@@ -1,50 +1,474 @@
 package main
 
-import "io"
+//YES, this file is a mess. Maybe this needs to be bindata.
 
-var IFILE io.Writer
 
-//TODO optimise some of the functions to be inline.
-func builtin(output io.Writer) {
-	IFILE = output
+func BlankMethod(r Type) Function {
+	return Function {
+		Exists: true,
+		Inline: true,
+		Returns: []Type{r},
+	}
+}
 
-	functions["output"] = Function{Exists:true, Args:[]TYPE{STRING}, Inline:true, Data:"STDOUT"}
-	functions["output_m_array"] = Function{Exists:true, Inline:true, Data:"STDOUT"}
+func SimpleMethod(r Type, data string) Function {
+	return Function{
+		Exists: true,
+		Returns: []Type{r},
+		Data: data,
+	}
+}
 
-	functions["execute"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Inline:true, Data:"EXECUTE"}
-	
-	functions["link"] = Function{Exists:true, Args:[]TYPE{STRING, NUMBER}, Inline:true, Data:"LINK"}
-	
-	functions["delete"] = Function{Exists:true, Args:[]TYPE{STRING}, Inline:true, Data:"DELETE"}
-	
-	functions["connect"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}, Inline:true, Data:"CONNECT"}
-	
-	functions["load"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Inline:true, Data:"LOAD"}
-	
-	functions["open"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{FILE}, Inline:true, Data:"OPEN"}
-	
-	functions["text"] = Function{Exists:true, Returns:[]TYPE{STRING}, Data:`
+func Method(r Type, Inline bool, Data string, load ...string) Function {
+	if len(load) > 0 {
+		return Function{
+			Exists: true,
+			Returns: []Type{r},
+			Inline:Inline,
+			Data:Data,
+			Method:true,
+			Import:load[0],
+		}
+	} else {
+		return Function{
+			Exists: true,
+			Returns: []Type{r},
+			Inline:Inline,
+			Data:Data,
+			Method:true,
+		}
+	}
+}
+
+func InlineFunction(a []Type, data string, r []Type) Function {
+	return Function{
+		Exists: true,
+		Args: a,
+		Returns: r,
+		Data: data,
+		Inline: true,
+	}
+}
+
+
+func Alias(f string, r Type) Function {
+	return Function{
+		Exists: true,
+		Inline: true,
+		Data: "RUN "+f,
+		Returns: []Type{r},
+		Import: f,
+	}
+}
+
+func (ic *Compiler) Builtin() {
+	ic.DefinedFunctions["number"] = Method(Number, true, "PUSH 0")
+	ic.DefinedFunctions["binary"] = Method(Number, true, "PUSH 0")
+	ic.DefinedFunctions["binary"] = Method(Number, true, "PUSH 0")
+	ic.DefinedFunctions["load"] = Method(Text, true, "PUSH 0")
+	ic.DefinedFunctions["text"] = Method(Number, false, `
 FUNCTION text
 	ARRAY a
 	SHARE a
 RETURN
-	`}
-	functions["text_m_text"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:""}
+`)
+	ic.DefinedFunctions["copy"] = Method(Undefined, true, "")
 	
-	functions["number"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"PUSH 0"}
-	functions["number_m_number"] = Function{Exists:true, Returns:[]TYPE{NUMBER}, Inline:true, Data:""}
-	functions["number_m_array"] = Function{Exists:true, Returns:[]TYPE{NUMBER}, Load:"number_m_text", Inline:true, Data:"RUN number_m_text"}
-	methods["number"] = true
+	ic.DefinedFunctions["text_m_text"] = BlankMethod(Text)
+	ic.DefinedFunctions["text_m_array"] = BlankMethod(Text)
 	
-	functions["text_m_array"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:""}
-	functions["text_m_letter"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"RUN text_m_number", Load:"text_m_number"}
+	ic.DefinedFunctions["open"] = InlineFunction([]Type{Text}, "OPEN", []Type{Pipe})
+	ic.DefinedFunctions["execute"] = InlineFunction([]Type{Text}, "EXECUTE", nil)
+	ic.DefinedFunctions["delete"] = InlineFunction([]Type{Text}, "DELETE", nil)
 	
-	functions["len_m_array"] = Function{Exists:true, Returns:[]TYPE{NUMBER}, Load:"len", Inline:true, Data:"RUN len"}
-	functions["len_m_number"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"MAKE"}
-	methods["len"] = true
+	ic.DefinedFunctions["read"] = InlineFunction(nil, "PUSH 0\nSTDIN", []Type{Text})
+	ic.DefinedFunctions["read_m_pipe"] = InlineFunction(nil, "PUSH 0\nIN", []Type{Text})
+	
+	ic.DefinedFunctions["link"] = InlineFunction([]Type{Text, Number}, "LINK", nil)
+	ic.DefinedFunctions["connect"] = InlineFunction([]Type{Text}, "CONNECT", []Type{Number})
+	
+	ic.DefinedFunctions["load_m_text"] = Method(Text, true, "LOAD")
+	
+	ic.DefinedFunctions["text_m_number"] = Method(Text, true, "PUSH 10\nRUN i_base_number", "i_base_number")
+	ic.DefinedFunctions["text_m_letter"] = Method(Text, true, "PUSH 10\nRUN i_base_number", "i_base_number")
+	
+	ic.DefinedFunctions["binary_m_number"] = Method(Text, true, "PUSH 2\nRUN i_base_number", "i_base_number")
+	
+	ic.DefinedFunctions["binary_m_text"] = Method(Text, true, "PUSH 2\nRUN i_base_string", "i_base_string")
+	
+	ic.DefinedFunctions["number_m_text"] = Method(Number, true, "PUSH 10\nRUN i_base_string", "i_base_string")
+	
+	ic.DefinedFunctions["output"] = InlineFunction([]Type{Text}, "STDOUT", nil)
+	ic.DefinedFunctions["output_m_pipe"] = InlineFunction([]Type{Text}, "OUT", nil)
+	
+	ic.DefinedFunctions["len"] = Method(Undefined, true, "")
+	ic.DefinedFunctions["len_m_array"] = InlineFunction([]Type{Array}, "LEN", nil)
+	ic.DefinedFunctions["len_m_text"] = InlineFunction([]Type{Text}, "LEN", nil)
+	
+	ic.DefinedFunctions["reada"] = Function{Exists:true, Args:[]Type{Letter}, Returns:[]Type{Text}, Data: `
+FUNCTION reada
+	PULL delim
+	MUL delim delim -1
+	PUSH delim
+	STDIN
+RETURN
+`}
 
-	output.Write([]byte(`
-#Returns whether or not a string is equal.
+ic.DefinedFunctions["reada_m_pipe"] = Function{Exists:true, Args:[]Type{Letter}, Returns:[]Type{Text}, Data:`
+FUNCTION reada_m_pipe
+	PULL delim
+	MUL delim delim -1
+	PUSH delim
+	IN
+END
+`}
+	
+	ic.DefinedFunctions["load_m_number"] = Function{Exists:true, Args:[]Type{Letter}, Returns:[]Type{Text}, Data: `
+FUNCTION reada
+	ARRAY a
+	PULL b
+	PUT b
+	LOAD
+RETURN
+`}
+
+
+ic.DefinedFunctions["close"] = Function{Exists:true, Args:[]Type{Pipe}, Data: `
+FUNCTION close
+	TAKE file
+	CLOSE file
+RETURN
+`}
+
+	
+	
+	ic.DefinedFunctions["number_m_array"] = Alias("number_m_text", Text)
+	
+	ic.DefinedFunctions["i_base_string"] = Function{Exists:true, Data: `
+FUNCTION i_base_string
+	PULL base
+	GRAB string
+	
+	VAR num
+	VAR exp
+	ADD exp 0 1
+	
+	VAR end 
+	ADD end 0 #string
+	SUB end end 1
+	
+	VAR i
+	VAR __first
+	VAR __toobig
+	VAR __toosmall
+	VAR __invalid
+	ADD i 0 end
+	LOOP
+		VAR __condition
+		IF __first
+			SUB i i 1
+		ELSE
+			ADD __first 0 1
+		END
+		SGE __condition i 0
+		IF __condition
+			ADD __condition 0 0
+		ELSE
+			BREAK
+		END
+		
+		PLACE string
+			PUSH i
+			GET exp*i
+		SEQ __condition exp*i 45
+		IF __condition 
+			MUL num num -1
+			BREAK
+		END
+		
+		
+		SGT __toobig exp*i 57
+		SLT __toosmall exp*i 46
+		ADD __invalid __toobig __toosmall
+		IF __invalid
+			ERROR 1
+			PUSH 0
+			RETURN
+		END
+		
+		SLT __condition exp*i 48
+		
+		IF __condition
+			ADD num 0 0
+			ADD exp 0 1
+		ELSE
+		
+			#Convert from unicode.
+			SUB exp*i exp*i 48
+			MUL exp*i exp exp*i
+	
+			ADD num num exp*i
+	
+			MUL exp exp base
+		END
+	REPEAT
+	
+	PUSH num
+RETURN
+`}
+
+ic.DefinedFunctions["i_base_number"] = Function{Exists:true, Data: `
+FUNCTION i_base_number
+	PULL base
+	PULL num
+	ARRAY txt
+	
+	VAR test
+	
+	SEQ test num 0
+	IF test
+		PLACE txt
+			PUT 48
+		SHARE txt
+		RETURN
+	END
+	
+	VAR exp
+	VAR exp>num
+	VAR num<0
+	
+	ADD exp exp 1
+	
+	SLT num<0 num 0
+	IF num<0
+		PLACE txt
+			PUT 45
+		MUL num num -1
+	END
+	
+	#What is the highest power to 10 which fits in num.
+	LOOP
+		SGT exp>num exp num
+		IF exp>num 
+			DIV exp exp base
+			BREAK
+		END
+		
+		MUL exp exp base
+	REPEAT
+	
+	VAR num/exp
+	VAR exp*(num/exp)
+	VAR exp<=0
+	
+	#Find each digit.
+	LOOP
+		SLE exp<=0 exp 0
+		IF exp<=0  
+			BREAK
+		END
+		DIV num/exp num exp
+		MUL exp*(num/exp) exp num/exp
+		SUB num num exp*(num/exp)
+		
+		ADD num/exp num/exp 48
+		PLACE txt
+			PUT num/exp
+		
+		DIV exp exp base
+	REPEAT
+	SHARE txt
+END
+`}
+	ic.DefinedFunctions["copy_m_array"] = Function{Exists:true, Args:[]Type{Array}, Returns:[]Type{Array}, Data: `
+#Compiled with IC.
+FUNCTION copy_m_array
+	GRAB array
+	ARRAY c
+	
+	VAR i
+	LOOP
+		VAR i+shunt+1
+		SGE i+shunt+1 i #array
+		IF i+shunt+1
+			SHARE c
+			RETURN
+		END
+		PLACE array 
+			PUSH i 
+			GET i+shunt+3
+		VAR v
+		ADD v 0 i+shunt+3
+		PLACE c
+			PUT v
+		ADD i i 1
+	REPEAT
+END
+`}
+
+	ic.DefinedFunctions["copy_m_text"] = Alias("copy_m_array", Text)
+	
+	ic.DefinedFunctions["text_m_numbers"] = SimpleMethod(Text, `
+FUNCTION text_m_number
+	PULL num
+	ARRAY txt
+	
+	VAR test
+	
+	SEQ test num 0
+	IF test
+		PLACE txt
+			PUT 48
+		SHARE txt
+		RETURN
+	END
+	
+	VAR tens
+	VAR tens>num
+	VAR num<0
+	
+	ADD tens tens 1
+	
+	SLT num<0 num 0
+	IF num<0
+		PLACE txt
+			PUT 45
+		MUL num num -1
+	END
+	
+	#What is the highest power to 10 which fits in num.
+	LOOP
+		SGT tens>num tens num
+		IF tens>num 
+			DIV tens tens 10
+			BREAK
+		END
+		
+		MUL tens tens 10
+	REPEAT
+	
+	VAR num/tens 
+	VAR tens*(num/tens)
+	VAR tens<=0
+	
+	#Find each digit.
+	LOOP
+		SLE tens<=0 tens 0
+		IF tens<=0  
+			BREAK
+		END
+		DIV num/tens num tens
+		MUL tens*(num/tens) tens num/tens
+		SUB num num tens*(num/tens)
+		
+		ADD num/tens num/tens 48
+		PLACE txt
+			PUT num/tens
+		
+		DIV tens tens 10
+	REPEAT
+	SHARE txt
+RETURN
+`)
+	
+	//ic.DefinedFunctions["text_m_letter"] = Alias("text_m_number", Text)
+	
+	ic.DefinedFunctions["strings.equal"] = Function{Exists:true, Args:[]Type{Text}, Returns:[]Type{Text}, Data: `
+
+FUNCTION unhash
+	PULL exp
+	PULL num
+	ARRAY txt
+	
+	VAR test
+	
+	SEQ test num 0
+	IF test
+		SHARE txt
+		RETURN
+	END
+	
+	VAR tens
+	VAR tens>num
+	
+	ADD tens tens 1
+	
+	#What is the highest power to 10 which fits in num.
+	LOOP
+		SGT tens>num tens num
+		IF tens>num 
+			DIV tens tens exp
+			BREAK
+		END
+		
+		MUL tens tens exp
+	REPEAT
+	
+	VAR num/tens 
+	VAR tens*(num/tens)
+	VAR tens<=0
+	
+	#Find each digit.
+	LOOP
+		SLE tens<=0 tens 0
+		IF tens<=0  
+			BREAK
+		END
+		DIV num/tens num tens
+		MUL tens*(num/tens) tens num/tens
+		SUB num num tens*(num/tens)
+	
+		PLACE txt
+			PUT num/tens
+		
+		DIV tens tens exp
+	REPEAT
+	SHARE txt
+RETURN
+
+FUNCTION hash
+	GRAB text
+	PULL exp
+	
+	VAR number
+	VAR tens
+	ADD tens 0 1
+	
+	VAR end 
+	ADD end 0 #text
+	SUB end end 1
+	
+	VAR i
+	VAR __first
+	ADD i 0 end
+	LOOP
+		VAR __condition
+		IF __first
+			SUB i i 1
+		ELSE
+			ADD __first 0 1
+		END
+		SGE __condition i 0
+		IF __condition
+			ADD __condition 0 0
+		ELSE
+			BREAK
+		END
+		
+		PLACE text
+			PUSH i
+			GET tens*i
+		
+		MUL tens*i tens tens*i
+		
+		ADD number number tens*i
+		
+		MUL tens tens exp
+	REPEAT
+	
+	PUSH number
+RETURN
+	
 FUNCTION strings.equal
 	GRAB str1
 	GRAB str2
@@ -83,99 +507,9 @@ FUNCTION strings.equal
 		ADD iterator iterator 1
 	REPEAT
 RETURN
-`))
-
-
-	functions["bool"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
-DATA i_true "true"
-DATA i_false "false"
-FUNCTION bool
-	PULL n
-	IF n
-		SHARE i_true
-		RETURN
-	END
-	SHARE i_false
-END
-`}
-	
-	functions["copy_m_array"] = Function{Exists:true, Returns:[]TYPE{ARRAY}, Inline: true, Load:"copy", Data:"RUN copy"}
-	methods["copy"] = true
-	functions["copy"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Data:`
-#Compiled with IC.
-FUNCTION copy
-	GRAB array
-	ARRAY c
-	
-	VAR i
-	LOOP
-		VAR i+shunt+1
-		SGE i+shunt+1 i #array
-		IF i+shunt+1
-			SHARE c
-			RETURN
-		END
-		PLACE array 
-			PUSH i 
-			GET i+shunt+3
-		VAR v
-		ADD v 0 i+shunt+3
-		PLACE c
-			PUT v
-		ADD i i 1
-	REPEAT
-END
 `}
 
-	functions["output_m_pipe"] = Function{Exists:true, Args:[]TYPE{STRING}, Inline:true, Data:"OUT"}
-	methods["output"] = true
-	
-	//Inbuilt output function.
-	functions["close"] = Function{Exists:true, Args:[]TYPE{FILE}, Data:`
-FUNCTION close
-	TAKE file
-	CLOSE file
-END
-`}
-
-	functions["len"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}, Data:`
-FUNCTION len
-	GRAB data
-	PUSH #data
-END
-`}
-
-
-	functions["reada"] = Function{Exists:true, Args:[]TYPE{LETTER}, Returns:[]TYPE{STRING}, Data:`
-FUNCTION reada
-	PULL delim
-	MUL delim delim -1
-	PUSH delim
-	STDIN
-END
-`}
-	
-	functions["read"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"PUSH 0\nSTDIN"}
-	
-	functions["reada_m_pipe"] = Function{Exists:true, Args:[]TYPE{LETTER}, Returns:[]TYPE{STRING}, Data:`
-FUNCTION reada_m_pipe
-	PULL delim
-	MUL delim delim -1
-	PUSH delim
-	IN
-END
-`}
-	methods["reada"] = true
-	
-	functions["read_m_pipe"] = Function{Exists:true, Returns:[]TYPE{STRING}, Inline:true, Data:"PUSH 0\nIN"}
-	methods["read"] = true
-	
-	//Inbuilt reada function.
-	functions["input_m_pipe"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING},Inline:true, Data:"IN"}
-	methods["input"] = true
-
-	//Inbuilt reada function.
-	functions["reada_m_text"] = Function{Exists:true, Args:[]TYPE{LETTER}, Returns:[]TYPE{STRING}, Data:`
+ic.DefinedFunctions["reada_m_text"] = Function{Exists:true, Args:[]Type{Letter}, Returns:[]Type{Text}, Data:`
 FUNCTION reada_m_text
 	GRAB s
 	PULL n
@@ -256,260 +590,7 @@ FUNCTION reada_m_text
 RETURN
 `}
 
-	functions["info_m_pipe"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Inline:true, Data:"STAT"}
-	methods["info"] = true
-	
-	//Inbuilt num function.
-	functions["number_m_text"] = Function{Exists:true, Returns:[]TYPE{NUMBER}, Data:`
-FUNCTION number_m_text
-	GRAB string
-	
-	VAR num
-	VAR tens
-	ADD tens 0 1
-	
-	VAR end 
-	ADD end 0 #string
-	SUB end end 1
-	
-	VAR i
-	VAR __first
-	VAR __toobig
-	VAR __toosmall
-	VAR __invalid
-	ADD i 0 end
-	LOOP
-		VAR __condition
-		IF __first
-			SUB i i 1
-		ELSE
-			ADD __first 0 1
-		END
-		SGE __condition i 0
-		IF __condition
-			ADD __condition 0 0
-		ELSE
-			BREAK
-		END
-		
-		PLACE string
-			PUSH i
-			GET tens*i
-		SEQ __condition tens*i 45
-		IF __condition 
-			MUL num num -1
-			BREAK
-		END
-		
-		
-		SGT __toobig tens*i 57
-		SLT __toosmall tens*i 46
-		ADD __invalid __toobig __toosmall
-		IF __invalid
-			ERROR 1
-			PUSH 0
-			RETURN
-		END
-		
-		SLT __condition tens*i 48
-		
-		IF __condition
-			ADD num 0 0
-			ADD tens 0 1
-		ELSE
-		
-			#Convert from unicode.
-			SUB tens*i tens*i 48
-			MUL tens*i tens tens*i
-	
-			ADD num num tens*i
-	
-			MUL tens tens 10
-		END
-	REPEAT
-	
-	PUSH num
-END
-`}
-
-	//Inbuilt text function.
-	functions["text_m_number"] = Function{Exists:true, Returns:[]TYPE{STRING}, Data:`
-FUNCTION text_m_number
-	PULL num
-	ARRAY txt
-	
-	VAR test
-	
-	SEQ test num 0
-	IF test
-		PLACE txt
-			PUT 48
-		SHARE txt
-		RETURN
-	END
-	
-	VAR tens
-	VAR tens>num
-	VAR num<0
-	
-	ADD tens tens 1
-	
-	SLT num<0 num 0
-	IF num<0
-		PLACE txt
-			PUT 45
-		MUL num num -1
-	END
-	
-	#What is the highest power to 10 which fits in num.
-	LOOP
-		SGT tens>num tens num
-		IF tens>num 
-			DIV tens tens 10
-			BREAK
-		END
-		
-		MUL tens tens 10
-	REPEAT
-	
-	VAR num/tens 
-	VAR tens*(num/tens)
-	VAR tens<=0
-	
-	#Find each digit.
-	LOOP
-		SLE tens<=0 tens 0
-		IF tens<=0  
-			BREAK
-		END
-		DIV num/tens num tens
-		MUL tens*(num/tens) tens num/tens
-		SUB num num tens*(num/tens)
-		
-		ADD num/tens num/tens 48
-		PLACE txt
-			PUT num/tens
-		
-		DIV tens tens 10
-	REPEAT
-	SHARE txt
-END
-`}
-	methods["text"] = true
-	
-	//Inbuilt text function.
-	functions["binary"] = Function{Exists:true, Args:[]TYPE{NUMBER}, Returns:[]TYPE{STRING}, Data:`
-FUNCTION binary
-	PULL num
-	ARRAY txt
-	
-	VAR test
-	
-	SEQ test num 0
-	IF test
-		PLACE txt
-			PUT 48
-		SHARE txt
-		RETURN
-	END
-	
-	VAR twos
-	VAR twos>num
-	VAR num<0
-	
-	ADD twos twos 1
-	
-	SLT num<0 num 0
-	IF num<0
-		PLACE txt
-			PUT 45
-		MUL num num -1
-	END
-	
-	#What is the highest power to 10 which fits in num.
-	LOOP
-		SGT twos>num twos num
-		IF twos>num 
-			DIV twos twos 2
-			BREAK
-		END
-		
-		MUL twos twos 2
-	REPEAT
-	
-	VAR num/twos
-	VAR twos*(num/twos)
-	VAR twos<=0
-	
-	#Find each digit.
-	LOOP
-		SLE twos<=0 twos 0
-		IF twos<=0  
-			BREAK
-		END
-		DIV num/twos num twos
-		MUL twos*(num/twos) twos num/twos
-		SUB num num twos*(num/twos)
-		
-		ADD num/twos num/twos 48
-		PLACE txt
-			PUT num/twos
-		
-		DIV twos twos 2
-	REPEAT
-	SHARE txt
-END
-`}
-	
-	//Hash function.
-	output.Write([]byte(
-`
-FUNCTION hash
-	GRAB text
-	PULL exp
-	
-	VAR number
-	VAR tens
-	ADD tens 0 1
-	
-	VAR end 
-	ADD end 0 #text
-	SUB end end 1
-	
-	VAR i
-	VAR __first
-	ADD i 0 end
-	LOOP
-		VAR __condition
-		IF __first
-			SUB i i 1
-		ELSE
-			ADD __first 0 1
-		END
-		SGE __condition i 0
-		IF __condition
-			ADD __condition 0 0
-		ELSE
-			BREAK
-		END
-		
-		PLACE text
-			PUSH i
-			GET tens*i
-		
-		MUL tens*i tens tens*i
-		
-		ADD number number tens*i
-		
-		MUL tens tens exp
-	REPEAT
-	
-	PUSH number
-END
-`	))
-
-
-	functions["sort"] = Function{Exists:true, Args:[]TYPE{ARRAY}, Returns:[]TYPE{}, Data:`
+ic.DefinedFunctions["sort"] = Function{Exists:true, Args:[]Type{Array}, Data:`
 FUNCTION i_part
 PULL back
 PULL start
@@ -616,63 +697,8 @@ RUN i_part
 RETURN
 `}
 
-//Hash function.
-	output.Write([]byte(
-`
-FUNCTION unhash
-	PULL exp
-	PULL num
-	ARRAY txt
-	
-	VAR test
-	
-	SEQ test num 0
-	IF test
-		SHARE txt
-		RETURN
-	END
-	
-	VAR tens
-	VAR tens>num
-	
-	ADD tens tens 1
-	
-	#What is the highest power to 10 which fits in num.
-	LOOP
-		SGT tens>num tens num
-		IF tens>num 
-			DIV tens tens exp
-			BREAK
-		END
-		
-		MUL tens tens exp
-	REPEAT
-	
-	VAR num/tens 
-	VAR tens*(num/tens)
-	VAR tens<=0
-	
-	#Find each digit.
-	LOOP
-		SLE tens<=0 tens 0
-		IF tens<=0  
-			BREAK
-		END
-		DIV num/tens num tens
-		MUL tens*(num/tens) tens num/tens
-		SUB num num tens*(num/tens)
-	
-		PLACE txt
-			PUT num/tens
-		
-		DIV tens tens exp
-	REPEAT
-	SHARE txt
-END
-`	))
-	//functions["hash"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{NUMBER}}
 
-	functions["watch"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{}, Data:`
+ic.DefinedFunctions["watch"] = Function{Exists:true, Args:[]Type{Text}, Data:`
 FUNCTION watch
 	GRAB id
 	
@@ -704,7 +730,7 @@ FUNCTION watch
 RETURN`}
 
 
-	functions["grab"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{STRING}, Data:`
+	ic.DefinedFunctions["grab"] = Function{Exists:true, Args:[]Type{Text}, Returns:[]Type{Text}, Data:`
 FUNCTION grab
 	GRAB id
 	
@@ -745,7 +771,7 @@ FUNCTION grab
 RETURN
 `}
 
-	functions["gui"] = Function{Exists:true, Args:[]TYPE{STRING}, Returns:[]TYPE{}, Data:`
+	ic.DefinedFunctions["gui"] = Function{Exists:true, Args:[]Type{Text}, Data:`
 FUNCTION gui
 	GRAB design
 	ARRAY i+tmp+14
@@ -823,7 +849,7 @@ FUNCTION gui
 RETURN
 `}
 
-	functions["edit"] = Function{Exists:true, Args:[]TYPE{STRING, STRING}, Returns:[]TYPE{}, Data:`
+	ic.DefinedFunctions["edit"] = Function{Exists:true, Args:[]Type{Text, Text}, Data:`
 FUNCTION edit
 	GRAB txt
 	GRAB id

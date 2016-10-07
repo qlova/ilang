@@ -1,7 +1,11 @@
 type User {
-	[]Name, Age
-	[]Address
-	[]Phone
+	""Name, Age
+	""Address
+	""Phone
+}
+
+method text() "" {
+	return Name
 }
 
 software {
@@ -11,7 +15,7 @@ software {
 	bob.Phone = "555000555"
 	bob.Age = 33
 	
-	print(bob.Name)
+	print(bob)
 	print(bob.Age)
 	print(bob.Phone)
 	print(bob.Address)

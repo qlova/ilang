@@ -1,58 +1,51 @@
 package main
 
 import (
-	"text/scanner"
-	"fmt"
-	"io"
 	"strings"
 )
 
-var GUIMain, GUIEnabled bool
-
 // gui main { <button> </button> }
-func ParseGUIDef(s *scanner.Scanner, output io.Writer) {
-	s.Scan()
+func (ic *Compiler) ScanGui() {
+	var token = ic.Scan(0)
 	
-	var name = s.TokenText()
-	if s.TokenText() == "{" {
+	var name = token
+	if token == "{" {
 		name = "main"
-		GUIMain = true
+		ic.GUIMainExists = true
 	} else {
-		s.Scan()
+		ic.Scan('{')
 	}
 	
-	fmt.Fprintf(output, "DATA gui_%s \"", name)
-	SetVariable("gui_"+name, STRING)
-	
-	Expecting(s, "{")
+	var asm = "DATA gui_"+name+" \""
+	ic.SetVariable("gui_"+name, Text)
 	
 	var design string
 	var jsbraces = 0
-	s.Scan()
 	for {
-		s.Scan()
-		if s.TokenText() == "}"  {
+		var token = ic.Scan(0)
+		if token == "}"  {
 	 		if jsbraces == 0 {
 				break
 			} else {
 				jsbraces--
 			}
 		}
-		if s.TokenText() == "{" {
+		if token == "{" {
 			jsbraces++
 		}
-		if s.TokenText() != "\n" {
-			if strings.Contains(s.TokenText(), "\"") {
-				design += strings.Replace(s.TokenText(), "\"", "\\\"", -1)
+		if token != "\n" {
+			if strings.Contains(token, "\"") {
+				design += strings.Replace(token, "\"", "\\\"", -1)
 			} else {
-				design += s.TokenText()
+				design += token
 			}
-			if string(s.Peek()) == " " {
+			if ic.Peek() == " " {
 				design += " "		
 			}
 		}
 	}
 	
-	fmt.Fprintf(output, "%s\"\n", design)
-	GUIEnabled = true
+	asm += design+"\""
+	ic.Assembly(asm)
+	ic.GUIExists = true
 }

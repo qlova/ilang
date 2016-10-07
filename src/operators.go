@@ -1,11 +1,5 @@
 package main
 
-import (
-	"text/scanner"
-	"fmt"
-	"io"
-)
-
 
 //This is an operator such as + - *
 //It contains all the information required to compile them.
@@ -14,16 +8,16 @@ type Operator struct {
 	Assembly string
 	Precidence bool
 	
-	A, B TYPE
+	A, B Type
 	
-	ExpressionType TYPE
+	ExpressionType Type
 }
 
-var Operations = make(map[string]map[TYPE]map[TYPE]Operator)
+var Operations = make(map[string]map[Type]map[Type]Operator)
 
 //Opp is a standard arithmetic operator.
-func NewOperator(a TYPE, o string, b TYPE, asm string, p bool, args ...TYPE) {
-	var typ TYPE = 0
+func NewOperator(a Type, o string, b Type, asm string, p bool, args ...Type) {
+	var typ Type = Undefined
 	if len(args) > 0 {
 		typ = args[0]
 	}
@@ -35,15 +29,15 @@ func NewOperator(a TYPE, o string, b TYPE, asm string, p bool, args ...TYPE) {
 		ExpressionType:typ,
 	}
 	if _, ok := Operations[o]; !ok {
-		Operations[o] = make(map[TYPE]map[TYPE]Operator)
+		Operations[o] = make(map[Type]map[Type]Operator)
 	}
 	if _, ok := Operations[o][a]; !ok {
-		Operations[o][a] = make(map[TYPE]Operator)
+		Operations[o][a] = make(map[Type]Operator)
 	}
 	Operations[o][a][b] = opp
 }
 
-func GetOperator(sym string, a TYPE, b TYPE) (Operator, bool) {
+func GetOperator(sym string, a Type, b Type) (Operator, bool) {
 	if _, ok := Operations[sym]; ok {
 		if _, ok := Operations[sym][a]; ok {
 			if o, ok := Operations[sym][a][b]; ok {
@@ -70,71 +64,37 @@ func OperatorPrecident(sym string) bool {
 }
 
 func init() {
-	NewOperator(NUMBER, "/", NUMBER, "VAR %c\nDIV %c %a %b", true)
-	NewOperator(NUMBER, "÷", NUMBER, "VAR %c\nDIV %c %a %b", true)
+	NewOperator(Number, "/", Number, "VAR %c\nDIV %c %a %b", true)
+	NewOperator(Number, "÷", Number, "VAR %c\nDIV %c %a %b", true)
 	
-	NewOperator(NUMBER, "+", NUMBER, "VAR %c\nADD %c %a %b", false)
-	NewOperator(NUMBER, "-", NUMBER, "VAR %c\nSUB %c %a %b", false)
+	NewOperator(Number, "+", Number, "VAR %c\nADD %c %a %b", false)
+	NewOperator(Number, "-", Number, "VAR %c\nSUB %c %a %b", false)
 	
-	NewOperator(NUMBER, "or", NUMBER, "VAR %c\nADD %c %a %b", false)
+	NewOperator(Number, "or", Number, "VAR %c\nADD %c %a %b", false)
 	
-	NewOperator(NUMBER, "*", NUMBER, "VAR %c\nMUL %c %a %b", true, NUMBER)
-	NewOperator(NUMBER, "×", NUMBER, "VAR %c\nMUL %c %a %b", true)
+	NewOperator(Number, "and", Number, "VAR %c\nMUL %c %a %b", true)
 	
-	NewOperator(NUMBER, "and", NUMBER, "VAR %c\nMUL %c %a %b", true)
+	NewOperator(Number, "*", Number, "VAR %c\nMUL %c %a %b", true)
+	NewOperator(Number, "×", Number, "VAR %c\nMUL %c %a %b", true)
 	
-	NewOperator(NUMBER, "mod", NUMBER, "VAR %c\nMOD %c %a %b", true)
-	NewOperator(NUMBER, "^",   NUMBER, "VAR %c\nPOW %c %a %b", true)
+	NewOperator(Number, "mod", Number, "VAR %c\nMOD %c %a %b", true)
+	NewOperator(Number, "^",   Number, "VAR %c\nPOW %c %a %b", true)
 	
-	NewOperator(NUMBER, "=", NUMBER, "VAR %c\nSEQ %c %a %b", true)
-	NewOperator(NUMBER, "!=",NUMBER, "VAR %c\nSNE %c %a %b", true)
-	NewOperator(NUMBER, "<", NUMBER, "VAR %c\nSLT %c %a %b", true)
-	NewOperator(NUMBER, ">", NUMBER, "VAR %c\nSGT %c %a %b", true)
-	NewOperator(NUMBER, "<=",NUMBER, "VAR %c\nSLE %c %a %b", true)
-	NewOperator(NUMBER, ">=",NUMBER, "VAR %c\nSGE %c %a %b", true)
+	NewOperator(Number, "=", Number, "VAR %c\nSEQ %c %a %b", true)
+	NewOperator(Number, "!=",Number, "VAR %c\nSNE %c %a %b", true)
+	NewOperator(Number, "<", Number, "VAR %c\nSLT %c %a %b", true)
+	NewOperator(Number, ">", Number, "VAR %c\nSGT %c %a %b", true)
+	NewOperator(Number, "<=",Number, "VAR %c\nSLE %c %a %b", true)
+	NewOperator(Number, ">=",Number, "VAR %c\nSGE %c %a %b", true)
 	
-	NewOperator(ITYPE, "=", ITYPE, "VAR %c\nSEQ %c %a %b", true)
+	NewOperator(Itype, "=", Itype, "VAR %c\nSEQ %c %a %b", true)
 	
-	NewOperator(STRING, "+", STRING, "ARRAY %c\nJOIN %c %a %b", false)
-	NewOperator(STRING, "=", STRING, "SHARE %a\n SHARE %b\nRUN strings.equal\nPULL %c\n", false)
-	NewOperator(STRING, "!=", STRING, "SHARE %a\n SHARE %b\nRUN strings.equal\nPULL %c\nDIV %c %c 0\n", false)
+	NewOperator(Text, "+", Text, "ARRAY %c\nJOIN %c %a %b", false)
+	NewOperator(Text, "=", Text, "SHARE %a\n SHARE %b\nRUN strings.equal\nPULL %c\n", false)
+	NewOperator(Text, "!=", Text, "SHARE %a\n SHARE %b\nRUN strings.equal\nPULL %c\nDIV %c %c 0\n", false)
 	
-	NewOperator(NUMBER, "²", UNDEFINED, "VAR %c\nPOW %c %a %a", true)
+	NewOperator(Number, "²", Undefined, "VAR %c\nPOW %c %a %a", true)
 	
-	NewOperator(STRING, "#", NUMBER, "SHARE %a\nPUSH %b\nRUN hash\nPULL %c\n", true)
-	NewOperator(NUMBER, "?", NUMBER, "PUSH %a\nPUSH %b\nRUN unhash\nGRAB %c\n", true,  STRING)
-}
-
-var OperatorFunction bool
-
-func ParseOperator(s *scanner.Scanner, output io.Writer) {
-	var A, B TYPE
-	var symbol string
-	
-	A = StringToType[s.TokenText()]
-	
-	s.Scan()
-		symbol = s.TokenText()
-		
-	s.Scan()
-		B = StringToType[s.TokenText()]
-		
-	s.Scan()
-	if s.TokenText() == "{" {
-		s.Scan()
-	}
-	
-	NewOperator(A, symbol, B, "SHARE %a\n SHARE %b\nRUN "+fmt.Sprint(A, "_", symbol, "_", B)+"\nGRAB %c\n", OperatorPrecident(symbol))
-	
-	GainScope()
-	fmt.Fprintf(output, "FUNCTION %s_%s_%s\n", A, symbol, B)
-	fmt.Fprintf(output, "GRAB b\nGRAB a\nARRAY c\n")
-	for range DefinedTypes[A-USER].Elements {
-		fmt.Fprintf(output, "PUT 0\n")
-	}
-	OperatorFunction = true
-	
-	SetVariable("c", A)
-	SetVariable("a", A)
-	SetVariable("b", B)
+	NewOperator(Text, "#", Number, "SHARE %a\nPUSH %b\nRUN hash\nPULL %c\n", true)
+	NewOperator(Number, "?", Number, "PUSH %a\nPUSH %b\nRUN unhash\nGRAB %c\n", true,  Text)
 }

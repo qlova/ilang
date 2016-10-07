@@ -1,5 +1,5 @@
 
-gui main {
+gui {
 	<row>
 		<button id="open">Open</button>
 		<right>
@@ -19,9 +19,9 @@ software {
 	watch("save")
 	watch("ctrl+s")
 	
-	var filename = []
+	var filename = ""
 	
-	loop 
+	loop {
 		! var event = grab("event")
 		issues {
 			break
@@ -33,14 +33,14 @@ software {
 				filename = newfile
 				! var file = open(newfile)
 				if error/0
-					var data = []
-					loop
+					var data = ""
+					loop {
 					
 						! data = data + reada@file('\n') + "\n"
 						issues {
 							break
 						}
-					repeat
+					}
 					edit("texteditor.setValue()", data)
 					close(file)
 				end
@@ -66,5 +66,5 @@ software {
 				edit("*", "")
 			end
 		end
-	repeat
+	}
 }

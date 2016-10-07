@@ -1,7 +1,7 @@
 
-function handler(|client) {
+function handler(||client) {
 	var ip = info@client("ip")
-	output("Connection from "&ip&"\n")
+	print("Connection from ", ip)
 	output("new")
 	loop
 !		var message = reada@client('\n')
@@ -9,7 +9,7 @@ function handler(|client) {
 			close(client)
 			return
 		}
-		output(message&"\n")
+		print(message)
 	repeat
 }
 
@@ -17,13 +17,13 @@ function handler(|client) {
 software {
 	load("tcp://8000")
 	issues {
-		output("Could not open port 8000!\n")
+		print("Could not open port 8000!")
 		return
 	}
 	loop
 		fork handler(open("tcp://8000"))
 		issues {
-			output("THERE WAS AN ERROR\n")
+			print("THERE WAS AN ERROR")
 			return
 		}
 	repeat
