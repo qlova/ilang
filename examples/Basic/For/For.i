@@ -1,8 +1,8 @@
 software {
-	for i = 0; i < 5; i = i + 1
-        for j = 1; j <= i; j = j + 1
+	for i over [1, 5]
+        for j over [1, i]
              output("*")
-        repeat
+        end
         output("\n")
-    repeat
+  	end
 }

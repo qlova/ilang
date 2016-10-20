@@ -1,168 +1,151 @@
 package main
 
 import (
-	"fmt"
-	"text/scanner"
-	"io"
-	"os"
-	//"strconv"
 	"strings"
 )
 
-//This is an expression shunter. It takes the current identifyer and shunts it into the next operator.
-//I don't think this has anything to do with the shunting yard algorithim, I just like the term.
-func shunt(name string, s *scanner.Scanner, output io.Writer) string {
-
-		//Scan the next token.
-		s.Scan()
+func (ic *Compiler) Shunt(name string) string {
+	var token = ic.Scan(0)
+	
+	switch token {
+		case ")", ",", "\n", "]", ";", "{":
+			ic.NextToken = token
+			return name
 		
-		//If it is one of these characters, then we have finished our shunt.
-		switch s.TokenText() {
-			case ")", ",", "\n", "]", ";", "{":
+		case ".":
+			if ic.ExpressionType.IsUser() == Undefined {
+				ic.RaiseError("Type '%v', cannot be indexed!", ic.ExpressionType.Name)
+			}
+			var index = ic.Scan(Name)
+			return ic.Shunt(ic.IndexUserType(name, index))
+		
+		case ":":
+			if ic.ExpressionType.Push == "PUSH" {
+				ic.NextToken = token
 				return name
-		}
-		
-		var token = s.TokenText()
-		
-		//I love doing the shunting.
-		if IsOperator(token+string(s.Peek())) {
-			token += string(s.Peek())
-			s.Scan()
-		}
-		
-		//What a shunting mess.
-		if IsOperator(token) {
-			s.Scan()
-			//fmt.Println(s.TokenText())
-			
-			unique++
-			id := "i+shunt+"+fmt.Sprint(unique)
-			
-			var operator Operator
-			var ok bool
-			
-			var A = ExpressionType
-			var B TYPE
-			var next string
-			if operator, ok = GetOperator(token, ExpressionType, UNDEFINED); !ok {
-			
-				next = expression(s, output, OperatorPrecident(token))
-				B = ExpressionType
-				operator, ok = GetOperator(token, A, B)
-				if token == "=" && A == STRING && B == STRING {
-					ExpressionType = NUMBER
-				}
-			} else if token == "²" {
-				next = name
-				B = ExpressionType
-				operator, ok = GetOperator("*", A, B)
-				token = "*"
 			}
-
-			if ok {
-				
-				asm := operator.Assembly
-				asm = strings.Replace(asm, "%a", name, -1)
-				asm = strings.Replace(asm, "%b", next, -1)
-				asm = strings.Replace(asm, "%c", id, -1)
-				
-				fmt.Fprint(output, asm, "\n")
-				
-				if operator.ExpressionType != 0 {
-					ExpressionType = operator.ExpressionType
-				}
-				
-				if !OperatorPrecident(token) {
-					return shunt(id, s, output)
-				}
-				return id
-				
-			} else {
-				fmt.Println(s.Pos(), "Invalid Operator Matchup! ", A , token, B, "(types do not support the opperator)")
-				os.Exit(1)
+			if ic.ExpressionType.Push != "SHARE" {
+				ic.RaiseError("Cannot index "+name+", not an array! ("+ic.ExpressionType.Name+")")
 			}
-		}
-		
-		if s.TokenText() == "." {
-			s.Scan()
-			return shunt(IndexUserType(s, output, name, s.TokenText()), s, output)
-		}
-		
-		//Slicing strings.
-		if s.TokenText() == ":" {
-			if string(s.Peek()) == ":" {
-				s.Scan()
-				s.Scan()
-				if ExpressionType != STRING && ExpressionType != ARRAY{
-					RaiseError(s, "Cannot slice "+name+", not an array! ("+ExpressionType.String()+")")
-				}	
-				
-				var end = expression(s, output)
-				if ExpressionType != NUMBER {
-					RaiseError(s, "Cannot slice "+name+", with non-numeric value! ("+ExpressionType.String()+")")
-				}	
-				
-				ExpressionType = STRING
-				
-				unique++
 			
-				fmt.Fprintf(output, "SHARE %s\nPUSH %v\nPUSH 0\nSLICE\nGRAB %s\n", name, end, "i+shunt+"+fmt.Sprint(unique))
-				return shunt("i+shunt+"+fmt.Sprint(unique), s, output)
+			var original = ic.ExpressionType
+			
+			var slice = ic.Tmp("slice")
+			ic.Assembly("SHARE ", name)
+			
+			var low,high string
+			if tok := ic.Scan(0); tok != ":" {
+				ic.NextToken = tok
+				low = ic.ScanExpression()
+				ic.Scan(':')
 			} else {
-				s.Scan()
-				
-				var start = expression(s, output, false)
-				if ExpressionType != NUMBER {
-					RaiseError(s, "Cannot slice "+name+", with non-numeric value! ("+ExpressionType.String()+")")
-				}	
-				
-				var end = ""
-				
-				s.Scan()
-				s.Scan()
-				if s.TokenText() != ";" {
-					end = expression(s, output, false)
-					if ExpressionType != NUMBER {
-						RaiseError(s, "Cannot slice "+name+", with non-numeric value! ("+ExpressionType.String()+")")
+				low = "0"
+			}
+			
+			if tok := ic.Scan(0); tok != ":" {
+				ic.NextToken = tok
+				high = ic.ScanExpression()
+				ic.Scan(':')
+			} else {
+				high = "#"+name
+			}
+			
+			ic.Assembly("PUSH ", high)
+			ic.Assembly("PUSH ", low)
+			
+			ic.Assembly("SLICE")
+			
+			ic.Assembly("GRAB ", slice)
+			
+			ic.ExpressionType = original
+			
+			return ic.Shunt(slice)
+		
+		
+		case "(":
+			if ic.ExpressionType != InFunction {
+				ic.RaiseError("Cannot call "+name+", not a function! ("+ic.ExpressionType.Name+")")
+			}
+			var r = ic.ScanFunctionCall(name)
+			ic.Scan(')')
+			
+			return ic.Shunt(r)
+			
+		case "[":
+			if ic.ExpressionType.Push != "SHARE" {
+				ic.RaiseError("Cannot index "+name+", not an array! ("+ic.ExpressionType.Name+")")
+			}
+			var index = ic.ScanExpression()
+			ic.Scan(']')
+			
+			ic.ExpressionType = Number
+			if ic.ExpressionType == Text {
+				ic.ExpressionType = Letter
+			}
+			
+			return ic.Shunt(ic.Index(name, index))
+		
+		default:
+			
+			if IsOperator(token+ic.Peek()) {
+				token += ic.Peek()
+				ic.Scan(0)
+			}
+		
+			if IsOperator(token) {
+				id := ic.Tmp("operator")
+			
+				var operator Operator
+				var ok bool
+			
+				var A = ic.ExpressionType
+				var B Type
+				var next string
+				if operator, ok = GetOperator(token, ic.ExpressionType, Undefined); !ok {
+			
+					if OperatorPrecident(token) {
+						next = ic.ScanExpression()
+					} else {
+						next = ic.expression()
 					}
-					s.Scan()
+					B = ic.ExpressionType
+					
+					operator, ok = GetOperator(token, A, B)
+					
+					if token == "=" && A == Text && B == Text {
+						ic.ExpressionType = Number
+					}
+				} else if token == "²" {
+					next = name
+					B = ic.ExpressionType
+					operator, ok = GetOperator("*", A, B)
+					token = "*"
 				}
-				
-				ExpressionType = STRING
-				
-				unique++
-				
-				if end == "" {
-					fmt.Fprintf(output, "SHARE %s\nPUSH #%s\nPUSH %s\nSLICE\nGRAB %s\n", name, name, start, "i+shunt+"+fmt.Sprint(unique))
-				} else {
-					fmt.Fprintf(output, "SHARE %s\nPUSH %v\nPUSH %v\nSLICE\nGRAB %s\n", name, end, start, "i+shunt+"+fmt.Sprint(unique))
-				}
-				
-				return shunt("i+shunt+"+fmt.Sprint(unique), s, output)
-			}
-		}
-		
-		if s.TokenText() == "[" {
-			s.Scan()
-			if ExpressionType != STRING && ExpressionType < USER && ExpressionType != ARRAY {
-				RaiseError(s, "Cannot index "+name+", not an array! ("+ExpressionType.String()+")")
-			}	
-			
-			var index = expression(s, output)
-			
 
-			ExpressionType = NUMBER
-			if ExpressionType == STRING {
-				ExpressionType = LETTER
-			}
-			
-			unique++
-			
-			fmt.Fprintf(output, "PLACE %v\nPUSH %v\nGET %v\n", name, index, "i+shunt+"+fmt.Sprint(unique))
-			return shunt("i+shunt+"+fmt.Sprint(unique), s, output)
+				if ok {
+				
+					asm := operator.Assembly
+					asm = strings.Replace(asm, "%a", name, -1)
+					asm = strings.Replace(asm, "%b", next, -1)
+					asm = strings.Replace(asm, "%c", id, -1)
+				
+					ic.Assembly(asm)
+				
+					if operator.ExpressionType != Undefined {
+						ic.ExpressionType = operator.ExpressionType
+					}
+				
+					if !OperatorPrecident(token) {
+						return ic.Shunt(id)
+					}
+					return id
+				
+				} else {
+					ic.RaiseError("Invalid Operator Matchup! ", A.Name , token, B.Name, "(types do not support the opperator)")
+				}
 		}
-		
-		fmt.Println(s.Pos(), "[SHUNTING YARD] Unexpected ", s.TokenText(), "("+name+")")
-		os.Exit(1)
-		return ""
+	}
+	
+	ic.RaiseError()
+	return ""
 }

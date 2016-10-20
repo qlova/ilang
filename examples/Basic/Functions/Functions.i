@@ -11,12 +11,12 @@ function add(a,b) r {
 }
 
 function printchars( ..x ) {
-	output(x)
+	print(text(x))
 }
 
 software {
 	var b = f
 	b()
 	call(b)
-	printchars(add(40, 59), 98, 97, 10)
+	printchars(add(40, 59), 98, 97)
 }

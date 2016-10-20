@@ -185,6 +185,7 @@
       <keyword>else</keyword>
       <keyword>fallthrough</keyword>
       <keyword>for</keyword>
+      <keyword>new</keyword>
       
       <keyword>exit</keyword>
       <keyword>error</keyword>
@@ -222,7 +223,10 @@
       <keyword>number</keyword>
       <keyword>text</keyword>
       
-      <keyword>|</keyword>
+      <keyword>pipe</keyword>
+      <keyword>array</keyword>
+      <keyword>Something</keyword>
+      <keyword>letter</keyword>
     </context>
 
     <context id="builtin-constant" style-ref="builtin-constant">
@@ -240,7 +244,6 @@
       <keyword>imag</keyword>
       <keyword>len</keyword>
       <keyword>make</keyword>
-      <keyword>new</keyword>
       <keyword>panic</keyword>
       <keyword>real</keyword>
       <keyword>recover</keyword>

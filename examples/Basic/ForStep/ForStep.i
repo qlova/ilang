@@ -1,6 +1,6 @@
 software {
-	for i=0; i<10; i = i + 2
+	for i=0, i<10; i = i + 2
 		output(text(i)+",")
-	repeat
+	end
 	output("\n")
 }

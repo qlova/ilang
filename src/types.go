@@ -1,177 +1,190 @@
 package main
 
-import (
-	"text/scanner"
-	"fmt"
-	"io"
-	"os"
-)
+var TypeIota int
 
-type TYPE int
-
-//These are the 4 types in I.
-const (
-	UNDEFINED TYPE = iota
+type Type struct {
+	Name, Push, Pop string
+	Int int
+	User bool
 	
-	MULTIPLE
-	
-	ITYPE
-	
-	FUNCTION
-	STRING
-	ARRAY
-	NUMBER
-	LETTER
-	FILE
-	
-	USER
-	SOMETHING
-)
-
-
-func (t TYPE) String() string {
-	if t >= USER {
-		return DefinedTypes[t-USER].Name
-	}
-	return map[TYPE]string{
-		FUNCTION:"function", 
-		STRING: "text",
-		ARRAY:  "array",
-		LETTER: "letter",
-		NUMBER:"number", 
-		ITYPE: "type", 
-		FILE: "pipe", 
-		SOMETHING: "Something",
-		UNDEFINED:"undefined",
-	}[t]
+	Detail *UserType
 }
 
-func (t TYPE) Push() string {
-	if t >= USER {
-		return "SHARE"
-	}
-	return map[TYPE]string{
-		FUNCTION:"RELAY", 
-		ITYPE:"PUSH", 
-		ARRAY:"SHARE", 
-		STRING:"SHARE",
-		LETTER:"PUSH", 
-		NUMBER:"PUSH",
-		FILE:"RELAY",
-		UNDEFINED:"",
-	}[t]
-}
-
-func (t TYPE) Pop() string {
-	if t >= USER {
-		return "GRAB"
-	}
-	return map[TYPE]string{
-		FUNCTION:"TAKE", 
-		STRING:"GRAB",
-		NUMBER:"PULL",
-		ITYPE: "PULL",
-		ARRAY: "GRAB",
-		LETTER: "PULL",
-		FILE:"TAKE",
-		UNDEFINED:"",
-	}[t]
-}
-
-var MethodListHeaped = map[TYPE][]int{}
-
-/*func GenMethodList(output io.Writer, t TYPE) {
-	methods := t.methods()
-	
-	//Put the methods on the heap.
-	if _, ok := MethodListHeaped[t]; !ok {
-		for i := range methods {
-			fmt.Fprintf(output, "SCOPE %s\nPUSH 0\nHEAPIT\n", methods[])
-		}
-	}
-	
-	unique++
-	fmt.Fprintf(output, "ARRAY %s\n", unique)
-	for i := range methods {
-		fmt.Fprintf(output, "PUT %s\n", methods[])
+func (t Type) IsUser() Type {
+	if t.User {
+		return t
+	} else {
+		return Undefined
 	}
 }
 
-//Cache.
-var TypeMethods = map[TYPE][]string{}
-//This cannot be called before all methods have been defined!
-func (t TYPE) Methods() (list []string) {
-	if l, ok := TypeMethods[t]; ok {
-		return l	
-	}
-	for key, f := range functions {
-		split := strings.Split(key, "_m_")
-		if len(split) > 0 {
-			t2 := split[1]
-			
-			if t.String() == t2 {
-				list = append(list, key)
-			}
-		} else if len(f.Args) == 1 && f.Args[0] == t {
-			list = append(list, key)
-		}
-	}
-	TypeMethods[t] = list
-	return
-}*/
-
-
-var DefinedTypes = []UserType{
-	UserType{},
-	/*
-		type Something {
-			data, type, []methods
-		}
-	*/	
-	UserType{
-		Name: "something",
-		Elements: []TYPE{ UNDEFINED, ITYPE, UNDEFINED},
-		Table: map[string]int{"type":1, "data":0},
-	},
-}
-var StringToType map[string]TYPE = map[string]TYPE{"something":SOMETHING}
-
-//This is so methods know what type they are acting on.
-var LastDefinedType TYPE
-
-type UserType struct {
-	Name string
-	Elements []TYPE
+type UserType struct {	
+	Elements []Type
 	Table map[string]int
-	SubElements map[int]TYPE
+	SubElements map[int]Type
 }
 
-func NewType(name string) UserType {
-	return UserType {
-		Name: name,
-		Table: make(map[string]int),
+func NewUserType(name string) Type {
+	t := NewType(name, "SHARE", "GRAB")
+	t.User = true
+	t.Detail = new(UserType)
+	t.Detail.Table = make(map[string]int)
+	return t
+}
+
+func NewType(name string, options ...string) Type {
+	var t Type
+	t.Name = name
+	
+	if len(options) == 2 {
+		t.Pop = options[1]
+		t.Push = options[0]
 	}
+	
+	t.Int = TypeIota
+	TypeIota++
+	
+	return t
 }
 
-func GetType(t TYPE) UserType {
-	if t >= USER {
-		return DefinedTypes[t-USER]
+var Undefined = NewType("undefined")
+var Number = NewType("number", "PUSH", "PULL")
+var Letter = NewType("letter", "PUSH", "PULL")
+var Text = NewType("text", "SHARE", "GRAB")
+var Array = NewType("array", "SHARE", "GRAB")
+var Itype = NewType("type", "PUSH", "PULL")
+var User = NewType("usertype", "SHARE", "GRAB")
+var Pipe = NewType("pipe", "RELAY", "TAKE")
+var Func = NewType("function", "RELAY", "TAKE")
+var Something = NewUserType("Something")
+
+var Variadic = NewFlag()
+
+func (ic *Compiler) ScanSymbolicType() Type {
+	var result Type = Undefined
+	var symbol = ic.Scan(0)
+	switch symbol {
+		case "{":
+			result = User
+			ic.Scan('}')
+		case "[":
+			result = Array
+			ic.Scan(']')
+		case `""`:
+			result = Text
+		case "'":
+			result = Letter
+			ic.Scan('\'')
+		case "|":
+			result = Pipe
+			ic.Scan('|')
+		case "(":
+			result = Func
+			ic.Scan(')')
+		case "<":
+			result = Itype
+			ic.Scan('>')
+		case ".":
+			result = Variadic
+			ic.Scan('.')
+		default:
+			result = Number
+			ic.NextToken = symbol
+			return result
+	}
+	return result
+}
+
+func (ic *Compiler) ScanType() {
+	var name = ic.Scan(Name)
+	t := NewUserType(name)
+	
+	ic.Scan('{')
+	//What are the elements?
+	for {
+		var token = ic.Scan(0)
+		if token == "}" {
+			break
+		}
+		if token != "," && token != "\n" {
+			ic.NextToken = token
+		}
+		
+		MemberType := ic.ScanSymbolicType()
+		
+		ident := ic.Scan(Name)
+		if ident == "}" {
+			break
+		}
+		t.Detail.Elements = append(t.Detail.Elements, MemberType)
+		t.Detail.Table[ident] = len(t.Detail.Elements)-1
+		
+	}
+	ic.DefinedTypes[name] = t
+
+	ic.LastDefinedType = t
+}
+
+func (ic *Compiler) ScanConstructor() string {
+	var name = ic.Scan(Name)
+					
+	if _, ok := ic.DefinedTypes[name]; !ok {
+		ic.RaiseError(name+" is an unrecognised type!")
+	}
+	
+	var token = ic.Scan(0)
+	
+	if ic.Peek() == ")" && token == "(" {
+		ic.ExpressionType = InFunction
+		ic.NextToken = "("
+		return name
+	}
+	
+	var array = ic.Tmp("constructor")
+	
+	ic.Assembly("ARRAY ", array)
+	//This is effectively a constructor.
+	if token == "(" {
+		var i int
+		for {
+			ic.Assembly("PLACE ", array)
+			ic.Assembly("PUT %v", ic.ScanExpression())
+			if i >= len(ic.DefinedTypes[name].Detail.Elements) {
+				ic.RaiseError("Too many arguments passed to constructor!")
+			}
+			if ic.ExpressionType != ic.DefinedTypes[name].Detail.Elements[i] {
+				ic.RaiseError("Mismatched types! Argument (%v) of constructor should be '%v'", i+1, 
+					ic.DefinedTypes[name].Detail.Elements[i])
+			}
+			token = ic.Scan(0)
+			if token == ")" {
+				break
+			} else if token != "," {
+				ic.Expecting(",")
+			}
+			i++
+		}
+	} else if token == "\n" {
+		for range ic.DefinedTypes[name].Detail.Elements {
+			ic.Assembly("PUT 0")
+		}
 	} else {
-		return UserType{}
-		//panic(t.String()+" is a fundamental type, it cannot be indexed!")
+		ic.RaiseError()
 	}
+	ic.ExpressionType = ic.DefinedTypes[name]
+	return array
 }
 
-func IndexUserType(s *scanner.Scanner, output io.Writer, name, element string) string {
+func (ic *Compiler) IndexUserType(name, element string) string {
 	var t UserType
-	if GetVariable(name) > 0 {
-		t = GetType(GetVariable(name))
+	if ic.GetVariable(name) != Undefined {
+		t = *ic.GetVariable(name).Detail
 	} else {
-		t = GetType(ExpressionType)
+		t = *ic.ExpressionType.Detail
 	}
 	
 	//Deal with indexing Something types.
-	if GetVariable(name) == SOMETHING {
+	/*if GetVariable(name) == SOMETHING {
 		switch element {
 			case "number":
 				ExpressionType = NUMBER
@@ -180,169 +193,99 @@ func IndexUserType(s *scanner.Scanner, output io.Writer, name, element string) s
 				fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
 				return "i+user+"+fmt.Sprint(unique)
 		}
-	}
+	}*/
 	
-	if index, ok := t.Table[element]; ok {
+	if index, ok := t.Table[element]; !ok {
+		ic.RaiseError(name+" does not have an element named "+element)
+	} else {
 	
-		unique++
-		ExpressionType = t.Elements[index]
+		var tmp = ic.Tmp("index")
+		ic.ExpressionType = t.Elements[index]
 	
-		switch t.Elements[index] {
-			case NUMBER, ITYPE, LETTER:
-				fmt.Fprintf(output, "PLACE %s\n", name)
-				fmt.Fprintf(output, "PUSH %v\n", index)
-				fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
-				return "i+user+"+fmt.Sprint(unique)
+		switch t.Elements[index].Push {
+			case "PUSH":
+				ic.Assembly("PLACE ", name)
+				ic.Assembly("PUSH ", index)
+				ic.Assembly("GET ", tmp)
+				return tmp
 			
-			case STRING, USER, ARRAY:
-				fmt.Fprintf(output, "PLACE %s\n", name)
-				fmt.Fprintf(output, "PUSH %v\n", index)
-				fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
+			case "SHARE", "RELAY":
+				ic.Assembly("PLACE ", name)
+				ic.Assembly("PUSH ", index)
+				ic.Assembly("GET ", tmp)
+				ic.Assembly("IF ",tmp)
+				ic.GainScope()
+				ic.Assembly("PUSH ", tmp)
+				if t.Elements[index].Push == "RELAY" {
+					ic.Assembly("HEAPIT")
+				} else {
+					ic.Assembly("HEAP")
+				}
+				tmp = ic.Tmp("index")
+				ic.Assembly("GRAB ", tmp)
+				ic.Assembly("SHARE ", tmp)
+				ic.LoseScope()
+				ic.Assembly("ELSE")
+				ic.GainScope()
+				ic.Assembly("ARRAY ", tmp)
+				ic.Assembly("SHARE ", tmp)
+				ic.LoseScope()
+				ic.Assembly("END")
+				ic.Assembly("GRAB ", tmp)
 				
-				fmt.Fprintf(output, "PUSH %s%v\n", "i+user+", unique)
-				fmt.Fprintf(output, "HEAP\n")
-				unique++
-				fmt.Fprintf(output, "GRAB %s%v\n", "i+elem+", unique)
-				
-				return "i+elem+"+fmt.Sprint(unique)
-				
+				return tmp
 				
 			default:
-				if t.Elements[index] >= USER {
-					fmt.Fprintf(output, "PLACE %s\n", name)
-					fmt.Fprintf(output, "PUSH %v\n", index)
-					fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
-				
-					fmt.Fprintf(output, "PUSH %s%v\n", "i+user+", unique)
-					fmt.Fprintf(output, "HEAP\n")
-					unique++
-					fmt.Fprintf(output, "GRAB %s%v\n", "i+elem+", unique)
-					
-					Protected = true
-				
-					return "i+elem+"+fmt.Sprint(unique)
-				}
-				fmt.Println(s.Pos(), name+" cannot index "+element+", type is unindexable!!!")
-				os.Exit(1)
+				ic.RaiseError(name+" cannot index "+element+", type is unindexable!!!")
 		}
-	} else {
-		fmt.Println(s.Pos(), name+" does not have an element named "+element)
-		os.Exit(1)
 	}
 	return ""
 }
 
-func ParseSymbolicType(s *scanner.Scanner) TYPE {
-	var result TYPE
-	var symbol = s.TokenText()
-	switch symbol {
-		case "{":
-			result = USER
-			s.Scan()
-			Expecting(s, "}")
-		case "[":
-			result = ARRAY
-			s.Scan()
-			Expecting(s, "]")
-		case "\"\"":
-			result = STRING
-		case "'":
-			result = LETTER
-			s.Scan()
-			Expecting(s, "'")
-		case "|":
-			result = FILE
-			s.Scan()
-			Expecting(s, "|")
-		case "(":
-			result = FUNCTION
-			s.Scan()
-			Expecting(s, ")")
-		case "<":
-			result = ITYPE
-			s.Scan()
-			Expecting(s, ">")
-		case ".":
-			result = MULTIPLE
-			s.Scan()
-			Expecting(s, ".")
-		default:
-			result = NUMBER
-			return result
-	}
-	s.Scan()
-	return result
-}
-
-//Returns the type.
-//Requires an "ARRAY name" before this is called.
-func ParseConstructor(s *scanner.Scanner, output io.Writer) TYPE {
-	stringtype := s.TokenText()
-					
-	if _, ok := StringToType[stringtype]; !ok {
-		RaiseError(s, stringtype+" is an unrecognised type!")
-	}
-	
-	s.Scan()
-	//This is effectively a constructor.
-	if s.TokenText() == "(" {
-		for {
-			s.Scan()
-			fmt.Fprintf(output, "PUT %s\n", s.TokenText())
-			s.Scan()
-			if s.TokenText() == ")" {
-				break
-			} else if s.TokenText() != "," {
-				RaiseError(s, "Expecting , found "+s.TokenText())
-			}
-		}
+func (ic *Compiler) SetUserType(name, element, value string) {
+	var t UserType
+	if ic.GetVariable(name) != Undefined {
+		t = *ic.GetVariable(name).Detail
 	} else {
-		for range DefinedTypes[StringToType[stringtype]-USER].Elements {
-			fmt.Fprintf(output, "PUT 0\n")
-		}
+		ic.RaiseError("Cannot set type without type identity!")
 	}
-	return StringToType[stringtype]
-}
-
-//We have a new type.
-func ParseTypeDef(s *scanner.Scanner, output io.Writer) {
-	s.Scan()
-		t := NewType(s.TokenText())
-	s.Scan()
-	if s.TokenText() == "{" {
-		s.Scan()
-		s.Scan()
-	}
-	//What are the element?
-	for {
-		if s.TokenText() == "}" {
-			break
-		}
-		t.Elements = append(t.Elements, ParseSymbolicType(s))
-
-		if s.TokenText() != "," {
-			t.Table[s.TokenText()] = len(t.Elements)-1
-			s.Scan()
-		}
-		if s.TokenText() == "}" {
-			break
-		}
-		if s.TokenText() != "," && s.TokenText() != "\n" {
-			fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
-			os.Exit(1)
-		}
-		s.Scan()
-		for s.TokenText() == "\n"  {
-			s.Scan()
-		}
-	}
-	DefinedTypes = append(DefinedTypes, t)
-	StringToType[t.Name] = USER+TYPE(len(DefinedTypes)-1)
-
-	LastDefinedType = USER+TYPE(len(DefinedTypes)-1)
 	
-	/*fmt.Println("NEW TYPE! ", t.Name)
-	for _, v := range t.Elements {
-		fmt.Println(v)
-	}*/
+	if index, ok := t.Table[element]; !ok {
+		ic.RaiseError(name+" does not have an element named "+element)
+	} else {
+	
+		if t.Elements[index] == User {
+			t.Elements[index] = ic.ExpressionType
+		}
+	
+		if ic.ExpressionType != t.Elements[index] {
+			ic.RaiseError("Type mismatch, cannot assign '",ic.ExpressionType.Name,"', to a element of type '",t.Elements[index].Name,"'")		
+		}
+
+		switch t.Elements[index].Push {
+			case "PUSH":
+				ic.Assembly("PLACE ", name)
+				ic.Assembly("PUSH ", index)
+				ic.Assembly("SET ", value)
+			
+			case "SHARE", "RELAY":
+				
+				var tmp = ic.Tmp("index")
+				ic.Assembly("SHARE ", value)
+				ic.Assembly("PUSH 0")
+				if t.Elements[index].Push == "RELAY" {
+					ic.Assembly("HEAPIT")
+				} else {
+					ic.Assembly("HEAP")
+				}
+				ic.Assembly("PULL ", tmp)
+				
+				ic.Assembly("PLACE ", name)
+				ic.Assembly("PUSH ", index)
+				ic.Assembly("SET ", tmp)
+				
+			default:
+				ic.RaiseError(name+" cannot index "+element+", type is unindexable!!!")
+		}
+	}
 }

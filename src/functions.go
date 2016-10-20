@@ -1,331 +1,201 @@
 package main
 
-import (
-	"text/scanner"
-	"fmt"
-	"io"
-	"os"
-	"strings"
-)
-
-var loaded = make(map[string]bool)
-
-func LoadFunction(name string) {
-	if functions[name].Data != "" && !loaded[name] && !functions[name].Inline {
-		IFILE.Write([]byte(functions[name].Data))
+type Function struct {
+	Exists bool
+	Loaded bool
+	Import string
+	Inline bool
+	Data string
 	
-		loaded[name] = true
-	}
+	Method bool
+	
+	Variadic bool
+	
+	Returns []Type
+	Args []Type
 }
 
-func ParseFunctionDef(s *scanner.Scanner, output io.Writer) {
-	var name string
+func (ic *Compiler) ScanFunctionCall(name string) string {
+	f := ic.DefinedFunctions[name]
+	
+	//TODO allow variadic arguments along with normal arguments.
+	if f.Variadic {
+		id := ic.Tmp("variadic")
+		
+		ic.Assembly("ARRAY ", id)
+		for {
+			value := ic.ScanExpression()
+			ic.Assembly("PLACE ", id)
+			ic.Assembly("PUT ", value)
+			
+			token := ic.Scan(0)
+			if token != "," {
+				if token != ")" {
+					ic.RaiseError()
+				}
+				ic.NextToken = ")"
+				break
+			}
+		}
+	
+		ic.Assembly("SHARE ", id)
+	} else {
+		for i := range f.Args {
+			arg := ic.ScanExpression()
+			
+			if f.Args[i] != ic.ExpressionType {
+				ic.RaiseError("Type mismatch! Argument ",i+1," of '"+name+"()' expects ",f.Args[i].Name,", got ",ic.ExpressionType.Name) 
+			}
+			
+			ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
+			
+			token := ic.Scan(0)
+			if token != "," && token != ")" {
+				ic.RaiseError()
+			}
+			if token == ")" {
+				ic.NextToken = ")"
+				break
+			}
+		}
+		if f.Method && ic.Peek() != ")" {
+			arg := ic.ScanExpression()
+			if _, ok := ic.DefinedFunctions[name+"_m_"+ic.ExpressionType.Name]; !ok {
+				ic.RaiseError("Method ",name," for type ",ic.ExpressionType.Name, "does not exist!")
+			}
+			
+			//Hardcoded LEN optimisation.
+			if name == "len" {
+				ic.ExpressionType = Number
+				return "#"+arg
+			}
+			
+			ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
+			f = ic.DefinedFunctions[name+"_m_"+ic.ExpressionType.Name]
+			name = name+"_m_"+ic.ExpressionType.Name
+		}
+	}
+	
+	ic.Assembly(ic.RunFunction(name))
+	
+	if len(f.Returns) > 0 {
+		id := ic.Tmp("result")
+		
+		var ReturnType = f.Returns[0]
+		
+		
+		ic.Assembly("%v %v", ReturnType.Pop, id)
+		ic.ExpressionType = ReturnType
+		
+		return id
+	}	
+	return ""
+}
+
+func (ic *Compiler) ScanFunction() {
+	var name string = ic.Scan(Name)
+	
+	ic.Assembly("FUNCTION ", name)
+	ic.Scan('(')
+	ic.GainScope()
+	
+	ic.function(name)
+}
+
+func (ic *Compiler) ScanNew() {
+	var name string = ic.Scan(Name)
+	
+	ic.Assembly("FUNCTION ", name)
+	ic.Scan('{')
+	ic.GainScope()
+	
+	ic.SetFlag(New)
+	ic.SetFlag(InMethod)
+	ic.SetFlag(InFunction)
+	
+	ic.Assembly("PUSH ", len(ic.LastDefinedType.Detail.Elements))
+	ic.Assembly("MAKE")
+	ic.Assembly("GRAB ", ic.LastDefinedType.Name)
+	ic.SetVariable(ic.LastDefinedType.Name, ic.LastDefinedType)
+	
+	ic.DefinedFunctions[name] = Function{Exists:true, Returns:[]Type{ic.LastDefinedType}}
+}
+
+func (ic *Compiler) ScanMethod() {
+	var name string = ic.Scan(Name)
+	name += "_m_"+ic.LastDefinedType.Name
+	
+	ic.Assembly("FUNCTION ", name)
+	ic.Scan('(')
+	ic.GainScope()
+	
+	ic.Assembly("%v %v", ic.LastDefinedType.Pop, ic.LastDefinedType.Name)
+	ic.SetVariable(ic.LastDefinedType.Name, ic.LastDefinedType)
+	
+	ic.function(name)
+	ic.SetFlag(InMethod)
+}
+
+func (ic *Compiler) function(name string) {
 	var function Function
 	
-	var method bool = s.TokenText() == "method"
-	var methodType = LastDefinedType
-	
-	
-	// function name(param1, param2) returns {
-	output.Write([]byte("FUNCTION "))
-	s.Scan()
-	if method {
-		fmt.Fprintf(output, "%v_m_%v\n", s.TokenText(), methodType)
-	} else {
-		output.Write([]byte(s.TokenText()+"\n"))
-	}
-	name = s.TokenText()
-	s.Scan()
-	if s.TokenText() != "(" {
-		fmt.Println(s.Pos(), "Expecting ( found ", s.TokenText())
-		return
-	}
-	
 	//We need to reverse the POP's because of stack pain.
-	var toReverse []string
-	for tok := s.Scan(); tok != scanner.EOF; {
-		var popstring string
-		if s.TokenText() == ")" {
-			break
-		}
+	if ic.Peek() != ")" {
+		var toReverse []string
+		for {
+			//Identfy the type and add it to the function.
+			var ArgumentType = ic.ScanSymbolicType()
 		
-		//Identfy the type and add it to the function.
-		var ArgumentType = ParseSymbolicType(s)
+			if ArgumentType == Variadic {
+				function.Variadic = true
+				ArgumentType = Array
+			}
+			function.Args = append(function.Args, ArgumentType)
 		
-		if ArgumentType == MULTIPLE {
-			function.Variadic = true
-			ArgumentType = ARRAY
-		}
-		function.Args = append(function.Args, ArgumentType)
-		popstring += ArgumentType.Pop()+" "
+			var name = ic.Scan(Name)
 		
-		SetVariable(s.TokenText(), ArgumentType)
+			ic.SetVariable(name, ArgumentType)
 		
-		popstring += s.TokenText()+"\n"
-		toReverse = append(toReverse, popstring)
-		s.Scan()
-		if s.TokenText() == ")" {
-			break
+			toReverse = append(toReverse, ArgumentType.Pop+" "+name)
+		
+			token := ic.Scan(0)
+		
+			if token != "," {
+				if token != ")" {
+					ic.RaiseError()
+				}
+				break
+			}
 		}
-		if s.TokenText() != "," {
-			fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
-			return
+		for i := len(toReverse)-1; i>=0; i-- {
+			ic.Assembly(toReverse[i])
 		}
-		s.Scan()
-	}
-	for i := len(toReverse)-1; i>=0; i-- {
-		output.Write([]byte(toReverse[i]))
-	}
-	
-	//The method variable needs to be popped and put into scope.
-	if method {
-		name := LastDefinedType.String()
-		fmt.Fprintf(output, "GRAB %s\n", name)
-		SetVariable(name, LastDefinedType)
-		SetVariable(name+".", 1)
+	} else {
+		ic.Scan(')')
 	}
 	
 	
-	s.Scan()
+	token := ic.Scan(0)
 	
 	//Find out the return value.
-	if s.TokenText() != "{" || (s.TokenText() == "{" && s.Peek() == '}') {
-		var ReturnType = ParseSymbolicType(s)
-		function.Returns = append(function.Returns, ReturnType)
-		if ReturnType == NUMBER {
-			s.Scan()
-		}
-	}
-	Expecting(s, "{")
+	if token != "{" || (token == "{" && ic.Peek() == "}") {
 	
-	s.Scan()
-	if s.TokenText() != "\n" {
-		fmt.Println(s.Pos(), "Expecting newline found ", s.TokenText())
-		return
+		ic.NextToken = token
+		var ReturnType = ic.ScanSymbolicType()
+		
+		function.Returns = append(function.Returns, ReturnType)
+		
+		if ReturnType == Number {
+			ic.Scan(Name)
+		}
+		ic.Scan('{')
 	}
 	
 	function.Exists = true
 	
-	if method {
-		methods[name] = true
-		functions[name+"_m_"+fmt.Sprint(methodType)] = function	
-	} else {
-		functions[name] = function
-	}
+	ic.DefinedFunctions[name] = function
 	
-	CurrentFunction = function
-}
-
-//Parse the return value for a function.
-func ParseFunctionReturns(token string, s *scanner.Scanner, output io.Writer, shunting bool) string {	
-	if len(functions[token].Returns) > 0 {
-		unique++
-		id := "i+output+"+fmt.Sprint(unique)
-		
-		var ReturnType = functions[token].Returns[0]
-		
-		fmt.Fprintf(output, "%s %v\n", ReturnType.Pop(), id)
-		ExpressionType = ReturnType
-		
-		if shunting {
-			return shunt(id, s, output)
-		}	
-		return id
-	}	
+	ic.CurrentFunction = function
 	
-	return ""	
-}
-
-/*
-	Parse a function.
-	eg.	output(text(20)) becomes:
-	
-		PUSH 20
-		RUN text
-		POPSTRING i+output+id
-		
-		PUSHSTRING i+output+id
-		RUN output
-*/
-func ParseFunction(name string, s *scanner.Scanner, output io.Writer, shunting bool, calling ...bool) string {
-	var token = name
-
-	var methodType TYPE
-	
-	var call = len(calling) == 0 || calling[0]
-	var noreturns = len(calling) > 1 && calling[1]
-
-	//Currently variadic functions only work with numbers. Why? No reason (Lazyness).
-	if functions[token].Variadic {
-		unique++
-		id := "i+output+"+fmt.Sprint(unique)
-		
-		fmt.Fprintf(output, "ARRAY %v\n", id)
-		for tok := s.Scan(); tok != scanner.EOF; {
-			
-			if s.TokenText() == ")" {
-				break
-			}
-			s.Scan()
-		
-			fmt.Fprintf(output, "PLACE %v\nPUT %v\n", id, expression(s, output))
-			
-			if s.TokenText() == ")" {
-				break
-			}
-			
-			if s.TokenText() != "," {
-				fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
-				os.Exit(1)
-			}
-		}
-	
-		fmt.Fprintf(output, "SHARE %v\n", id)
-	} else {
-
-		var i int
-		if s.TokenText() != "," {
-			s.Scan()
-		}
-		for {
-			
-			if s.TokenText() == "@" {
-				s.Scan()
-				var name string
-				var sort TYPE
-				if s.TokenText() == "(" {
-					name = expression(s, output, false)
-					sort = ExpressionType
-				} else {
-					name = s.TokenText()
-					sort = GetVariable(s.TokenText())
-				}
-				methodType = sort
-				if sort == UNDEFINED && (
-					name == "inbox" || name == "outbox" ){
-						methodType = FILE
-				}
-				
-				//PUSH type
-				fmt.Fprintf(output, "%s %v\n", sort.Push(), name)
-
-				s.Scan()
-				token = token+"_m_"+methodType.String()
-			}
-		
-			if s.TokenText() == ")" {
-				if len(functions[token].Args) > i {
-					RaiseError(s, token+" requires "+fmt.Sprint(len(functions[token].Args))+" arguments!")
-				}
-				return token
-			}
-			
-			if s.TokenText() == "," && !(len(functions[token].Args) > i) {
-				break
-			}
-			
-			s.Scan()
-			if s.TokenText() == ")" {
-				if len(functions[token].Args) > i {
-					RaiseError(s, token+" requires "+fmt.Sprint(len(functions[token].Args))+" arguments!")
-				}
-				break
-			}
-						
-			if len(functions[token].Args) < i {
-				RaiseError(s, token+" requires "+fmt.Sprint(len(functions[token].Args))+" arguments!")
-			}
-		
-			if len(functions[token].Args) > i {
-				var argument = expression(s, output)
-				
-				if ExpressionType != functions[token].Args[i] {
-					if methods[token] {
-					
-						//Special something calls.
-						if ExpressionType == SOMETHING {
-							
-							//s.Scan()
-							fmt.Fprintf(output, "PLACE %v\n", argument)
-							fmt.Fprintf(output, "PUSH 1\nGET itype\nIF 1\nVAR itypetest\nIF itypetest\nERROR 1\n")
-							var ends = 0
-							for key, f := range functions {
-								split := strings.Split(key, "_m_")
-								if len(f.Args) == 1 && len(split) > 0 && split[0] == token {
-									fmt.Fprintf(output, "ELSE\nSEQ itypetest itype %v\nIF itypetest\n", int(f.Args[0]))
-									switch f.Args[0] {
-										case NUMBER:
-											fmt.Fprintf(output,"PUSH 0\nGET data\nPUSH data\n")
-									}
-									fmt.Fprintf(output,"RUN %s\n", key)
-									ends++
-								}
-							}
-							
-							for i := 0; i < ends; i ++ {
-								fmt.Fprintf(output, "END\n")
-							}
-							fmt.Fprintf(output, "END\nEND\n")
-							if call && !noreturns {
-								return ParseFunctionReturns(token, s, output, shunting)
-							}
-							return ""
-						}
-					
-						token = token+"_m_"+ExpressionType.String()
-						
-						if !functions[token].Exists || len(functions[token].Args) != 0 {
-							RaiseError(s, fmt.Sprintf("%v is not defined for arguments of type %v!", 
-								token, ExpressionType.String()))
-						}
-						
-						//PUSH type.
-						fmt.Fprintf(output, "%s %v\n", ExpressionType.Push(), argument)
-						
-						goto endTypeCheck
-						
-					} else {	
-						RaiseError(s, fmt.Sprintf("Type mismatch! Argument %v of '%v()' expects %v, got %v (%v)", 
-							fmt.Sprint(i+1), token, functions[token].Args[i].String(), ExpressionType.String(), argument))
-					}
-				}
-				fmt.Fprintf(output, "%v %v\n", functions[token].Args[i].Push(), argument)
-			} else {
-				break
-			}
-			endTypeCheck:
-			i++
-		
-			if s.TokenText() == ")" {
-				if len(functions[token].Args) > i {
-					RaiseError(s, token+" requires "+fmt.Sprint(len(functions[token].Args))+" arguments!")
-				}
-				break
-			}
-			if s.TokenText() != "," {
-				fmt.Println(s.Pos(), "Expecting , found ", s.TokenText())
-				os.Exit(1)
-			}
-		}	
-	}
-	
-	if call && !functions[token].Ghost {
-		if functions[token].Local {
-			output.Write([]byte("EXE "+token+"\n"))
-		} else if functions[token].Inline {
-			 output.Write([]byte(functions[token].Data+"\n"))
-		} else {
-			output.Write([]byte("RUN "+token+"\n"))
-		}
-		
-		//Write the function to the ifile if it is builtin.
-		//println(token, functions[token].Data != "", !functions[token].Loaded, !functions[token].Inline)
-		LoadFunction(token)
-		LoadFunction(functions[token].Load)
-		
-		if !noreturns {
-			return ParseFunctionReturns(token, s, output, shunting)
-		}
-	}
-	return ""
+	ic.SetFlag(InFunction)
 }

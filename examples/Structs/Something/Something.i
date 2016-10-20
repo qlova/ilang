@@ -1,12 +1,17 @@
 software {
-	var a is something
+	var a is Something
 	
-	a = 3
+	a = [97]
 	
+	print(a) //This is slow.
 	if a.type = number
 		print("a is a number!")
-		print(a) //This is slow.
+		print(a.number) //This is fast.
 	end
-	
-	
+	if a.type = text
+		print("a is text")
+	end
+	if a.type = array
+		print("a is array")
+	end
 }

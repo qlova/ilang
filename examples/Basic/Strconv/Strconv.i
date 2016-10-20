@@ -1,6 +1,6 @@
 
 function numeric(""n) {
-!	number(n)
+	number(n)
 	issues {
 		print(n, "  is not numeric!")
 		return
