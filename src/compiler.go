@@ -620,7 +620,7 @@ func (ic *Compiler) Compile() {
 				ic.GainScope()
 				
 			case "else":
-				nesting, ok := ic.Scope[len(ic.Scope)-2]["flag_nesting"]
+				nesting, ok := ic.Scope[len(ic.Scope)-1]["flag_nesting"]
 				if !ok {
 					nesting.Int = 0
 				}
@@ -629,7 +629,7 @@ func (ic *Compiler) Compile() {
 				ic.GainScope()
 				ic.SetVariable("flag_nesting", Type{Int:nesting.Int})
 			case "elseif":
-				nesting, ok := ic.Scope[len(ic.Scope)-2]["flag_nesting"]
+				nesting, ok := ic.Scope[len(ic.Scope)-1]["flag_nesting"]
 				if !ok {
 					nesting.Int = 0
 				}
@@ -644,7 +644,7 @@ func (ic *Compiler) Compile() {
 			
 			case "end":
 			
-				nesting, ok := ic.Scope[len(ic.Scope)-2]["flag_nesting"]
+				nesting, ok := ic.Scope[len(ic.Scope)-1]["flag_nesting"]
 				if ok {
 					for i:=0; i < nesting.Int; i++ {
 						ic.Assembly("END")
