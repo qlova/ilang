@@ -72,8 +72,14 @@ func (ic *Compiler) Shunt(name string) string {
 			return ic.Shunt(r)
 			
 		case "[":
+			var list bool
+			var typename string
 			if ic.ExpressionType.Push != "SHARE" {
 				ic.RaiseError("Cannot index "+name+", not an array! ("+ic.ExpressionType.Name+")")
+			}
+			if ic.ExpressionType.List {
+				list = true
+				typename = ic.ExpressionType.Name
 			}
 			var index = ic.ScanExpression()
 			ic.Scan(']')
@@ -83,7 +89,16 @@ func (ic *Compiler) Shunt(name string) string {
 				ic.ExpressionType = Letter
 			}
 			
-			return ic.Shunt(ic.Index(name, index))
+			if !list {
+				return ic.Shunt(ic.Index(name, index))
+			} else {
+				var listdex = ic.Tmp("listdex")
+				ic.Assembly("PUSH ", ic.Index(name, index))
+				ic.Assembly("HEAP")
+				ic.Assembly("GRAB ", listdex)
+				ic.ExpressionType = ic.DefinedTypes[typename]
+				return ic.Shunt(listdex)
+			}
 		
 		default:
 			

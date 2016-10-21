@@ -27,9 +27,13 @@ func (ic *Compiler) ScanForLoop() {
 		case "in":
 			var array = ic.ScanExpression()
 			
+			if ic.ExpressionType.Push != "SHARE" {
+				ic.RaiseError("Cannot iterate over '", ic.ExpressionType.Name, "'")
+			}
+			
 			var condition = ic.Tmp("in") 
 
-			var i, v string
+			var i, v, vo string
 			if name2 != "" {
 				i = name
 				v = name2
@@ -37,6 +41,12 @@ func (ic *Compiler) ScanForLoop() {
 				i = ic.Tmp("i")
 				v = name
 			}
+			
+			vo = v
+			if ic.ExpressionType.List {
+				v += "_address"
+			}
+			
 			backup := ic.Tmp("backup")
 			
 			ic.Assembly(`
@@ -45,19 +55,32 @@ VAR %v
 LOOP
 	VAR %v
 	ADD %v 0 %v
-	PLACE %v
-	PUSH %v
-	GET %v
 	SGE %v %v #%v
 	IF %v
 		BREAK
 	END
+	PLACE %v
+	PUSH %v
+	GET %v
 	ADD %v %v 1
-`, i,backup, condition, i, backup, array, i, v, condition, i, array, condition, backup, i)
+`, i,backup, condition, i, backup,  condition, i, array, condition, array, i, v, backup, i)
 
+			if ic.ExpressionType.List {
+				ic.Assembly("PUSH ", v)
+				ic.Assembly("HEAP")
+				ic.Assembly("GRAB ", vo)
+			}
+			
 			ic.GainScope()
 			ic.SetVariable(i, Number)
-			ic.SetVariable(v, Number)
+			if ic.ExpressionType.List {
+				list := ic.ExpressionType
+				list.User = true
+				list.List = false
+				ic.SetVariable(vo, list)
+			} else {
+				ic.SetVariable(vo, Number)
+			}
 			ic.SetFlag(ForLoop)
 			return
 	

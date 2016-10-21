@@ -58,6 +58,8 @@ type Compiler struct {
 	ExpressionType Type
 	
 	Unique int
+	
+	InPackageDir bool
 }
 
 func (ic *Compiler) Tmp(mod string) string {
@@ -161,7 +163,8 @@ func (c *Compiler) Scan(verify rune) string {
 		if tok == scanner.EOF {
 			if len(c.Scanners) > 0 {
 				c.Scanner = c.Scanners[len(c.Scanners)-1]
-				c.Scanners = c.Scanners[:len(c.Scope)-1]
+				c.Scanners = c.Scanners[:len(c.Scanners)-1]
+				
 				return c.Scan(verify)
 			} else {
 				
@@ -320,6 +323,18 @@ func (ic *Compiler) Compile() {
 					data = true
 				}
 				
+				//Are we in a block of code?
+				var block = false
+				
+				var peeking = ic.Scan(0) 
+				if peeking  == "{" {
+					block = true
+					ic.Scan('\n')
+					asm = ""
+				} else {
+					ic.NextToken = peeking 
+				}
+				
 				for {
 					var token = ic.Scan(0)
 					if data {
@@ -327,14 +342,30 @@ func (ic *Compiler) Compile() {
 						data = false
 					}
 					if token == "\n" {
+						if block {
+							asm = strings.ToUpper(cmd)+" "+asm
+						}
 						if ic.Header {
 							ic.Library(asm)
 						} else {
 							ic.Assembly(asm)
 						}
+						if !block {
+							break
+						} else {
+							asm = ""
+						}
+					} else {
+						if asm == "" {
+							asm = token
+						} else {
+							asm += " "+token
+						}
+					}
+					
+					if block && token == "}" {
 						break
 					}
-					asm += " "+token
 				}
 				
 			case "!":
@@ -381,14 +412,20 @@ func (ic *Compiler) Compile() {
 				
 				file, err := os.Open(pkg+".i")
 				if err != nil {
-					ic.RaiseError("Cannot import "+pkg+", does not exist!")
+					if file, err = os.Open(pkg+"/"+pkg+".i"); err != nil {
+						ic.RaiseError("Cannot import "+pkg+", does not exist!")
+					} else {
+						os.Chdir("./"+pkg)
+						ic.InPackageDir = true
+					}
 				}
 				ic.Scanners = append(ic.Scanners, ic.Scanner)
 				
 				ic.Scanner = &scanner.Scanner{}
 				ic.Scanner.Init(file)
+				ic.Scanner.Position.Filename = pkg+".i"
 				ic.Scanner.Whitespace= 1<<'\t' | 1<<'\r' | 1<<' '
-		
+				
 			case "software":
 				ic.Header = false
 				ic.Scan('{')
@@ -549,6 +586,8 @@ func (ic *Compiler) Compile() {
 					ic.AssembleVar(name, ic.ScanExpression())
 				} else if token == "is" {
 					ic.AssembleVar(name, ic.ScanConstructor())
+				} else if token == "has" {
+					ic.AssembleVar(name, ic.ScanList())
 				} else {
 					ic.RaiseError()
 				}
@@ -583,7 +622,7 @@ func (ic *Compiler) Compile() {
 				ic.GainScope()
 				
 			case "else":
-				nesting, ok := ic.Scope[len(ic.Scope)-2]["flag_nesting"]
+				nesting, ok := ic.Scope[len(ic.Scope)-1]["flag_nesting"]
 				if !ok {
 					nesting.Int = 0
 				}
@@ -592,7 +631,7 @@ func (ic *Compiler) Compile() {
 				ic.GainScope()
 				ic.SetVariable("flag_nesting", Type{Int:nesting.Int})
 			case "elseif":
-				nesting, ok := ic.Scope[len(ic.Scope)-2]["flag_nesting"]
+				nesting, ok := ic.Scope[len(ic.Scope)-1]["flag_nesting"]
 				if !ok {
 					nesting.Int = 0
 				}
@@ -607,7 +646,7 @@ func (ic *Compiler) Compile() {
 			
 			case "end":
 			
-				nesting, ok := ic.Scope[len(ic.Scope)-2]["flag_nesting"]
+				nesting, ok := ic.Scope[len(ic.Scope)-1]["flag_nesting"]
 				if ok {
 					for i:=0; i < nesting.Int; i++ {
 						ic.Assembly("END")
@@ -698,17 +737,48 @@ func (ic *Compiler) Compile() {
 								default:
 									ic.RaiseError()
 							}
-						case Array, Text:
+						case Array, Text, List, t.IsList():
 							var name = token
 							token = ic.Scan(0)
+							
 							switch token {
 								case "&":
 									value := ic.ScanExpression()
-									if ic.ExpressionType.Push != "PUSH" {
-										ic.RaiseError("Only numeric values can be added to arrays.")
+									
+									if t == List {
+										list := ic.ExpressionType
+										list.List = true
+										list.User = false
+										t = list
+										ic.SetVariable(name, list)
+										if ic.GetFlag(InMethod) {
+											ic.LastDefinedType.Detail.Elements[ic.LastDefinedType.Detail.Table[name]] = t
+										}
 									}
-									ic.Assembly("PLACE ", name)
-									ic.Assembly("PUT ", value)
+									
+									if t.List {
+										if ic.ExpressionType.Name != t.Name {
+											ic.RaiseError("Type mismatch! Cannot add a ", ic.ExpressionType.Name,
+												 " to a List of ", t.Name)
+										}
+										
+										var tmp = ic.Tmp("index")
+										ic.Assembly("SHARE ", value)
+										ic.Assembly("PUSH 0")
+										ic.Assembly("HEAP")
+										ic.Assembly("PULL ", tmp)
+				
+										ic.Assembly("PLACE ", name)
+										ic.Assembly("PUT ", tmp)
+										
+									} else {
+									
+										if ic.ExpressionType.Push != "PUSH" {
+											ic.RaiseError("Only numeric values can be added to arrays.")
+										}
+										ic.Assembly("PLACE ", name)
+										ic.Assembly("PUT ", value)
+									}
 								case "[":
 									var index = ic.ScanExpression()
 									ic.Scan(']')
@@ -728,6 +798,13 @@ func (ic *Compiler) Compile() {
 										ic.Assembly("PLACE ", value)
 										ic.Assembly("RENAME ", name)
 									}
+								case "has":
+									if ic.GetFlag(InMethod) {
+										ic.SetUserType(ic.LastDefinedType.Name, name, ic.ScanList())
+									} else {
+										ic.AssembleVar(name, ic.ScanList())
+									}
+									
 								default:
 									ic.RaiseError()
 							}
@@ -748,6 +825,7 @@ func (ic *Compiler) Compile() {
 								default:
 									ic.RaiseError()
 							}
+							
 						case User:
 							if !ic.GetFlag(InMethod) {
 								ic.RaiseError()
@@ -755,7 +833,7 @@ func (ic *Compiler) Compile() {
 							var name = token
 							ic.Scan('=')
 							var value = ic.ScanExpression()
-							ic.SetUserType(ic.LastDefinedType.Name, name, value)	
+							ic.SetUserType(ic.LastDefinedType.Name, name, value)
 						
 						case t.IsUser():
 							var name = token
