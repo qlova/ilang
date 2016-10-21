@@ -4,7 +4,7 @@ i is a hardware-agnostic maths-based cross-platform programming language in heav
 Hello World:
 
 		software {
-			output("Hello World")
+			print("Hello World")
 		}
 
 There are no official releases yet as the language is in a alpha state but you can grab the source and start hacking!  
