@@ -39,12 +39,17 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 		}
 	
 		ic.Assembly("SHARE ", id)
-	} else {
+	} else if len(f.Args) > 0 {
 		for i := range f.Args {
 			arg := ic.ScanExpression()
 			
 			if f.Args[i] != ic.ExpressionType {
-				ic.RaiseError("Type mismatch! Argument ",i+1," of '"+name+"()' expects ",f.Args[i].Name,", got ",ic.ExpressionType.Name) 
+				if f.Args[i] == User {
+					f.Args[i] = ic.ExpressionType
+				} else {
+					ic.RaiseError("Type mismatch! Argument ",i+1," of '"+name+"()' expects ",
+						f.Args[i].Name,", got ",ic.ExpressionType.Name) 
+				}
 			}
 			
 			ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
@@ -58,6 +63,7 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 				break
 			}
 		}
+	} else {
 		if f.Method && ic.Peek() != ")" {
 			arg := ic.ScanExpression()
 			if _, ok := ic.DefinedFunctions[name+"_m_"+ic.ExpressionType.Name]; !ok {
@@ -134,6 +140,10 @@ func (ic *Compiler) ScanMethod() {
 	
 	ic.function(name)
 	ic.SetFlag(InMethod)
+	
+	f := ic.DefinedFunctions[name]
+	f.Method = true
+	ic.DefinedFunctions[name] = f
 }
 
 func (ic *Compiler) function(name string) {
@@ -192,6 +202,7 @@ func (ic *Compiler) function(name string) {
 	}
 	
 	function.Exists = true
+	function.Method = true
 	
 	ic.DefinedFunctions[name] = function
 	
