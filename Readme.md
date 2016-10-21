@@ -96,7 +96,7 @@ Flick me an email (splizard @ splizard dot com) if you have any questions =)
 
 ##Types
 There are 8 types in the i language.
-
+```
 number()
 letter()	''
 array() 	[]
@@ -107,6 +107,7 @@ type		<>
 function 	()
 
 Something() {}
+```
 
 **number**
 Numbers in the i language can be integers of any size.
