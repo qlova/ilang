@@ -323,6 +323,18 @@ func (ic *Compiler) Compile() {
 					data = true
 				}
 				
+				//Are we in a block of code?
+				var block = false
+				
+				var peeking = ic.Scan(0) 
+				if peeking  == "{" {
+					block = true
+					ic.Scan('\n')
+					asm = ""
+				} else {
+					ic.NextToken = peeking 
+				}
+				
 				for {
 					var token = ic.Scan(0)
 					if data {
@@ -330,14 +342,30 @@ func (ic *Compiler) Compile() {
 						data = false
 					}
 					if token == "\n" {
+						if block {
+							asm = strings.ToUpper(cmd)+" "+asm
+						}
 						if ic.Header {
 							ic.Library(asm)
 						} else {
 							ic.Assembly(asm)
 						}
+						if !block {
+							break
+						} else {
+							asm = ""
+						}
+					} else {
+						if asm == "" {
+							asm = token
+						} else {
+							asm += " "+token
+						}
+					}
+					
+					if block && token == "}" {
 						break
 					}
-					asm += " "+token
 				}
 				
 			case "!":
