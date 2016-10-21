@@ -58,6 +58,8 @@ type Compiler struct {
 	ExpressionType Type
 	
 	Unique int
+	
+	InPackageDir bool
 }
 
 func (ic *Compiler) Tmp(mod string) string {
@@ -161,7 +163,8 @@ func (c *Compiler) Scan(verify rune) string {
 		if tok == scanner.EOF {
 			if len(c.Scanners) > 0 {
 				c.Scanner = c.Scanners[len(c.Scanners)-1]
-				c.Scanners = c.Scanners[:len(c.Scope)-1]
+				c.Scanners = c.Scanners[:len(c.Scanners)-1]
+				
 				return c.Scan(verify)
 			} else {
 				
@@ -381,14 +384,20 @@ func (ic *Compiler) Compile() {
 				
 				file, err := os.Open(pkg+".i")
 				if err != nil {
-					ic.RaiseError("Cannot import "+pkg+", does not exist!")
+					if file, err = os.Open(pkg+"/"+pkg+".i"); err != nil {
+						ic.RaiseError("Cannot import "+pkg+", does not exist!")
+					} else {
+						os.Chdir("./"+pkg)
+						ic.InPackageDir = true
+					}
 				}
 				ic.Scanners = append(ic.Scanners, ic.Scanner)
 				
 				ic.Scanner = &scanner.Scanner{}
 				ic.Scanner.Init(file)
+				ic.Scanner.Position.Filename = pkg+".i"
 				ic.Scanner.Whitespace= 1<<'\t' | 1<<'\r' | 1<<' '
-		
+				
 			case "software":
 				ic.Header = false
 				ic.Scan('{')
