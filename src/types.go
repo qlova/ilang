@@ -147,8 +147,9 @@ func (ic *Compiler) ScanConstructor() string {
 	if token == "(" {
 		var i int
 		for {
+			var expr = ic.ScanExpression()
 			ic.Assembly("PLACE ", array)
-			ic.Assembly("PUT %v", ic.ScanExpression())
+			ic.Assembly("PUT %v", expr)
 			if i >= len(ic.DefinedTypes[name].Detail.Elements) {
 				ic.RaiseError("Too many arguments passed to constructor!")
 			}
