@@ -586,6 +586,8 @@ func (ic *Compiler) Compile() {
 					ic.AssembleVar(name, ic.ScanExpression())
 				} else if token == "is" {
 					ic.AssembleVar(name, ic.ScanConstructor())
+				} else if token == "has" {
+					ic.AssembleVar(name, ic.ScanList())
 				} else {
 					ic.RaiseError()
 				}
@@ -735,17 +737,48 @@ func (ic *Compiler) Compile() {
 								default:
 									ic.RaiseError()
 							}
-						case Array, Text:
+						case Array, Text, List, t.IsList():
 							var name = token
 							token = ic.Scan(0)
+							
 							switch token {
 								case "&":
 									value := ic.ScanExpression()
-									if ic.ExpressionType.Push != "PUSH" {
-										ic.RaiseError("Only numeric values can be added to arrays.")
+									
+									if t == List {
+										list := ic.ExpressionType
+										list.List = true
+										list.User = false
+										t = list
+										ic.SetVariable(name, list)
+										if ic.GetFlag(InMethod) {
+											ic.LastDefinedType.Detail.Elements[ic.LastDefinedType.Detail.Table[name]] = t
+										}
 									}
-									ic.Assembly("PLACE ", name)
-									ic.Assembly("PUT ", value)
+									
+									if t.List {
+										if ic.ExpressionType.Name != t.Name {
+											ic.RaiseError("Type mismatch! Cannot add a ", ic.ExpressionType.Name,
+												 " to a List of ", t.Name)
+										}
+										
+										var tmp = ic.Tmp("index")
+										ic.Assembly("SHARE ", value)
+										ic.Assembly("PUSH 0")
+										ic.Assembly("HEAP")
+										ic.Assembly("PULL ", tmp)
+				
+										ic.Assembly("PLACE ", name)
+										ic.Assembly("PUT ", tmp)
+										
+									} else {
+									
+										if ic.ExpressionType.Push != "PUSH" {
+											ic.RaiseError("Only numeric values can be added to arrays.")
+										}
+										ic.Assembly("PLACE ", name)
+										ic.Assembly("PUT ", value)
+									}
 								case "[":
 									var index = ic.ScanExpression()
 									ic.Scan(']')
@@ -765,6 +798,13 @@ func (ic *Compiler) Compile() {
 										ic.Assembly("PLACE ", value)
 										ic.Assembly("RENAME ", name)
 									}
+								case "has":
+									if ic.GetFlag(InMethod) {
+										ic.SetUserType(ic.LastDefinedType.Name, name, ic.ScanList())
+									} else {
+										ic.AssembleVar(name, ic.ScanList())
+									}
+									
 								default:
 									ic.RaiseError()
 							}
@@ -785,6 +825,7 @@ func (ic *Compiler) Compile() {
 								default:
 									ic.RaiseError()
 							}
+							
 						case User:
 							if !ic.GetFlag(InMethod) {
 								ic.RaiseError()
@@ -792,7 +833,7 @@ func (ic *Compiler) Compile() {
 							var name = token
 							ic.Scan('=')
 							var value = ic.ScanExpression()
-							ic.SetUserType(ic.LastDefinedType.Name, name, value)	
+							ic.SetUserType(ic.LastDefinedType.Name, name, value)
 						
 						case t.IsUser():
 							var name = token

@@ -66,14 +66,15 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 	} else {
 		if f.Method && ic.Peek() != ")" {
 			arg := ic.ScanExpression()
-			if _, ok := ic.DefinedFunctions[name+"_m_"+ic.ExpressionType.Name]; !ok {
-				ic.RaiseError("Method ",name," for type ",ic.ExpressionType.Name, "does not exist!")
-			}
 			
 			//Hardcoded LEN optimisation.
 			if name == "len" {
 				ic.ExpressionType = Number
 				return "#"+arg
+			}
+			
+			if _, ok := ic.DefinedFunctions[name+"_m_"+ic.ExpressionType.Name]; !ok {
+				ic.RaiseError("Method ",name," for type ",ic.ExpressionType.Name, "does not exist!")
 			}
 			
 			ic.Assembly("%v %v", ic.ExpressionType.Push, arg)

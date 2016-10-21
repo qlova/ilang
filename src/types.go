@@ -6,12 +6,21 @@ type Type struct {
 	Name, Push, Pop string
 	Int int
 	User bool
+	List bool
 	
 	Detail *UserType
 }
 
 func (t Type) IsUser() Type {
 	if t.User {
+		return t
+	} else {
+		return Undefined
+	}
+}
+
+func (t Type) IsList() Type {
+	if t.List {
 		return t
 	} else {
 		return Undefined
@@ -54,6 +63,7 @@ var Text = NewType("text", "SHARE", "GRAB")
 var Array = NewType("array", "SHARE", "GRAB")
 var Itype = NewType("type", "PUSH", "PULL")
 var User = NewType("usertype", "SHARE", "GRAB")
+var List = NewType("list", "SHARE", "GRAB")
 var Pipe = NewType("pipe", "RELAY", "TAKE")
 var Func = NewType("function", "RELAY", "TAKE")
 var Something = NewUserType("Something")
@@ -66,7 +76,14 @@ func (ic *Compiler) ScanSymbolicType() Type {
 	switch symbol {
 		case "{":
 			result = User
-			ic.Scan('}')
+			t := ic.Scan(0)
+			if t == "." {	
+				result = List
+				ic.Scan('.')
+				ic.Scan('}')
+			} else if t != "}" {
+				ic.RaiseError()
+			}
 		case "[":
 			result = Array
 			ic.Scan(']')
@@ -124,6 +141,31 @@ func (ic *Compiler) ScanType() {
 
 	ic.LastDefinedType = t
 }
+
+func (ic *Compiler) ScanList() string {
+	var name = ic.Scan(Name)
+	
+	t, ok := ic.DefinedTypes[name]
+	if !ok {
+		ic.RaiseError(name+" is an unrecognised type!")
+	}
+	t.List = true
+	t.User = false
+	
+	ic.Scan('(')
+	if (ic.Scan(0) != "s") {
+		ic.RaiseError("Expecting list size!")
+	}
+	ic.Scan(')')
+	
+	ic.ExpressionType = t
+	
+	var list = ic.Tmp("list")
+	
+	ic.Assembly("ARRAY ", list)
+	
+	return list
+}	
 
 func (ic *Compiler) ScanConstructor() string {
 	var name = ic.Scan(Name)
@@ -255,7 +297,7 @@ func (ic *Compiler) SetUserType(name, element, value string) {
 		ic.RaiseError(name+" does not have an element named "+element)
 	} else {
 	
-		if t.Elements[index] == User {
+		if t.Elements[index] == User || (t.Elements[index] == List && ic.ExpressionType.Push == "SHARE") {
 			t.Elements[index] = ic.ExpressionType
 		}
 	
