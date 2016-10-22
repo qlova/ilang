@@ -191,7 +191,20 @@ func (ic *Compiler) ScanConstructor() string {
 		for {
 			var expr = ic.ScanExpression()
 			ic.Assembly("PLACE ", array)
-			ic.Assembly("PUT %v", expr)
+			if ic.ExpressionType.Push == "PUSH" {
+				ic.Assembly("PUT %v", expr)
+			} else {
+				var tmp = ic.Tmp("heap")
+				ic.Assembly("SHARE ", expr)
+				ic.Assembly("PUSH 0")
+				if ic.ExpressionType.Push == "RELAY" {
+					ic.Assembly("HEAPIT")
+				} else {
+					ic.Assembly("HEAP")
+				}
+				ic.Assembly("PULL ", tmp)
+				ic.Assembly("PUT ", tmp)
+			}
 			if i >= len(ic.DefinedTypes[name].Detail.Elements) {
 				ic.RaiseError("Too many arguments passed to constructor!")
 			}
