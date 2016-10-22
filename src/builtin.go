@@ -77,6 +77,8 @@ RETURN
 	ic.DefinedFunctions["text_m_text"] = BlankMethod(Text)
 	ic.DefinedFunctions["text_m_array"] = BlankMethod(Text)
 	
+	ic.DefinedFunctions["load"] = Method(Undefined, true, "")
+	
 	ic.DefinedFunctions["open"] = InlineFunction([]Type{Text}, "OPEN", []Type{Pipe})
 	ic.DefinedFunctions["execute"] = InlineFunction([]Type{Text}, "EXECUTE", nil)
 	ic.DefinedFunctions["delete"] = InlineFunction([]Type{Text}, "DELETE", nil)
