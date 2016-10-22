@@ -252,6 +252,11 @@ func (ic *Compiler) LoseScope() {
 				continue
 			}
 			
+			//Possible memory leak, TODO check up on this.
+			if _, ok := ic.DefinedTypes[name]; ic.GetFlag(InMethod) && ok {
+				continue
+			}
+			
 			if variable.IsUser() != Undefined {
 				ic.Assembly("SHARE ", name)
 				ic.Assembly("RUN collect_m_", variable.Name)
