@@ -335,6 +335,7 @@ func (ic *Compiler) Compile() {
 					ic.NextToken = peeking 
 				}
 				
+				var braces = 0
 				for {
 					var token = ic.Scan(0)
 					if data {
@@ -363,8 +364,17 @@ func (ic *Compiler) Compile() {
 						}
 					}
 					
-					if block && token == "}" {
-						break
+					if block {
+						if token == "}"  {
+					 		if braces == 0 {
+								break
+							} else {
+								braces--
+							}
+						}
+						if token == "{" {
+							braces++
+						}
 					}
 				}
 				
