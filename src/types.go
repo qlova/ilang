@@ -322,6 +322,12 @@ func (ic *Compiler) SetUserType(name, element, value string) {
 	
 		if t.Elements[index] == User || (t.Elements[index] == List && ic.ExpressionType.Push == "SHARE") {
 			t.Elements[index] = ic.ExpressionType
+			
+			if ic.LastDefinedType == ic.GetVariable(name) && ic.GetFlag(InMethod) {
+				ic.Assembly("PLACE ", value)
+				ic.Assembly("RENAME ", element)
+				ic.SetVariable(element, ic.ExpressionType)
+			}
 		}
 	
 		if ic.ExpressionType != t.Elements[index] {
