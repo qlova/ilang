@@ -64,6 +64,8 @@ type Compiler struct {
 	Unique int
 	
 	InPackageDir bool
+	FileDepth int
+	Dirs []string
 }
 
 func (ic *Compiler) Tmp(mod string) string {
@@ -166,8 +168,10 @@ func (c *Compiler) Scan(verify rune) string {
 			
 		if tok == scanner.EOF {
 			if len(c.Scanners) > 0 {
+				//var currentfile = c.Scanner.Filename
 				c.Scanner = c.Scanners[len(c.Scanners)-1]
 				c.Scanners = c.Scanners[:len(c.Scanners)-1]
+				
 				
 				return c.Scan(verify)
 			} else {
@@ -453,24 +457,45 @@ func (ic *Compiler) Compile() {
 				ic.Assembly(".const %v %v", name, value)
 				ic.SetVariable(name, ic.ExpressionType)
 			
+			//MESSY
 			case "import":
 				pkg := ic.Scan(Name)
 				ic.Scan('\n')
 				
+				var filename = ""
+				
+				retry:
 				file, err := os.Open(pkg+".i")
 				if err != nil {
 					if file, err = os.Open(pkg+"/"+pkg+".i"); err != nil {
-						ic.RaiseError("Cannot import "+pkg+", does not exist!")
+						dir, _ := os.Getwd()
+						if ic.FileDepth > 0 {
+							ic.FileDepth--
+							os.Chdir(ic.Dirs[len(ic.Dirs)-1])
+							ic.Dirs = ic.Dirs[:len(ic.Dirs)-1]
+							goto retry
+						}
+						
+						ic.RaiseError("Cannot import "+pkg+", does not exist!", dir)
 					} else {
+						 filename = pkg+"/"+pkg+".i"
+						 
+						 dir, _ := os.Getwd()
+						 
+						ic.Dirs = append(ic.Dirs, dir)
+						 
 						os.Chdir("./"+pkg)
+						ic.FileDepth++
 						ic.InPackageDir = true
 					}
+				} else {
+					filename = pkg+".i"
 				}
 				ic.Scanners = append(ic.Scanners, ic.Scanner)
 				
 				ic.Scanner = &scanner.Scanner{}
 				ic.Scanner.Init(file)
-				ic.Scanner.Position.Filename = pkg+".i"
+				ic.Scanner.Position.Filename = filename
 				ic.Scanner.Whitespace= 1<<'\t' | 1<<'\r' | 1<<' '
 				
 			case "software":
