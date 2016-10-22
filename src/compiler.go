@@ -25,6 +25,10 @@ type Compiler struct {
 	Lib io.Writer
 	
 	Header bool
+	Game bool
+	NewGame bool
+	UpdateGame bool
+	DrawGame bool
 	
 	Scanner *scanner.Scanner
 	Scanners []*scanner.Scanner //Multiple files.
@@ -196,6 +200,34 @@ func (c *Compiler) Scan(verify rune) string {
 					c.LoadFunction("gui")
 					c.LoadFunction("output_m_pipe")
 					c.LoadFunction("reada_m_pipe")
+				}
+				
+				if !c.SoftwareBlockExists && c.Game && !c.GUIExists {
+					if !c.NewGame {
+						c.Assembly("FUNCTION Game")
+						c.GainScope()
+						c.Assembly("ARRAY game")
+						for range c.DefinedTypes["Game"].Detail.Elements {
+							c.Assembly("PUT 0")
+						}
+						c.Assembly("SHARE game")
+						c.LoseScope()
+						c.Assembly("RETURN")
+					}
+					if !c.UpdateGame {
+						c.Assembly("FUNCTION update_m_Game")
+						c.Assembly("RETURN")
+					}
+					if !c.DrawGame {
+						c.Assembly("FUNCTION draw_m_Game")
+						c.Assembly("RETURN")
+					}
+				
+					c.Assembly("SOFTWARE")
+					c.GainScope()
+					c.Assembly("RUN grate")
+					c.LoseScope()
+					c.Assembly("EXIT")
 				}
 				
 				os.Exit(0)

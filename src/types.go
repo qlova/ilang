@@ -114,6 +114,11 @@ func (ic *Compiler) ScanSymbolicType() Type {
 
 func (ic *Compiler) ScanType() {
 	var name = ic.Scan(Name)
+	
+	if name == "Game" {
+		ic.Game = true
+	}
+	
 	t := NewUserType(name)
 	
 	ic.Scan('{')
@@ -219,6 +224,11 @@ func (ic *Compiler) ScanConstructor() string {
 				ic.Expecting(",")
 			}
 			i++
+		}
+		for j := range ic.DefinedTypes[name].Detail.Elements {
+			if j > i {
+				ic.Assembly("PUT 0")
+			}
 		}
 	} else if token == "\n" {
 		for range ic.DefinedTypes[name].Detail.Elements {

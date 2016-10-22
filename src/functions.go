@@ -112,6 +112,10 @@ func (ic *Compiler) ScanFunction() {
 func (ic *Compiler) ScanNew() {
 	var name string = ic.Scan(Name)
 	
+	if name == "Game" {
+		ic.NewGame = true
+	}
+	
 	ic.Assembly("FUNCTION ", name)
 	ic.Scan('{')
 	ic.GainScope()
@@ -130,6 +134,14 @@ func (ic *Compiler) ScanNew() {
 
 func (ic *Compiler) ScanMethod() {
 	var name string = ic.Scan(Name)
+	
+	if ic.LastDefinedType.Name == "Game" && name == "draw" {
+		ic.DrawGame = true
+	}
+	if ic.LastDefinedType.Name == "Game" && name == "update" {
+		ic.UpdateGame = true
+	}
+	
 	name += "_m_"+ic.LastDefinedType.Name
 	
 	ic.Assembly("FUNCTION ", name)
