@@ -32,6 +32,8 @@ function runit {
 		lua)
 			lua $1.lua <<< $(echo -e "$2")
 		;;
+		js)nodejs $1.js <<< $(echo -e "$2")
+		;;
 	esac
 }
 
@@ -56,7 +58,7 @@ function BasicTest {
 
 cd Plus
 if [ "$2" != "" ]; then
-	for l in rb py go java lua rb bash cs; do
+	for l in rb py go java lua rb js bash cs; do
 		LANGUAGE=$l
 		echo $l
 		BasicTest "$1" "$2" "$3" 
@@ -73,12 +75,10 @@ BasicTest Length "2"
 BasicTest OrderOfOperation "405"
 BasicTest Plus "4" "2 2\n"
 BasicTest Arithmetic "Sum: 8\nDifference: -2\nProduct: 15\nQuotient: 0\nModulus: 3\nExponent: 243" "3 5\n"
-BasicTest FileExists "input.txt exists\n/input.txt does not exist\ndocs exists\n/docs does not exist"
 BasicTest Maths "d d b"
 BasicTest Conditionals "3=3\n3!=2\nverified"
 BasicTest Copy "2\n1"
 BasicTest Variables "2"
-BasicTest CreateFile "output.txt created!\ndocs/ created!\nFailed to create /output.txt\nFailed to create /docs/"
 BasicTest DivideByZero "5/0 is a division by zero.\n5/2 is not division by zero.\n0/0 is a division by zero."
 BasicTest Strconv "1200  is numeric :)\n3.14  is numeric :)\n3/4  is numeric :)\nabcdefg  is not numeric!"
 BasicTest EmptyString "Empty string!"
@@ -97,17 +97,17 @@ BasicTest Logic "false and true is false\nfalse or true is true\nfalse xor true 
 BasicTest DownwardFor "10\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0"
 BasicTest For "*\n**\n***\n****\n*****"
 BasicTest ForStep "2,4,6,8,10,"
-BasicTest Sort "2\n3\n4\n5\n6"
 BasicTest Binary "111111011001000\n0\n-1"
+BasicTest Range "3\n2\n1"
+BasicTest ArrayLoop "22\n2\n3\n4\n022\n12\n23\n34"
+BasicTest Issues "Issue 2\n"
+BasicTest Import "Did something!\n"
+BasicTest Constant "42\n"
+
+BasicTest Sort "2\n3\n4\n5\n6"
 BasicTest Split "192\n168\n1\n70"
 BasicTest Links "1\n2\n3\n"
 BasicTest Slices "Hello\nbob\nmy\n"
 BasicTest Universal "Hello World\n"
-BasicTest Issues "Issue 2\n"
-BasicTest Import "Did something!\n"
-BasicTest Constant "42\n"
-BasicTest ReadFile "This is the contents of the file!"
-BasicTest Range "3\n2\n1"
-BasicTest ArrayLoop "22\n2\n3\n4\n022\n12\n23\n34"
 BasicTest Threading "This is a thread!"
 
