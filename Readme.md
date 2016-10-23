@@ -67,7 +67,7 @@ I:
 	software {
 		var file = open("input.txt")
 		loop {
-			print(read@file())
+			print(read(file))
 			issues {
 				exit
 			}
