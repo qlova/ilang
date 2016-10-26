@@ -60,7 +60,7 @@ func main() {
 	
 	//If the executable hasn't been updated in an hour, check for an update.
 	//(This will be scaled back before public use TODO)
-	if time.Now().Sub(info.ModTime()) > time.Hour {
+	if time.Now().Sub(info.ModTime()) > time.Hour*24 {
 		CheckForUpdate(info.ModTime())
 	}
 	
@@ -88,23 +88,33 @@ func main() {
 				compile.Stdout = os.Stdout
 				compile.Stderr = os.Stderr
 				verify(compile.Run())
-				compile = exec.Command(uct, "-go", path.Base(mainFile[:len(mainFile)-2]+".u"))
-				compile.Stdout = os.Stdout
-				compile.Stderr = os.Stderr
-				compile.Dir = path.Dir(mainFile)+"/.it/"
-				verify(compile.Run())
-				compile = exec.Command(goc, "build", "-o",  "../"+path.Base(mainFile[:len(mainFile)-2]))
-				compile.Stdout = os.Stdout
-				compile.Stderr = os.Stderr
-				compile.Dir = path.Dir(mainFile)+"/.it/"
-				verify(compile.Run())
 				
-				if os.Args[1] == "run" {
-					run := exec.Command("./"+path.Base(mainFile[:len(mainFile)-2]))
-					run.Stdout = os.Stdout
-					run.Stderr = os.Stderr
-					run.Stdin = os.Stdin
-					run.Run()
+				//Other languages.
+				if len(os.Args) > 2 {
+					compile = exec.Command(uct, os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
+					compile.Stdout = os.Stdout
+					compile.Stderr = os.Stderr
+					compile.Dir = path.Dir(mainFile)+"/.it/"
+					verify(compile.Run())
+				} else {
+					compile = exec.Command(uct, "-go", path.Base(mainFile[:len(mainFile)-2]+".u"))
+					compile.Stdout = os.Stdout
+					compile.Stderr = os.Stderr
+					compile.Dir = path.Dir(mainFile)+"/.it/"
+					verify(compile.Run())
+					compile = exec.Command(goc, "build", "-o",  "../"+path.Base(mainFile[:len(mainFile)-2]))
+					compile.Stdout = os.Stdout
+					compile.Stderr = os.Stderr
+					compile.Dir = path.Dir(mainFile)+"/.it/"
+					verify(compile.Run())
+				
+					if os.Args[1] == "run" {
+						run := exec.Command("./"+path.Base(mainFile[:len(mainFile)-2]))
+						run.Stdout = os.Stdout
+						run.Stderr = os.Stderr
+						run.Stdin = os.Stdin
+						run.Run()
+					}
 				}
 		}
 	}
