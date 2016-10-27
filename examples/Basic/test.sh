@@ -12,11 +12,12 @@ fi
 function runit {
 	case $LANGUAGE in
 		py)
-			python3 $1.py <<< $(echo -e "$2")
+			cd ./.it && python3 $1.py <<< $(echo -e "$2")
 		;;
 		go)
-			go build && ./$1 <<< $(echo -e "$2")
+			cd ./.it && go build -o ../$1 && cd .. && ./$1 <<< $(echo -e "$2")
 		;;
+		
 		bash) 
 			./$1.bash <<< $(echo -e "$2")
 		;;
@@ -38,7 +39,7 @@ function runit {
 }
 
 function BasicTest {
-	cd ../$1/ && ic $1.i && uct -$LANGUAGE $1.u
+	cd ../$1/ && it build -$LANGUAGE
 	if [ "$?" -eq "1" ]; then
 		echo -e "$1 \e[31mFAILED!\e[0m to compile D:"
 		exit 1
