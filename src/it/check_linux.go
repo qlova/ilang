@@ -8,6 +8,7 @@ var git = "git"
 var goc = "go"
 var uct = "uct"
 var ic  = "ic"
+var ext = ""
 
 func AptGetInstall(name string) error {
 	err := exec.Command("which", "apt-get").Run()

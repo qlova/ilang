@@ -102,7 +102,7 @@ func main() {
 					compile.Stderr = os.Stderr
 					compile.Dir = path.Dir(mainFile)+"/.it/"
 					verify(compile.Run())
-					compile = exec.Command(goc, "build", "-o",  "../"+path.Base(mainFile[:len(mainFile)-2]))
+					compile = exec.Command(goc, "build", "-o",  "../"+path.Base(mainFile[:len(mainFile)-2])+ext)
 					compile.Stdout = os.Stdout
 					compile.Stderr = os.Stderr
 					compile.Dir = path.Dir(mainFile)+"/.it/"

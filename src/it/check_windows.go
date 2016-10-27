@@ -1,5 +1,8 @@
 package main
 
+import "os"
+import "fmt"
+import "io"
 import "os/exec"
 import "net/http"
 
@@ -7,6 +10,7 @@ var git = "git.exe"
 var goc = "go.exe"
 var uct = "uct.exe"
 var ic  = "ic.exe"
+var ext = ".exe"
 
 func downloadFile(filepath string, url string) (err error) {
 
