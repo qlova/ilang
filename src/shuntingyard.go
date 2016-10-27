@@ -63,6 +63,51 @@ func (ic *Compiler) Shunt(name string) string {
 		
 		
 		case "(":
+			//Calling pipes.
+			if ic.ExpressionType == Pipe {
+			
+				token := ic.Scan(0)
+				if token == ")" {
+					//Read default from the pipe.
+					var r = ic.Tmp("read")
+					ic.Assembly("RELAY ", name)
+					ic.Assembly("PUSH 0")
+					ic.Assembly("IN")
+					ic.Assembly("GRAB ", r)
+					ic.ExpressionType = Text
+					return ic.Shunt(r)	
+				}
+				
+				ic.NextToken = token
+								
+				argument := ic.ScanExpression()
+				
+				switch ic.ExpressionType {
+					case Letter:
+						var r = ic.Tmp("reada")
+						ic.Assembly("RELAY ", name)
+						ic.Assembly("PUSH ", argument)
+						ic.Assembly("RUN reada_m_pipe")
+						ic.Assembly("GRAB ", r)
+						ic.LoadFunction("reada_m_pipe")
+						ic.ExpressionType = Text
+						ic.Scan(')')
+						return ic.Shunt(r)	
+					case Number:
+						var r = ic.Tmp("reada")
+						ic.Assembly("RELAY ", name)
+						ic.Assembly("PUSH ", argument)
+						ic.Assembly("IN")
+						ic.Assembly("GRAB ", r)
+						ic.ExpressionType = Text
+						ic.Scan(')')
+						return ic.Shunt(r)
+					default:
+						ic.RaiseError("Cannot call a pipe with a ", ic.ExpressionType.Name, " argument in an expression!")
+				}
+
+			}
+		
 			if ic.ExpressionType != InFunction {
 				ic.RaiseError("Cannot call "+name+", not a function! ("+ic.ExpressionType.Name+")")
 			}
