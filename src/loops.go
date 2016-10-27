@@ -3,6 +3,7 @@ package main
 func (ic *Compiler) ScanForLoop() {
 	
 	var name = ic.Scan(Name)
+	
 	var name2 string
 	
 	if ic.Peek() == "," {
@@ -14,6 +15,7 @@ func (ic *Compiler) ScanForLoop() {
 		case "=":
 			ic.AssembleVar(name, ic.ScanExpression())
 			ic.Scan(',')
+			ic.Assembly("IF 1")
 			ic.Assembly("LOOP")
 			ic.GainScope()
 			condition := ic.ScanExpression()
@@ -50,6 +52,7 @@ func (ic *Compiler) ScanForLoop() {
 			backup := ic.Tmp("backup")
 			
 			ic.Assembly(`
+IF 1
 VAR %v
 VAR %v
 LOOP
@@ -78,6 +81,7 @@ LOOP
 				list.User = true
 				list.List = false
 				ic.SetVariable(vo, list)
+				ic.SetVariable(vo+".", Protected)
 			} else {
 				ic.SetVariable(vo, Number)
 			}
@@ -94,7 +98,7 @@ LOOP
 			condition := ic.Tmp("over")
 			backup := ic.Tmp("backup")
 			
-			ic.Assembly("",
+			ic.Assembly("IF 1\n",
 				"VAR ",name,"\n",
 				"VAR ",backup,"\n",
 				"ADD ",backup," 0 ",a,"\n",
@@ -124,7 +128,9 @@ LOOP
 				"	END\n",
 			)
 			ic.GainScope()
-			ic.SetVariable(name, Number)
+			if name != "each" { 
+				ic.SetVariable(name, Number)
+			}
 			ic.SetFlag(ForLoop)
 			return
 	}

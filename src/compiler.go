@@ -126,6 +126,7 @@ func (c *Compiler) GetScopedFlag(sort Type) bool {
 func (ic *Compiler) GetVariable(name string) Type {
 	for i:=len(ic.Scope)-1; i>=0; i-- {
 		if v, ok := ic.Scope[i][name]; ok {
+			ic.Scope[i][name+"_use"] = Used
 			return v
 		}
 	}
@@ -144,6 +145,9 @@ func (ic *Compiler) GetVariable(name string) Type {
 
 //Set the type of a variable, this is akin to creating or assigning a variable.
 func (c *Compiler) SetVariable(name string, sort Type) {
+	if !strings.Contains(name, "_") {
+		c.SetVariable(name+"_use", Unused)
+	}
 	c.Scope[len(c.Scope)-1][name] = sort
 }
 
@@ -259,6 +263,10 @@ func (ic *Compiler) LoseScope() {
 
 	//Erm garbage collection???
 	for name, variable := range ic.Scope[len(ic.Scope)-1] {
+		if variable == Unused {
+			ic.RaiseError("unused variable! ", strings.Split(name, "_")[0])
+		} 
+	
 		if ic.Scope[len(ic.Scope)-1][name+"."] != Protected { //Protected variables
 			if ic.GetFlag(InMethod) && name == ic.LastDefinedType.Name {
 				continue
@@ -738,9 +746,8 @@ func (ic *Compiler) Compile() {
 				loopAfter := ic.GetFlag(ForLoop)
 				if loopBefore != loopAfter {
 					ic.Assembly("REPEAT")
-				} else {
-					ic.Assembly("END")
 				}
+				ic.Assembly("END")
 				
 			case "}":
 			

@@ -67,6 +67,7 @@ func (ic *Compiler) expression() string {
 	
 	if t := ic.GetVariable(token); t != Undefined {
 		ic.ExpressionType = t
+		ic.SetVariable(token+"_use", Used)
 		return token
 	}
 	

@@ -20,3 +20,6 @@ var FirstCase = NewFlag()
 var Loop = NewFlag()
 var ForLoop = NewFlag()
 var New = NewFlag()
+
+var Unused = NewFlag()
+var Used = NewFlag()
