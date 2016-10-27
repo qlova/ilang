@@ -147,6 +147,11 @@ func (ic *Compiler) GetVariable(name string) Type {
 func (c *Compiler) SetVariable(name string, sort Type) {
 	if !strings.Contains(name, "_") {
 		c.SetVariable(name+"_use", Unused)
+		for i:=len(c.Scope)-1; i>=0; i-- {
+			if _, ok := c.Scope[i][name]; ok {
+				c.RaiseError("Duplicate variable name!", name)
+			}
+		}
 	}
 	c.Scope[len(c.Scope)-1][name] = sort
 }
