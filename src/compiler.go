@@ -886,6 +886,30 @@ func (ic *Compiler) Compile() {
 								default:
 									ic.RaiseError()
 							}
+						case Pipe:
+							var name = token
+							token = ic.Scan(0)
+							switch token {
+								case "(":
+									argument := ic.ScanExpression()
+									if ic.ExpressionType != Text && ic.ExpressionType != Array {
+										ic.RaiseError("Only text values can be passed to a pipe call (outside of an expression).")
+									}
+									ic.Assembly("RELAY ", name)
+									ic.Assembly("SHARE ", argument)
+									ic.Assembly("OUT")
+									ic.Scan(')')
+								case "=":
+									value := ic.ScanExpression()
+									if ic.ExpressionType != Pipe {
+										ic.RaiseError("Only ",Func.Name," values can be assigned to ",name,".")
+									}
+									ic.Assembly("PLACE ", value)
+									ic.Assembly("RELOAD ", name)
+								default:
+									ic.RaiseError()
+							}
+							
 						case Func:
 							var name = token
 							token = ic.Scan(0)
