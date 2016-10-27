@@ -67,7 +67,7 @@ func (ic *Compiler) expression() string {
 	
 	if t := ic.GetVariable(token); t != Undefined {
 		ic.ExpressionType = t
-		return ic.Shunt(token)
+		return token
 	}
 	
 	if t, ok := ic.DefinedTypes[token]; ok {
