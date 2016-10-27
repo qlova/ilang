@@ -114,6 +114,14 @@ func (c *Compiler) GetFlag(sort Type) bool {
 	return false
 }
 
+//This will return the value of a scopped flag.
+func (c *Compiler) GetScopedFlag(sort Type) bool {
+	if _, ok := c.Scope[len(c.Scope)-1][sort.Name]; ok {
+		return true
+	}
+	return false
+}
+
 //This will return the type of the variable. UNDEFINED for undefined variables.
 func (ic *Compiler) GetVariable(name string) Type {
 	for i:=len(ic.Scope)-1; i>=0; i-- {
@@ -736,17 +744,16 @@ func (ic *Compiler) Compile() {
 				
 			case "}":
 			
-				nesting, ok := ic.Scope[len(ic.Scope)-2]["flag_nesting"]
-				if ok {
-				
-					if ic.GetVariable("flag_switch") != Undefined {
-						ic.LoseScope()
-					}
+				if ic.GetVariable("flag_switch") != Undefined {
+					ic.LoseScope()
+				}
 					
-					if ic.GetFlag(Issue) {
-						ic.LoseScope()
-					}
-				
+				if ic.GetFlag(Issue) {
+					ic.LoseScope()
+				}
+			
+				nesting, ok := ic.Scope[len(ic.Scope)-1]["flag_nesting"]
+				if ok {				
 					for i:=0; i < nesting.Int+1; i++ {
 						ic.Assembly("END")
 					}
@@ -756,7 +763,7 @@ func (ic *Compiler) Compile() {
 				softwarebefore := ic.GetFlag(Software)
 				functionbefore := ic.GetFlag(InFunction)
 				issuesbefore := ic.GetFlag(Issues)
-				loopbefore := ic.GetFlag(Loop)
+				loopbefore := ic.GetScopedFlag(Loop)
 				
 				newbefore := ic.GetFlag(New)
 				
@@ -767,7 +774,6 @@ func (ic *Compiler) Compile() {
 				softwareafter := ic.GetFlag(Software)
 				functionafter := ic.GetFlag(InFunction)
 				issuesafter := ic.GetFlag(Issues)
-				loopafter := ic.GetFlag(Loop)
 				
 				if softwarebefore != softwareafter {
 					ic.Assembly("EXIT")
@@ -781,7 +787,7 @@ func (ic *Compiler) Compile() {
 				if issuesbefore != issuesafter {
 					ic.Assembly("END")
 				}
-				if loopbefore != loopafter {
+				if loopbefore {
 					ic.Assembly("REPEAT")
 				}
 				
