@@ -19,61 +19,60 @@ const (
 type Variables map[string]Type
 
 type Compiler struct {
-	Scope []Variables
+	Scope []Variables //This holds the current scope, it contains flags and variables.
 	
-	Output io.Writer
-	Lib io.Writer
+	Output io.Writer //This is where the Compiler will output to.
+	Lib io.Writer	//This is a Lib file which the compiler will write builtin functions to.
 	
-	Header bool
-	Game bool
-	NewGame bool
-	UpdateGame bool
-	DrawGame bool
+	Header bool 	//Are we still in the header of the file? or has a function been declared.
+	Game bool		//Is this a game package?
+	NewGame bool	//Does a NewGame constructor exist?
+	UpdateGame bool //Does an update Game method exist?
+	DrawGame bool	//Does a DrawGame method exist?
 	
-	Scanner *scanner.Scanner
-	Scanners []*scanner.Scanner //Multiple files.
-	NextToken string
+	Scanner *scanner.Scanner	//This is the current scanner.
+	Scanners []*scanner.Scanner //Multiple files, multiple scanners.
+	NextToken string			//You can overide the next token, this will be returned by the next call to scan.
 	
-	DefinedTypes map[string]Type
-	DefinedFunctions map[string]Function
-	CurrentFunction Function
+	DefinedTypes map[string]Type			//A map of all the user created types.
+	DefinedFunctions map[string]Function	//A map of all the user created functions.
+	CurrentFunction Function				//If we are currently in a function, this is it.
 	
 	//Flags for compiling.
-	SoftwareBlockExists bool
+	SoftwareBlockExists bool //Does the software block exist?
 	
-	GUIExists bool
-	GUIMainExists bool
+	GUIExists bool		//Does a gui exist?
+	GUIMainExists bool	//Does a main gui exist?
 	
-	InSwitchCase bool
-	SwitchExpression string
-	FirstCase bool
+	Fork bool //Set this to true, in order to fork the next function call.
 	
-	InIssueBlock bool
-	FirstIssue bool
-	
-	Fork bool
-	
+	//This is unused currently.
 	InOperatorFunction bool
 	
-	LastDefinedType Type
-	LastDefinedFunction Function
-	LastDefinedFunctionName string
+	LastDefinedType Type			//The latest user defined type.
+	LastDefinedFunction Function	//The latest user defined function.
+	LastDefinedFunctionName string  //The name of the latest user defined function.
 	
+	//This is the expressiontype variable, it stores the type of the last scanned expression.
 	ExpressionType Type
 	
+	//A counter for tmp variables so names do not clash.
 	Unique int
 	
-	InPackageDir bool
+	//These variables keep track of importing directories and packages.
 	FileDepth int
 	Dirs []string
+	
+	Stop bool //If this variable is set, the compiler will stop.
 }
 
+//Return a string for a variable which will not clash with any other variables.
 func (ic *Compiler) Tmp(mod string) string {
 	ic.Unique++
 	return "i_"+mod+fmt.Sprint(ic.Unique)
 }
 
-//This function increases the scope of the compiler for example when it reaches an if statement block.
+//This returns correctly formatted assembly.
 func (ic *Compiler) asm(asm ...interface{}) string {
 	var tabs = strings.Repeat("\t", len(ic.Scope)-1)
 	var s = ""
@@ -88,12 +87,12 @@ func (ic *Compiler) asm(asm ...interface{}) string {
 	return s
 }
 
-//This function increases the scope of the compiler for example when it reaches an if statement block.
+//Assembly passed to this function will be output in the ilang.u library file.
 func (ic *Compiler) Library(asm ...interface{}) {
 	fmt.Fprintln(ic.Lib, ic.asm(asm...))
 }
 
-//This function increases the scope of the compiler for example when it reaches an if statement block.
+//Assembly passed to this function will be output to the file.
 func (ic *Compiler) Assembly(asm ...interface{}) {
 	fmt.Fprintln(ic.Output, ic.asm(asm...))
 }
@@ -104,68 +103,18 @@ func (c *Compiler) GainScope() {
 	c.Scope = append(c.Scope, make(map[string]Type))
 }
 
-//This will return the value of a scopped flag.
-func (c *Compiler) GetFlag(sort Type) bool {
-	for i:=len(c.Scope)-1; i>=0; i-- {
-		if _, ok := c.Scope[i][sort.Name]; ok {
-			return true
-		}
-	}
-	return false
-}
-
-//This will return the value of a scopped flag.
-func (c *Compiler) GetScopedFlag(sort Type) bool {
-	if _, ok := c.Scope[len(c.Scope)-1][sort.Name]; ok {
-		return true
-	}
-	return false
-}
-
-//This will return the type of the variable. UNDEFINED for undefined variables.
-func (ic *Compiler) GetVariable(name string) Type {
-	for i:=len(ic.Scope)-1; i>=0; i-- {
-		if v, ok := ic.Scope[i][name]; ok {
-			ic.Scope[i][name+"_use"] = Used
-			return v
-		}
-	}
-	
-	//Allow table values to be indexed in a method.
-	if ic.GetFlag(InMethod) {
-		if _, ok := ic.LastDefinedType.Detail.Table[name]; ok {
-			var value = ic.IndexUserType(ic.LastDefinedType.Name, name)
-			ic.AssembleVar(name, value)
-			ic.SetVariable(name+"_use", Used)
-			return ic.ExpressionType
-		}
-	}
-	
-	return Undefined
-}
-
-//Set the type of a variable, this is akin to creating or assigning a variable.
-func (c *Compiler) SetVariable(name string, sort Type) {
-	if !strings.Contains(name, "_") && sort != Protected {
-		c.SetVariable(name+"_use", Unused)
-		for i:=len(c.Scope)-1; i>=0; i-- {
-			if v, ok := c.Scope[i][name]; ok && v != List && v != User {
-				c.RaiseError("Duplicate variable name!", name, "(", v.Name, ")")
-			}
-		}
-	}
-	c.Scope[len(c.Scope)-1][name] = sort
-}
-
-//Set the type of a variable, this is akin to creating or assigning a variable.
-func (c *Compiler) SetFlag(flag Type) {
-	c.Scope[len(c.Scope)-1][flag.Name] = flag
-}
-
+//Peek at the next character in the scanner.
 func (ic *Compiler) Peek() string {
 	return string(ic.Scanner.Peek())
 }
 
+//Scan and return a token, can be called like:
+/*
+		var name = ic.Scan(Name) //Returns a name
+		ic.Scan('(') 			//Expects a '(' char
+		var token = ic.Scan(0) //Returns the string of the next token.
+*/
+//When an EOF is reached, Scan will stop the Compiler.
 func (c *Compiler) Scan(verify rune) string {
 	if c.NextToken != "" {
 		var text = c.NextToken
@@ -201,7 +150,8 @@ func (c *Compiler) Scan(verify rune) string {
 				
 				fmt.Fprintf(c.Lib, `DATA i_newline "\n"`+"\n")
 				c.LoadFunction("strings.equal")
-				
+			
+				//Create a software block.
 				if !c.SoftwareBlockExists && c.GUIExists && c.GUIMainExists {
 					c.Assembly("SOFTWARE")
 					c.GainScope()
@@ -224,6 +174,7 @@ func (c *Compiler) Scan(verify rune) string {
 					c.LoadFunction("reada_m_pipe")
 				}
 				
+				//Create a software block.
 				if !c.SoftwareBlockExists && c.Game && !c.GUIExists {
 					if !c.NewGame {
 						c.Assembly("FUNCTION Game")
@@ -252,7 +203,8 @@ func (c *Compiler) Scan(verify rune) string {
 					c.Assembly("EXIT")
 				}
 				
-				os.Exit(0)
+				c.Stop = true
+				return ""
 			}
 		}
 		return c.Scanner.TokenText()
@@ -328,6 +280,7 @@ func (ic *Compiler) RunFunction(name string) string {
 	if f.Inline {
 		return f.Data
 	} else if ic.Fork {
+		ic.Fork = false
 		return "FORK "+name
 	} else {
 		return "RUN "+name
@@ -375,8 +328,11 @@ func (ic *Compiler) Compile() {
 	
 	ic.Header = true
 	
-	for {
+	for {	
 		token := ic.Scan(0)
+		if ic.Stop {
+			break
+		}
 		
 		//These are all the tokens in ilang.
 		switch token {
@@ -517,7 +473,6 @@ func (ic *Compiler) Compile() {
 						 
 						os.Chdir("./"+pkg)
 						ic.FileDepth++
-						ic.InPackageDir = true
 					}
 				} else {
 					filename = pkg+".i"
@@ -547,6 +502,10 @@ func (ic *Compiler) Compile() {
 			case "return":
 				if !ic.CurrentFunction.Exists {
 					ic.RaiseError("Cannot return, not in a function!")
+				}
+				
+				if ic.CurrentFunction.Returns[0] == User {
+					ic.CurrentFunction.Returns[0] = ic.ExpressionType
 				}
 				
 				if len(ic.CurrentFunction.Returns) == 1 {
@@ -667,6 +626,29 @@ func (ic *Compiler) Compile() {
 				ic.Assembly("IF ",condition)
 				ic.GainScope()
 				ic.SetFlag(Issue)
+			
+			case "delete":
+				ic.Scan('(')
+				var tok = ic.Scan(0)
+				var arg string
+				if tok != ")" {
+					ic.NextToken = tok
+					arg = ic.ScanExpression()
+				}
+				if ic.ExpressionType == Text {
+					ic.Scan(')')
+					ic.Assembly("SHARE ", arg)
+					ic.Assembly("DELETE")
+				} else if tok == ")" {
+					if !ic.GetFlag(ForLoop) {
+						ic.RaiseError("delete not in a for loop!")
+					}
+					//Delete things in a for loop.
+					ic.Assembly("PLACE ", ic.GetVariable("i_for_delete").Name)
+					ic.Assembly("PUT ", ic.GetVariable("i_for_id").Name)
+				} else {
+					ic.RaiseError("Invalid argument for delete.")
+				}
 				
 			case "loop":
 				ic.Assembly("LOOP")
@@ -756,11 +738,43 @@ func (ic *Compiler) Compile() {
 					}
 				}
 			
+				var array = ic.GetVariable("i_for_array").Name
+				var del = ic.GetVariable("i_for_delete").Name
+			
 				loopBefore := ic.GetFlag(ForLoop)
 				ic.LoseScope()
 				loopAfter := ic.GetFlag(ForLoop)
 				if loopBefore != loopAfter {
 					ic.Assembly("REPEAT")
+					
+					ic.Assembly(`
+VAR ii_i8
+VAR ii_backup9
+LOOP
+	VAR ii_in7
+	ADD ii_i8 0 ii_backup9
+	SGE ii_in7 ii_i8 #%v
+	IF ii_in7
+		BREAK
+	END
+	PLACE %v
+	PUSH ii_i8
+	GET i_v
+	ADD ii_backup9 ii_i8 1
+
+	VAR ii_operator11
+	SUB ii_operator11 #%v 1
+	PLACE %v
+	PUSH ii_operator11
+	GET ii_index12
+	PLACE %v
+	PUSH i_v
+	SET ii_index12
+	PLACE %v
+	POP n
+	ADD n 0 0
+REPEAT
+					`, del, del, array, array, array, array)
 				}
 				ic.Assembly("END")
 				

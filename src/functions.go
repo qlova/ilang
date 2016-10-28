@@ -150,6 +150,7 @@ func (ic *Compiler) ScanMethod() {
 	
 	ic.Assembly("%v %v", ic.LastDefinedType.Pop, ic.LastDefinedType.Name)
 	ic.SetVariable(ic.LastDefinedType.Name, ic.LastDefinedType)
+	ic.SetVariable(ic.LastDefinedType.Name+"_use", Used)
 	
 	ic.function(name)
 	ic.SetFlag(InMethod)

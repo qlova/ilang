@@ -39,7 +39,7 @@ func (ic *Compiler) ScanForLoop() {
 				condition := ic.Tmp("over")
 				backup := ic.Tmp("backup")
 			
-				ic.Assembly("IF 1\n",
+				ic.Assembly("IF 1\n",	
 					"VAR ",name,"\n",
 					"VAR ",backup,"\n",
 					"ADD ",backup," 0 ",a,"\n",
@@ -105,9 +105,12 @@ func (ic *Compiler) ScanForLoop() {
 			}
 			
 			backup := ic.Tmp("backup")
+			del := ic.Tmp("delete")
+			
 			if OverList {
 			ic.Assembly(`
 IF 1
+ARRAY %v
 VAR %v
 VAR %v
 LOOP
@@ -117,13 +120,12 @@ LOOP
 	IF %v
 		BREAK
 	END
-	PLACE %v
-	PUSH %v
 	ADD %v %v 1
-`, i,backup, condition, i, backup,  condition, i, array, condition, array, i, backup, i)			
+`, del, i,backup, condition, i, backup,  condition, i, array, condition, backup, i)			
 			} else {
 			ic.Assembly(`
 IF 1
+ARRAY %v
 VAR %v
 VAR %v
 LOOP
@@ -137,7 +139,7 @@ LOOP
 	PUSH %v
 	GET %v
 	ADD %v %v 1
-`, i,backup, condition, i, backup,  condition, i, array, condition, array, i, v, backup, i)
+`, del, i,backup, condition, i, backup,  condition, i, array, condition, array, i, v, backup, i)
 	}
 
 			if ic.ExpressionType.List {
@@ -157,6 +159,10 @@ LOOP
 			} else {
 				ic.SetVariable(vo, Number)
 			}
+			ic.SetVariable("i_for_delete", Type{Name:del})
+			ic.SetVariable("i_for_id", Type{Name:i})
+			ic.SetVariable("i_for_array", Type{Name:array})
+			
 			ic.SetFlag(ForLoop)
 			return
 	}
