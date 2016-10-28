@@ -136,6 +136,7 @@ func (ic *Compiler) GetVariable(name string) Type {
 		if _, ok := ic.LastDefinedType.Detail.Table[name]; ok {
 			var value = ic.IndexUserType(ic.LastDefinedType.Name, name)
 			ic.AssembleVar(name, value)
+			ic.SetVariable(name+"_use", Used)
 			return ic.ExpressionType
 		}
 	}
@@ -145,11 +146,11 @@ func (ic *Compiler) GetVariable(name string) Type {
 
 //Set the type of a variable, this is akin to creating or assigning a variable.
 func (c *Compiler) SetVariable(name string, sort Type) {
-	if !strings.Contains(name, "_") {
+	if !strings.Contains(name, "_") && sort != Protected {
 		c.SetVariable(name+"_use", Unused)
 		for i:=len(c.Scope)-1; i>=0; i-- {
-			if _, ok := c.Scope[i][name]; ok {
-				c.RaiseError("Duplicate variable name!", name)
+			if v, ok := c.Scope[i][name]; ok && v != List && v != User {
+				c.RaiseError("Duplicate variable name!", name, "(", v.Name, ")")
 			}
 		}
 	}
@@ -268,9 +269,15 @@ func (ic *Compiler) LoseScope() {
 
 	//Erm garbage collection???
 	for name, variable := range ic.Scope[len(ic.Scope)-1] {
-		if variable == Unused {
-			ic.RaiseError("unused variable! ", strings.Split(name, "_")[0])
-		} 
+		if strings.Contains(name, "_") {
+			var ok = false
+			if ic.LastDefinedType.Detail != nil {
+				_, ok = ic.LastDefinedType.Detail.Table[strings.Split(name, "_")[0]]
+			}
+			if variable == Unused && !(ic.GetFlag(InMethod) && ok ) {
+				ic.RaiseError("unused variable! ", strings.Split(name, "_")[0])
+			} 
+		}
 	
 		if ic.Scope[len(ic.Scope)-1][name+"."] != Protected { //Protected variables
 			if ic.GetFlag(InMethod) && name == ic.LastDefinedType.Name {
@@ -400,6 +407,9 @@ func (ic *Compiler) Compile() {
 				var braces = 0
 				for {
 					var token = ic.Scan(0)
+					if strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+						ic.GetVariable(token)
+					}
 					if data {
 						ic.SetVariable(token, Text)
 						data = false

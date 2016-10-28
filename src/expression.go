@@ -78,6 +78,7 @@ func (ic *Compiler) expression() string {
 		
 		//TODO better gc protection.
 		ic.SetVariable(variable, t)
+		ic.SetVariable(variable+"_use", Used)
 		return variable
 	}
 	

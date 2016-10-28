@@ -10,6 +10,8 @@ func (ic *Compiler) ScanForLoop() {
 		ic.Scan(',')
 		name2 = ic.Scan(Name)
 	}
+
+	var OverList = false
 	
 	switch ic.Scan(0) {
 		case "=":
@@ -25,7 +27,56 @@ func (ic *Compiler) ScanForLoop() {
 			ic.Assembly("	BREAK")
 			ic.Assembly("END")
 			ic.SetFlag(ForLoop)
-		
+	
+		case "over":
+			var token = ic.Scan(0)
+			if token == "[" {
+				a := ic.ScanExpression()
+				ic.Scan(',')
+				b := ic.ScanExpression()
+				ic.Scan(']')
+			
+				condition := ic.Tmp("over")
+				backup := ic.Tmp("backup")
+			
+				ic.Assembly("IF 1\n",
+					"VAR ",name,"\n",
+					"VAR ",backup,"\n",
+					"ADD ",backup," 0 ",a,"\n",
+					"ADD ",name," 0 ",a,"\n",
+					"LOOP\n",
+					"	VAR ",condition,"\n",
+					"	SNE ",condition," ",name," ",b,"\n",
+					"	ADD ",name," 0 ",backup,"\n",
+					"	IF ",condition,"\n",
+					"		SLT ",condition," ",name," ",b,"\n",
+					"		IF ",condition,"\n",
+					"			ADD ",backup," ",name," 1\n",
+					"		ELSE\n",
+					"			SUB ",backup," ",name," 1\n",
+					"		END\n",
+					"		SEQ ",condition," ",a," ",b,"\n",
+					"		IF ",condition,"\n",
+					"			BREAK\n",
+					"		END\n",
+					"	ELSE\n",
+					"		SEQ ",condition," ",a," ",b,"\n",
+					"		IF ",condition,"\n",
+					"			ADD ",name," ",name," 1\n",
+					"       ELSE\n",
+					"			BREAK\n",
+					"		END\n",
+					"	END\n",
+				)
+				ic.GainScope()
+				if name != "each" { 
+					ic.SetVariable(name, Number)
+				}
+				ic.SetFlag(ForLoop)
+				return
+			}
+			ic.NextToken = token
+			fallthrough
 		case "in":
 			var array = ic.ScanExpression()
 			
@@ -44,13 +95,33 @@ func (ic *Compiler) ScanForLoop() {
 				v = name
 			}
 			
+			if OverList {
+				i = name
+			}
+			
 			vo = v
 			if ic.ExpressionType.List {
 				v += "_address"
 			}
 			
 			backup := ic.Tmp("backup")
-			
+			if OverList {
+			ic.Assembly(`
+IF 1
+VAR %v
+VAR %v
+LOOP
+	VAR %v
+	ADD %v 0 %v
+	SGE %v %v #%v
+	IF %v
+		BREAK
+	END
+	PLACE %v
+	PUSH %v
+	ADD %v %v 1
+`, i,backup, condition, i, backup,  condition, i, array, condition, array, i, backup, i)			
+			} else {
 			ic.Assembly(`
 IF 1
 VAR %v
@@ -67,6 +138,7 @@ LOOP
 	GET %v
 	ADD %v %v 1
 `, i,backup, condition, i, backup,  condition, i, array, condition, array, i, v, backup, i)
+	}
 
 			if ic.ExpressionType.List {
 				ic.Assembly("PUSH ", v)
@@ -84,52 +156,6 @@ LOOP
 				ic.SetVariable(vo+".", Protected)
 			} else {
 				ic.SetVariable(vo, Number)
-			}
-			ic.SetFlag(ForLoop)
-			return
-	
-		case "over":
-			ic.Scan('[')
-			a := ic.ScanExpression()
-			ic.Scan(',')
-			b := ic.ScanExpression()
-			ic.Scan(']')
-			
-			condition := ic.Tmp("over")
-			backup := ic.Tmp("backup")
-			
-			ic.Assembly("IF 1\n",
-				"VAR ",name,"\n",
-				"VAR ",backup,"\n",
-				"ADD ",backup," 0 ",a,"\n",
-				"ADD ",name," 0 ",a,"\n",
-				"LOOP\n",
-				"	VAR ",condition,"\n",
-				"	SNE ",condition," ",name," ",b,"\n",
-				"	ADD ",name," 0 ",backup,"\n",
-				"	IF ",condition,"\n",
-				"		SLT ",condition," ",name," ",b,"\n",
-				"		IF ",condition,"\n",
-				"			ADD ",backup," ",name," 1\n",
-				"		ELSE\n",
-				"			SUB ",backup," ",name," 1\n",
-				"		END\n",
-				"		SEQ ",condition," ",a," ",b,"\n",
-				"		IF ",condition,"\n",
-				"			BREAK\n",
-				"		END\n",
-				"	ELSE\n",
-				"		SEQ ",condition," ",a," ",b,"\n",
-				"		IF ",condition,"\n",
-				"			ADD ",name," ",name," 1\n",
-				"       ELSE\n",
-				"			BREAK\n",
-				"		END\n",
-				"	END\n",
-			)
-			ic.GainScope()
-			if name != "each" { 
-				ic.SetVariable(name, Number)
 			}
 			ic.SetFlag(ForLoop)
 			return

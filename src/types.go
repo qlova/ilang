@@ -245,6 +245,7 @@ func (ic *Compiler) IndexUserType(name, element string) string {
 	var t UserType
 	if ic.GetVariable(name) != Undefined {
 		t = *ic.GetVariable(name).Detail
+		ic.SetVariable(name+"_use", Used)
 	} else {
 		t = *ic.ExpressionType.Detail
 	}
@@ -312,6 +313,7 @@ func (ic *Compiler) SetUserType(name, element, value string) {
 	var t UserType
 	if ic.GetVariable(name) != Undefined {
 		t = *ic.GetVariable(name).Detail
+		ic.SetVariable(name+"_use", Used)
 	} else {
 		ic.RaiseError("Cannot set type without type identity!")
 	}
