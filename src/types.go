@@ -122,6 +122,8 @@ func (ic *Compiler) ScanType() {
 	t := NewUserType(name)
 	
 	ic.Scan('{')
+		
+	ic.InsertPlugins(name)
 	//What are the elements?
 	for {
 		var token = ic.Scan(0)
@@ -181,19 +183,20 @@ func (ic *Compiler) ScanConstructor() string {
 	
 	var token = ic.Scan(0)
 	
-	if ic.Peek() == ")" && token == "(" {
+	/*if ic.Peek() == ")" && token == "(" {
 		ic.ExpressionType = InFunction
 		ic.NextToken = "("
 		return name
-	}
+	}*/
 	
 	var array = ic.Tmp("constructor")
 	
 	ic.Assembly("ARRAY ", array)
 	//This is effectively a constructor.
-	if token == "(" {
+	if token == "{" {
 		var i int
 		for {
+			
 			var expr = ic.ScanExpression()
 			ic.Assembly("PLACE ", array)
 			if ic.ExpressionType.Push == "PUSH" {
@@ -218,7 +221,7 @@ func (ic *Compiler) ScanConstructor() string {
 					ic.DefinedTypes[name].Detail.Elements[i])
 			}
 			token = ic.Scan(0)
-			if token == ")" {
+			if token == "}" {
 				break
 			} else if token != "," {
 				ic.Expecting(",")
@@ -230,10 +233,13 @@ func (ic *Compiler) ScanConstructor() string {
 				ic.Assembly("PUT 0")
 			}
 		}
-	} else if token == "\n" {
+	} else if token == "\n" || token == ")" {
 		for range ic.DefinedTypes[name].Detail.Elements {
 			ic.Assembly("PUT 0")
 		}
+		if token == ")" {
+			ic.NextToken = ")"
+		}	
 	} else {
 		ic.RaiseError()
 	}

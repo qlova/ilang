@@ -8,7 +8,7 @@ func (ic *Compiler) Shunt(name string) string {
 	var token = ic.Scan(0)
 	
 	switch token {
-		case ")", ",", "\n", "]", ";", "{":
+		case ")", ",", "\n", "]", ";", "{", "}":
 			ic.NextToken = token
 			return name
 		

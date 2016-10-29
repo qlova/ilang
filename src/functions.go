@@ -110,13 +110,15 @@ func (ic *Compiler) ScanFunction() {
 }
 
 func (ic *Compiler) ScanNew() {
-	var name string = ic.Scan(Name)
+	var sort = ic.Scan(Name)
+	var name string = "new_m_"+sort
 	
-	if name == "Game" {
+	if name == "new_m_Game" {
 		ic.NewGame = true
 	}
 	
 	ic.Assembly("FUNCTION ", name)
+	ic.Scan(')')
 	ic.Scan('{')
 	ic.GainScope()
 	
@@ -124,40 +126,66 @@ func (ic *Compiler) ScanNew() {
 	ic.SetFlag(InMethod)
 	ic.SetFlag(InFunction)
 	
-	ic.Assembly("PUSH ", len(ic.LastDefinedType.Detail.Elements))
+	ic.Assembly("PUSH ", len(ic.DefinedTypes[sort].Detail.Elements))
 	ic.Assembly("MAKE")
-	ic.Assembly("GRAB ", ic.LastDefinedType.Name)
-	ic.SetVariable(ic.LastDefinedType.Name, ic.LastDefinedType)
+	ic.Assembly("GRAB ", ic.DefinedTypes[sort].Name)
+	ic.SetVariable(ic.DefinedTypes[sort].Name, ic.DefinedTypes[sort])
 	
-	ic.DefinedFunctions[name] = Function{Exists:true, Returns:[]Type{ic.LastDefinedType}}
+	ic.DefinedFunctions[name] = Function{Exists:true, Returns:[]Type{ic.DefinedTypes[sort]}}
+	
+	ic.InsertPlugins(name)
 }
 
 func (ic *Compiler) ScanMethod() {
 	var name string = ic.Scan(Name)
 	
-	if ic.LastDefinedType.Name == "Game" && name == "draw" {
+	f := ic.DefinedFunctions[name]
+	f.Method = true
+	ic.DefinedFunctions[name] = f
+	
+	if name == "new" {
+		ic.Scan('(')
+		ic.ScanNew()
+		return
+	}	
+		
+	var MethodType = ic.LastDefinedType
+	
+	ic.Scan('(')
+	var token = ic.Scan(0)
+	if token != ")" {
+		if t, ok := ic.DefinedTypes[token]; ok {
+			MethodType = t
+		} else {
+			ic.NextToken = token
+		}
+	}
+	
+	
+	if MethodType.Name == "Game" && name == "draw" {
 		ic.DrawGame = true
 	}
-	if ic.LastDefinedType.Name == "Game" && name == "update" {
+	if MethodType.Name == "Game" && name == "update" {
 		ic.UpdateGame = true
 	}
 	
-	name += "_m_"+ic.LastDefinedType.Name
+	name += "_m_"+MethodType.Name
 	
 	ic.Assembly("FUNCTION ", name)
-	ic.Scan('(')
 	ic.GainScope()
 	
-	ic.Assembly("%v %v", ic.LastDefinedType.Pop, ic.LastDefinedType.Name)
-	ic.SetVariable(ic.LastDefinedType.Name, ic.LastDefinedType)
-	ic.SetVariable(ic.LastDefinedType.Name+"_use", Used)
+	ic.Assembly("%v %v", MethodType.Pop, MethodType.Name)
+	ic.SetVariable(MethodType.Name, MethodType)
+	ic.SetVariable(MethodType.Name+"_use", Used)
 	
 	ic.function(name)
 	ic.SetFlag(InMethod)
 	
-	f := ic.DefinedFunctions[name]
+	f = ic.DefinedFunctions[name]
 	f.Method = true
 	ic.DefinedFunctions[name] = f
+	
+	ic.InsertPlugins(name)
 }
 
 func (ic *Compiler) function(name string) {

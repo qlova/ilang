@@ -53,6 +53,14 @@ type Compiler struct {
 	LastDefinedFunction Function	//The latest user defined function.
 	LastDefinedFunctionName string  //The name of the latest user defined function.
 	
+	//Plugins
+	Insertion []Plugin
+	P int
+	I int
+	Lines int
+	
+	Plugins map[string][]Plugin
+	
 	//This is the expressiontype variable, it stores the type of the last scanned expression.
 	ExpressionType Type
 	
@@ -104,8 +112,17 @@ func (c *Compiler) GainScope() {
 }
 
 //Peek at the next character in the scanner.
-func (ic *Compiler) Peek() string {
-	return string(ic.Scanner.Peek())
+func (c *Compiler) Peek() string {
+
+	//Plugin injection.
+	if len(c.Insertion) > 0 {
+		if c.P != len(c.Insertion) {
+			var text = c.Insertion[c.P].Tokens[c.I]
+			return text
+		}
+	}
+
+	return string(c.Scanner.Peek())
 }
 
 //Scan and return a token, can be called like:
@@ -116,6 +133,7 @@ func (ic *Compiler) Peek() string {
 */
 //When an EOF is reached, Scan will stop the Compiler.
 func (c *Compiler) Scan(verify rune) string {
+
 	if c.NextToken != "" {
 		var text = c.NextToken
 		if verify > 0  && rune(text[0]) != verify {
@@ -124,97 +142,126 @@ func (c *Compiler) Scan(verify rune) string {
 		}
 		c.NextToken = ""
 		return text
-	} else {
-		tok := c.Scanner.Scan()
-		if verify > 0 && tok != verify {
-			if verify > 9 {
-				c.Expecting(string(verify))
-			}
-			c.RaiseError("Unexpected "+c.Scanner.TokenText())
-		}
-			
-		if tok == scanner.EOF {
-			if len(c.Scanners) > 0 {
-				//var currentfile = c.Scanner.Filename
-				c.Scanner = c.Scanners[len(c.Scanners)-1]
-				c.Scanners = c.Scanners[:len(c.Scanners)-1]
-				
-				
-				return c.Scan(verify)
-			} else {
-				
-				//Final cleanup and tasks.
-				for _, t := range c.DefinedTypes {
-					c.Collect(t)
-				}
-				
-				fmt.Fprintf(c.Lib, `DATA i_newline "\n"`+"\n")
-				c.LoadFunction("strings.equal")
-			
-				//Create a software block.
-				if !c.SoftwareBlockExists && c.GUIExists && c.GUIMainExists {
-					c.Assembly("SOFTWARE")
-					c.GainScope()
-						c.Assembly("SHARE gui_main")
-						c.Assembly("RUN gui")
-						c.Assembly("LOOP")
-						c.Assembly("SHARE i_newline")
-						c.Assembly("RUN grab")
-						c.Assembly("IF ERROR")
-						c.GainScope()
-							c.Assembly("EXIT")
-						c.LoseScope()
-						c.Assembly("END")
-						c.Assembly("REPEAT")
-					c.LoseScope()
-					c.Assembly("EXIT")
-					c.LoadFunction("grab")
-					c.LoadFunction("gui")
-					c.LoadFunction("output_m_pipe")
-					c.LoadFunction("reada_m_pipe")
-				}
-				
-				//Create a software block.
-				if !c.SoftwareBlockExists && c.Game && !c.GUIExists {
-					if !c.NewGame {
-						c.Assembly("FUNCTION Game")
-						c.GainScope()
-						c.Assembly("ARRAY game")
-						for range c.DefinedTypes["Game"].Detail.Elements {
-							c.Assembly("PUT 0")
-						}
-						c.Assembly("SHARE game")
-						c.LoseScope()
-						c.Assembly("RETURN")
-					}
-					if !c.UpdateGame {
-						c.Assembly("FUNCTION update_m_Game")
-						c.Assembly("RETURN")
-					}
-					if !c.DrawGame {
-						c.Assembly("FUNCTION draw_m_Game")
-						c.Assembly("RETURN")
-					}
-				
-					c.Assembly("SOFTWARE")
-					c.GainScope()
-					c.Assembly("RUN grate")
-					c.LoseScope()
-					c.Assembly("EXIT")
-				}
-				
-				c.Stop = true
-				return ""
-			}
-		}
-		return c.Scanner.TokenText()
 	}
+
+	//Plugin injection.
+	if len(c.Insertion) > 0 {
+		if c.P == len(c.Insertion) {
+			c.P = 0
+			c.I = 0
+			c.Insertion = nil
+			c.Lines = 0
+		}
+		
+		if c.P != len(c.Insertion) {
+			var text = c.Insertion[c.P].Tokens[c.I]
+			if verify > 0  && rune(text[0]) != verify {
+				text = strconv.Quote(text)
+				c.RaiseError("Unexpected "+text+", expecting "+string(verify))
+			}
+			if text == "\n" {
+				c.Lines++
+			}
+			
+			if c.I == len(c.Insertion[c.P].Tokens)-1 {
+				c.Lines = 0
+				c.I = 0
+				c.P++
+			} else {
+				c.I++
+			}
+		
+			return text
+		}
+	}
+	
+	tok := c.Scanner.Scan()
+	if verify > 0 && tok != verify {
+		if verify > 9 {
+			c.Expecting(string(verify))
+		}
+		c.RaiseError("Unexpected "+c.Scanner.TokenText())
+	}
+		
+	if tok == scanner.EOF {
+		if len(c.Scanners) > 0 {
+			//var currentfile = c.Scanner.Filename
+			c.Scanner = c.Scanners[len(c.Scanners)-1]
+			c.Scanners = c.Scanners[:len(c.Scanners)-1]
+			
+			
+			return c.Scan(verify)
+		} else {
+			
+			//Final cleanup and tasks.
+			for _, t := range c.DefinedTypes {
+				c.Collect(t)
+			}
+			
+			fmt.Fprintf(c.Lib, `DATA i_newline "\n"`+"\n")
+			c.LoadFunction("strings.equal")
+		
+			//Create a software block.
+			if !c.SoftwareBlockExists && c.GUIExists && c.GUIMainExists {
+				c.Assembly("SOFTWARE")
+				c.GainScope()
+					c.Assembly("SHARE gui_main")
+					c.Assembly("RUN gui")
+					c.Assembly("LOOP")
+					c.Assembly("SHARE i_newline")
+					c.Assembly("RUN grab")
+					c.Assembly("IF ERROR")
+					c.GainScope()
+						c.Assembly("EXIT")
+					c.LoseScope()
+					c.Assembly("END")
+					c.Assembly("REPEAT")
+				c.LoseScope()
+				c.Assembly("EXIT")
+				c.LoadFunction("grab")
+				c.LoadFunction("gui")
+				c.LoadFunction("output_m_pipe")
+				c.LoadFunction("reada_m_pipe")
+			}
+			
+			//Create a software block.
+			if !c.SoftwareBlockExists && c.Game && !c.GUIExists {
+				if !c.NewGame {
+					c.Assembly("FUNCTION Game")
+					c.GainScope()
+					c.Assembly("ARRAY game")
+					for range c.DefinedTypes["Game"].Detail.Elements {
+						c.Assembly("PUT 0")
+					}
+					c.Assembly("SHARE game")
+					c.LoseScope()
+					c.Assembly("RETURN")
+				}
+				if !c.UpdateGame {
+					c.Assembly("FUNCTION update_m_Game")
+					c.Assembly("RETURN")
+				}
+				if !c.DrawGame {
+					c.Assembly("FUNCTION draw_m_Game")
+					c.Assembly("RETURN")
+				}
+			
+				c.Assembly("SOFTWARE")
+				c.GainScope()
+				c.Assembly("RUN grate")
+				c.LoseScope()
+				c.Assembly("EXIT")
+			}
+			
+			c.Stop = true
+			return ""
+		}
+	}
+	return c.Scanner.TokenText()
 }
 
 func (c *Compiler) Expecting(token string) {
-	if c.Scanner.TokenText() != token {
-		c.RaiseError("Expecting "+token+" found "+strconv.Quote(c.Scanner.TokenText()))
-	}
+	c.RaiseError("Expecting "+token)
 }
 
 func (ic *Compiler) LoseScope() {
@@ -255,11 +302,23 @@ func (ic *Compiler) LoseScope() {
 	
 }
 
+func (c *Compiler) TokenText() string {
+	if len(c.Insertion) > 0 {
+		return c.Insertion[c.P].Tokens[c.I-1]
+	}
+	return c.Scanner.TokenText()
+}
+
 func (c *Compiler) RaiseError(message ...interface{}) {
+	pos := fmt.Sprint(c.Scanner.Pos())
+	if len(c.Insertion) > 0 {
+		pos = fmt.Sprintf("%v:%v:%v", c.Insertion[c.P].File, c.Insertion[c.P].Line+c.Lines, c.I) 
+	}
+
 	if len(message) == 0 {
-		fmt.Fprintf(os.Stderr, "[%v] %v\n", c.Scanner.Pos(), "Unexpected "+strconv.Quote(c.Scanner.TokenText()))
+		fmt.Fprintf(os.Stderr, "[%v] %v\n", pos, "Unexpected "+strconv.Quote(c.TokenText()))
 	} else {
-		fmt.Fprintf(os.Stderr, "[%v] %v\n", c.Scanner.Pos(), fmt.Sprint(message...))
+		fmt.Fprintf(os.Stderr, "[%v] %v\n", pos, fmt.Sprint(message...))
 	}
 	//panic("DEBUG TRACEBACK")
 	os.Exit(1)
@@ -312,6 +371,7 @@ func NewCompiler(input io.Reader) Compiler {
 		DefinedFunctions: make(map[string]Function),
 		DefinedTypes: make(map[string]Type),
 		LastDefinedType: Something,
+		Plugins: make(map[string][]Plugin),
 	}
 	
 	c.Builtin()
@@ -405,6 +465,9 @@ func (ic *Compiler) Compile() {
 						}
 					}
 				}
+			case "plugin":
+				ic.ScanPlugin()
+				
 				
 			case "!":
 				ic.Assembly("ADD ERROR 0 0")
@@ -504,7 +567,7 @@ func (ic *Compiler) Compile() {
 					ic.RaiseError("Cannot return, not in a function!")
 				}
 				
-				if ic.CurrentFunction.Returns[0] == User {
+				if len(ic.CurrentFunction.Returns) > 0 && ic.CurrentFunction.Returns[0] == User {
 					ic.CurrentFunction.Returns[0] = ic.ExpressionType
 				}
 				
@@ -526,6 +589,9 @@ func (ic *Compiler) Compile() {
 				
 			case "switch":
 				var expression = ic.ScanExpression()
+				if ic.ExpressionType != Number {
+					ic.RaiseError("switch statements must have numeric conditions!")
+				}
 				ic.Scan('{')
 				ic.GainScope()
 				ic.SetFlag(Type{Name: "flag_switch", Push: expression})
@@ -703,6 +769,9 @@ func (ic *Compiler) Compile() {
 			
 			case "if":
 				var expression = ic.ScanExpression()
+				if ic.ExpressionType != Number {
+					ic.RaiseError("if statements must have numeric conditions!")
+				}
 				ic.Assembly("IF ", expression)
 				ic.GainScope()
 				
