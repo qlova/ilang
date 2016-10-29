@@ -164,6 +164,7 @@ LOOP
 			ic.SetVariable("i_for_array", Type{Name:array})
 			
 			ic.SetFlag(ForLoop)
+			ic.SetFlag(Delete)
 			return
 	}
 	

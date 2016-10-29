@@ -31,7 +31,7 @@ function runit {
 			ruby $1.rb <<< $(echo -e "$2")
 		;;
 		lua)
-			lua $1.lua <<< $(echo -e "$2")
+			cd ./.it && lua $1.lua <<< $(echo -e "$2") && cd .. 
 		;;
 		js)nodejs $1.js <<< $(echo -e "$2")
 		;;
@@ -104,6 +104,7 @@ BasicTest ArrayLoop "22\n2\n3\n4\n022\n12\n23\n34"
 BasicTest Issues "Issue 2\n"
 BasicTest Import "Did something!\n"
 BasicTest Constant "42\n"
+BasicTest Delete "5\n2\n3\n4"
 
 BasicTest Sort "2\n3\n4\n5\n6"
 BasicTest Split "192\n168\n1\n70"

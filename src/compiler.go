@@ -599,7 +599,9 @@ func (ic *Compiler) Compile() {
 				for {
 					token := ic.Scan(0)
 					if token != "\n" {
-						ic.Expecting("case")
+						if token != "case" {
+							ic.RaiseError("Expecting case")
+						}
 						break
 					}
 				}
@@ -811,39 +813,43 @@ func (ic *Compiler) Compile() {
 				var del = ic.GetVariable("i_for_delete").Name
 			
 				loopBefore := ic.GetFlag(ForLoop)
+				delBefore := ic.GetFlag(Delete)
 				ic.LoseScope()
 				loopAfter := ic.GetFlag(ForLoop)
+				delAfter := ic.GetFlag(Delete)
 				if loopBefore != loopAfter {
 					ic.Assembly("REPEAT")
 					
-					ic.Assembly(`
-VAR ii_i8
-VAR ii_backup9
-LOOP
-	VAR ii_in7
-	ADD ii_i8 0 ii_backup9
-	SGE ii_in7 ii_i8 #%v
-	IF ii_in7
-		BREAK
-	END
-	PLACE %v
-	PUSH ii_i8
-	GET i_v
-	ADD ii_backup9 ii_i8 1
+					if delBefore != delAfter {
+						ic.Assembly(`
+	VAR ii_i8
+	VAR ii_backup9
+	LOOP
+		VAR ii_in7
+		ADD ii_i8 0 ii_backup9
+		SGE ii_in7 ii_i8 #%v
+		IF ii_in7
+			BREAK
+		END
+		PLACE %v
+		PUSH ii_i8
+		GET i_v
+		ADD ii_backup9 ii_i8 1
 
-	VAR ii_operator11
-	SUB ii_operator11 #%v 1
-	PLACE %v
-	PUSH ii_operator11
-	GET ii_index12
-	PLACE %v
-	PUSH i_v
-	SET ii_index12
-	PLACE %v
-	POP n
-	ADD n 0 0
-REPEAT
-					`, del, del, array, array, array, array)
+		VAR ii_operator11
+		SUB ii_operator11 #%v 1
+		PLACE %v
+		PUSH ii_operator11
+		GET ii_index12
+		PLACE %v
+		PUSH i_v
+		SET ii_index12
+		PLACE %v
+		POP n
+		ADD n 0 0
+	REPEAT
+						`, del, del, array, array, array, array)
+					}
 				}
 				ic.Assembly("END")
 				
