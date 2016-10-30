@@ -73,13 +73,44 @@ func (ic *Compiler) expression() string {
 	
 	if t, ok := ic.DefinedTypes[token]; ok {
 		ic.ExpressionType = t
-		ic.NextToken = token
-		variable := ic.ScanConstructor()
 		
-		//TODO better gc protection.
-		ic.SetVariable(variable, t)
-		ic.SetVariable(variable+"_use", Used)
-		return variable
+		if ic.Peek() == "(" {
+			ic.Scan('(')
+			if ic.Peek() == ")" {
+				ic.Scan(')')
+				
+				var array = ic.Tmp("user")
+				ic.Assembly("ARRAY ", array)
+				for range ic.DefinedTypes[token].Detail.Elements {
+					ic.Assembly("PUT 0")
+				}
+				return array
+			}
+			ic.RaiseError()	
+		} else if ic.Peek() == "{" {
+			ic.NextToken = token
+			variable := ic.ScanConstructor()
+				//TODO better gc protection.
+			ic.SetVariable(variable, t)
+			ic.SetVariable(variable+"_use", Used)
+			return variable
+		} else {
+			ic.RaiseError()
+		}
+		
+		
+	}
+	
+	if token == "new" {
+		var sort = ic.expression()
+		if _, ok := ic.DefinedFunctions["new_m_"+ic.ExpressionType.Name]; !ok {
+			ic.RaiseError()
+		}
+		var r = ic.Tmp("new")
+		ic.Assembly(ic.ExpressionType.Push, " ", sort)
+		ic.Assembly("RUN new_m_"+ic.ExpressionType.Name)
+		ic.Assembly("GRAB ", r)
+		return r
 	}
 	
 	if _, ok := ic.DefinedFunctions[token]; ok {

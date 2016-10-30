@@ -143,11 +143,11 @@ func (ic *Compiler) ScanMethod() {
 	f.Method = true
 	ic.DefinedFunctions[name] = f
 	
-	if name == "new" {
+	/*if name == "new" {
 		ic.Scan('(')
 		ic.ScanNew()
 		return
-	}	
+	}*/	
 		
 	var MethodType = ic.LastDefinedType
 	
@@ -179,9 +179,14 @@ func (ic *Compiler) ScanMethod() {
 	ic.SetVariable(MethodType.Name+"_use", Used)
 	
 	ic.function(name)
+	f = ic.DefinedFunctions[name]
+	if name == "new_m_"+MethodType.Name {
+		ic.SetFlag(New)
+		f.Returns = []Type{MethodType}
+	}
 	ic.SetFlag(InMethod)
 	
-	f = ic.DefinedFunctions[name]
+	
 	f.Method = true
 	ic.DefinedFunctions[name] = f
 	
