@@ -301,6 +301,11 @@ func (ic *Compiler) IndexUserType(name, element string) string {
 				ic.Assembly("ELSE")
 				ic.GainScope()
 				ic.Assembly("ARRAY ", tmp)
+				if t.Elements[index].User {
+				for range t.Elements[index].Detail.Elements {
+					ic.Assembly("PUT 0")
+				}
+				}
 				ic.Assembly("SHARE ", tmp)
 				ic.LoseScope()
 				ic.Assembly("END")
