@@ -812,15 +812,13 @@ func (ic *Compiler) Compile() {
 				var array = ic.GetVariable("i_for_array").Name
 				var del = ic.GetVariable("i_for_delete").Name
 			
-				loopBefore := ic.GetFlag(ForLoop)
-				delBefore := ic.GetFlag(Delete)
+				loopBefore := ic.GetScopedFlag(ForLoop)
+				delBefore := ic.GetScopedFlag(Delete)
 				ic.LoseScope()
-				loopAfter := ic.GetFlag(ForLoop)
-				delAfter := ic.GetFlag(Delete)
-				if loopBefore != loopAfter {
+				if loopBefore {
 					ic.Assembly("REPEAT")
 					
-					if delBefore != delAfter {
+					if delBefore {
 						ic.Assembly(`
 	VAR ii_i8
 	VAR ii_backup9

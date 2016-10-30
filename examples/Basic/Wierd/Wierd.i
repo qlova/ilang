@@ -1,5 +1,9 @@
 function bool(n) "" {
-	if n; return "true"; else; return "false"; end
+	if n
+		return "true"
+	else
+		return "false"
+	end
 }
 
 software {
