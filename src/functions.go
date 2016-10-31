@@ -151,46 +151,81 @@ func (ic *Compiler) ScanMethod() {
 		
 	var MethodType = ic.LastDefinedType
 	
-	ic.Scan('(')
 	var token = ic.Scan(0)
-	if token != ")" {
-		if t, ok := ic.DefinedTypes[token]; ok {
-			MethodType = t
-		} else {
-			ic.NextToken = token
+	if token == "(" {
+		token = ic.Scan(0)
+		if token != ")" {
+			if t, ok := ic.DefinedTypes[token]; ok {
+				MethodType = t
+			} else {
+				ic.NextToken = token
+			}
 		}
+	
+	
+		if MethodType.Name == "Game" && name == "new" {
+			ic.NewGame = true
+		}
+		if MethodType.Name == "Game" && name == "draw" {
+			ic.DrawGame = true
+		}
+		if MethodType.Name == "Game" && name == "update" {
+			ic.UpdateGame = true
+		}
+	
+		name += "_m_"+MethodType.Name
+	
+		ic.Assembly("FUNCTION ", name)
+		ic.GainScope()
+	
+		ic.Assembly("%v %v", MethodType.Pop, MethodType.Name)
+		ic.SetVariable(MethodType.Name, MethodType)
+		ic.SetVariable(MethodType.Name+"_use", Used)
+	
+		ic.function(name)
+		f = ic.DefinedFunctions[name]
+		if name == "new_m_"+MethodType.Name {
+			ic.SetFlag(New)
+			f.Returns = []Type{MethodType}
+		}
+		ic.SetFlag(InMethod)
+	
+	
+		f.Method = true
+		ic.DefinedFunctions[name] = f
+	
+		ic.InsertPlugins(name)
+	} else {
+		var symbol = token
+		var other = ic.Scan(Name)
+		ic.Scan('{')
+		
+		if t, ok := ic.DefinedTypes[name]; ok {
+			MethodType = t
+		}
+		
+		var a = MethodType
+		
+		MethodType = ic.DefinedTypes[other]
+		
+		var b = MethodType
+		
+		NewOperator(a, symbol, b, "SHARE %a\n SHARE %b\nRUN "+a.Name+"_"+symbol+"_"+b.Name+"\nGRAB %c", true)
+		
+		ic.Assembly("FUNCTION %s_%s_%s\n", a.Name, symbol, b.Name)
+		ic.GainScope()
+		ic.Assembly("GRAB b\nGRAB a\nARRAY c\n")
+		for range a.Detail.Elements {
+			ic.Assembly("PUT 0\n")
+		}
+		ic.InOperatorFunction = true
+		
+		ic.SetFlag(InFunction)
+	
+		ic.SetVariable("c", a)
+		ic.SetVariable("a", a)
+		ic.SetVariable("b", b)
 	}
-	
-	
-	if MethodType.Name == "Game" && name == "draw" {
-		ic.DrawGame = true
-	}
-	if MethodType.Name == "Game" && name == "update" {
-		ic.UpdateGame = true
-	}
-	
-	name += "_m_"+MethodType.Name
-	
-	ic.Assembly("FUNCTION ", name)
-	ic.GainScope()
-	
-	ic.Assembly("%v %v", MethodType.Pop, MethodType.Name)
-	ic.SetVariable(MethodType.Name, MethodType)
-	ic.SetVariable(MethodType.Name+"_use", Used)
-	
-	ic.function(name)
-	f = ic.DefinedFunctions[name]
-	if name == "new_m_"+MethodType.Name {
-		ic.SetFlag(New)
-		f.Returns = []Type{MethodType}
-	}
-	ic.SetFlag(InMethod)
-	
-	
-	f.Method = true
-	ic.DefinedFunctions[name] = f
-	
-	ic.InsertPlugins(name)
 }
 
 func (ic *Compiler) function(name string) {

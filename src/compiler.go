@@ -227,7 +227,7 @@ func (c *Compiler) Scan(verify rune) string {
 			//Create a software block.
 			if !c.SoftwareBlockExists && c.Game && !c.GUIExists {
 				if !c.NewGame {
-					c.Assembly("FUNCTION Game")
+					c.Assembly("FUNCTION new_m_Game")
 					c.GainScope()
 					c.Assembly("ARRAY game")
 					for range c.DefinedTypes["Game"].Detail.Elements {
@@ -237,6 +237,15 @@ func (c *Compiler) Scan(verify rune) string {
 					c.LoseScope()
 					c.Assembly("RETURN")
 				}
+					c.Assembly("FUNCTION Game")
+					c.GainScope()
+					c.Assembly("ARRAY game")
+					for range c.DefinedTypes["Game"].Detail.Elements {
+						c.Assembly("PUT 0")
+					}
+					c.Assembly("SHARE game")
+					c.LoseScope()
+					c.Assembly("RETURN")
 				if !c.UpdateGame {
 					c.Assembly("FUNCTION update_m_Game")
 					c.Assembly("RETURN")
@@ -487,8 +496,8 @@ func (ic *Compiler) Compile() {
 				ic.Header = false
 				ic.ScanGui()
 				
-			case "new":
-				ic.ScanNew()
+			//case "new":
+				//ic.ScanNew()
 			
 			case "fork":
 				name := ic.Scan(Name)
@@ -567,12 +576,13 @@ func (ic *Compiler) Compile() {
 					ic.RaiseError("Cannot return, not in a function!")
 				}
 				
-				if len(ic.CurrentFunction.Returns) > 0 && ic.CurrentFunction.Returns[0] == User {
-					ic.CurrentFunction.Returns[0] = ic.ExpressionType
-				}
-				
 				if len(ic.CurrentFunction.Returns) == 1 {
 					r := ic.ScanExpression()
+					
+					if ic.CurrentFunction.Returns[0] == User {
+						ic.CurrentFunction.Returns[0] = ic.ExpressionType
+					}
+					
 					if ic.ExpressionType != ic.CurrentFunction.Returns[0] {
 						ic.RaiseError("Cannot return '",ic.ExpressionType.Name,
 							"', expecting ",ic.CurrentFunction.Returns[0].Name)
@@ -891,6 +901,10 @@ func (ic *Compiler) Compile() {
 					ic.Assembly("SHARE ", ic.LastDefinedType.Name)
 				}
 				if functionbefore != functionafter {
+					if ic.InOperatorFunction {
+						ic.InOperatorFunction = false
+						ic.Assembly("SHARE c")
+					}
 					ic.Assembly("RETURN")
 				}
 				if issuesbefore != issuesafter {
@@ -899,6 +913,7 @@ func (ic *Compiler) Compile() {
 				if loopbefore {
 					ic.Assembly("REPEAT")
 				}
+				
 				
 			default:
 				
@@ -922,14 +937,26 @@ func (ic *Compiler) Compile() {
 										ic.Assembly("ADD %v %v %v", name, 0, value)
 									}
 								default:
-									ic.RaiseError()
+									ic.ExpressionType = t
+									ic.NextToken = token
+									ic.Shunt(name)
+									if ic.ExpressionType != Undefined {
+										ic.RaiseError("blank expression!")
+									}
+									ic.ExpressionType = t
+									if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
+										ic.SetUserType(ic.LastDefinedType.Name, name, name)
+									}
 							}
 						case Array, Text, List, t.IsList():
 							var name = token
 							token = ic.Scan(0)
 							
 							switch token {
-								case "&":
+								case "&", "+":
+									if token == "+" {
+										ic.Scan('=')
+									}
 									value := ic.ScanExpression()
 									
 									if t == List {
@@ -993,7 +1020,12 @@ func (ic *Compiler) Compile() {
 									}
 									
 								default:
-									ic.RaiseError()
+									ic.ExpressionType = t
+									ic.NextToken = token
+									ic.Shunt(name)
+									if ic.ExpressionType != Undefined {
+										ic.RaiseError("blank expression!")
+									}
 							}
 						case Pipe:
 							var name = token
@@ -1016,7 +1048,12 @@ func (ic *Compiler) Compile() {
 									ic.Assembly("PLACE ", value)
 									ic.Assembly("RELOAD ", name)
 								default:
-									ic.RaiseError()
+									ic.ExpressionType = t
+									ic.NextToken = token
+									ic.Shunt(name)
+									if ic.ExpressionType != Undefined {
+										ic.RaiseError("blank expression!")
+									}
 							}
 							
 						case Func:
@@ -1034,7 +1071,12 @@ func (ic *Compiler) Compile() {
 									ic.Assembly("PLACE ", value)
 									ic.Assembly("RELOAD ", name)
 								default:
-									ic.RaiseError()
+									ic.ExpressionType = t
+									ic.NextToken = token
+									ic.Shunt(name)
+									if ic.ExpressionType != Undefined {
+										ic.RaiseError("blank expression!")
+									}
 							}
 							
 						case User:
@@ -1047,15 +1089,40 @@ func (ic *Compiler) Compile() {
 							ic.SetUserType(ic.LastDefinedType.Name, name, value)
 						
 						case t.IsUser():
+							//Support indexing at any level
+							// eg. Monster.Pos.X = 4
 							var name = token
-							token = ic.Scan(0)
-							if token == "." {
-								var index = ic.Scan(Name)
-								ic.Scan('=')
-								var value = ic.ScanExpression()
-								ic.SetUserType(name, index, value)
+							var index string
+							for token = ic.Scan(0); token == "."; {
+								index = ic.Scan(Name)
+								if token = ic.Scan(0); token == "." {
+									name = ic.IndexUserType(name, index)
+									ic.SetVariable(name, ic.ExpressionType) //This is required for setusertype to recognise.
+									ic.SetVariable(name+".", Protected)
+								}
+							}
+							var value string
+							if token != "=" {
+								value = ic.IndexUserType(name, index)
+								
+								var b = ic.ExpressionType
+								ic.NextToken = token
+								ic.Shunt(value)
+								if ic.ExpressionType != Undefined {
+									ic.RaiseError("blank expression!")
+								}
+								ic.ExpressionType = b
+								
 							} else {
-								ic.RaiseError()
+								value = ic.ScanExpression()
+							}
+							
+							//TODO garbage collection
+							if index == "" {
+								ic.Assembly("PLACE ", value)
+								ic.Assembly("RENAME ", name)
+							} else {
+								ic.SetUserType(name, index, value)
 							}
 							
 						default:

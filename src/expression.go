@@ -68,25 +68,25 @@ func (ic *Compiler) expression() string {
 	if t := ic.GetVariable(token); t != Undefined {
 		ic.ExpressionType = t
 		ic.SetVariable(token+"_use", Used)
+		if t.User {
+			return ic.Shunt(token)
+		}
 		return token
 	}
 	
 	if t, ok := ic.DefinedTypes[token]; ok {
 		ic.ExpressionType = t
 		
-		if ic.Peek() == "(" {
+		if ic.Peek() == "(" || ic.Peek() == ")" {
 			ic.Scan('(')
-			if ic.Peek() == ")" {
-				ic.Scan(')')
+			ic.Scan(')')
 				
-				var array = ic.Tmp("user")
-				ic.Assembly("ARRAY ", array)
-				for range ic.DefinedTypes[token].Detail.Elements {
-					ic.Assembly("PUT 0")
-				}
-				return array
+			var array = ic.Tmp("user")
+			ic.Assembly("ARRAY ", array)
+			for range ic.DefinedTypes[token].Detail.Elements {
+				ic.Assembly("PUT 0")
 			}
-			ic.RaiseError()	
+			return array
 		} else if ic.Peek() == "{" {
 			ic.NextToken = token
 			variable := ic.ScanConstructor()
@@ -104,7 +104,7 @@ func (ic *Compiler) expression() string {
 	if token == "new" {
 		var sort = ic.expression()
 		if _, ok := ic.DefinedFunctions["new_m_"+ic.ExpressionType.Name]; !ok {
-			ic.RaiseError()
+			ic.RaiseError("no new method found for ", ic.ExpressionType.Name)
 		}
 		var r = ic.Tmp("new")
 		ic.Assembly(ic.ExpressionType.Push, " ", sort)

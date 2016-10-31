@@ -2,6 +2,12 @@ package main
 
 import "strings"
 
+//Create the assembly for a new variable and keep track of it.
+//Type is inferred by the Compiler's ExpressionType value.
+func (ic *Compiler) CreateVariable(name, value string) {
+	ic.AssembleVar(name, value)
+}
+
 //Assign a value to a variable, this will generate assembly.
 func (ic *Compiler) AssembleVar(name string, value string) {
 

@@ -17,7 +17,7 @@ var Operations = make(map[string]map[Type]map[Type]Operator)
 
 //Opp is a standard arithmetic operator.
 func NewOperator(a Type, o string, b Type, asm string, p bool, args ...Type) {
-	var typ Type = Undefined
+	var typ Type = a
 	if len(args) > 0 {
 		typ = args[0]
 	}
@@ -60,6 +60,10 @@ func OperatorPrecident(sym string) bool {
 	return map[string]bool{"=":true, "!=":true,">=":true,"<=":true,"<":true,">":true,
 		"+": true,
 		"-": true,
+		"+=": true,
+		"-=": true,
+		"*=": true,
+		"/=": true,
 	}[sym]
 }
 
@@ -69,6 +73,14 @@ func init() {
 	
 	NewOperator(Number, "+", Number, "VAR %c\nADD %c %a %b", false)
 	NewOperator(Number, "-", Number, "VAR %c\nSUB %c %a %b", false)
+	
+	NewOperator(Number, "++", Undefined, "ADD %a %a 1", false, Undefined)
+	NewOperator(Number, "--", Undefined, "SUB %a %a 1", false, Undefined)
+	
+	NewOperator(Number, "+=", Number, "ADD %a %a %b", false, Undefined)
+	NewOperator(Number, "-=", Number, "SUB %a %a %b", false, Undefined)
+	NewOperator(Number, "*=", Number, "MUL %a %a %b", false, Undefined)
+	NewOperator(Number, "/=", Number, "DIV %a %a %b", false, Undefined)
 	
 	NewOperator(Number, "or", Number, "VAR %c\nADD %c %a %b", false)
 	
@@ -90,6 +102,7 @@ func init() {
 	NewOperator(Itype, "=", Itype, "VAR %c\nSEQ %c %a %b", true)
 	
 	NewOperator(Text, "+", Text, "ARRAY %c\nJOIN %c %a %b", false)
+	NewOperator(Text, "+=", Text, "JOIN %a %a %b", false)
 	NewOperator(Text, "=", Text, "SHARE %a\n SHARE %b\nRUN strings.equal\nPULL %c\n", false, Number)
 	NewOperator(Text, "!=", Text, "SHARE %a\n SHARE %b\nRUN strings.equal\nPULL %c\nDIV %c %c 0\n", false, Number)
 	

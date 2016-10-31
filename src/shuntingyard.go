@@ -171,10 +171,7 @@ func (ic *Compiler) Shunt(name string) string {
 					B = ic.ExpressionType
 					
 					operator, ok = GetOperator(token, A, B)
-					
-					if token == "=" && A == Text && B == Text {
-						ic.ExpressionType = Number
-					}
+					ic.ExpressionType = operator.ExpressionType
 				} else if token == "²" {
 					next = name
 					B = ic.ExpressionType
@@ -191,9 +188,7 @@ func (ic *Compiler) Shunt(name string) string {
 				
 					ic.Assembly(asm)
 				
-					if operator.ExpressionType != Undefined {
-						ic.ExpressionType = operator.ExpressionType
-					}
+					ic.ExpressionType = operator.ExpressionType
 				
 					if !OperatorPrecident(token) {
 						return ic.Shunt(id)

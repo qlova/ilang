@@ -355,6 +355,7 @@ func (ic *Compiler) SetUserType(name, element, value string) {
 			
 			case "SHARE", "RELAY":
 				
+				//TODO garbage collect
 				var tmp = ic.Tmp("index")
 				ic.Assembly("SHARE ", value)
 				ic.Assembly("PUSH 0")
