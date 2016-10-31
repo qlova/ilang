@@ -4,12 +4,12 @@ type User {
 	""Phone
 }
 
-method text() "" {
+method text(User) "" {
 	return Name
 }
 
 software {
-	var bob is User
+	var bob = User()
 	bob.Name = "Bob Normal"
 	bob.Address = "22 Some Road"
 	bob.Phone = "555000555"

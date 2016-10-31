@@ -11,61 +11,61 @@ function gcd(a, b) n {
 	end
 }
 
-Rational * Rational {
-	c  = ab
-	ci = aibi
+method Rational * Rational {
+	c.numer  = a.numer*b.numer
+	c.denom  = a.denom*b.denom
 	
-	var g = gcd(c, ci)
+	var g = gcd(c.numer, c.denom)
 	
-	c = c/g
-	ci = ci/g
+	c.numer  = c.numer/g
+	c.denom  = c.denom/g
 }
 
-Rational + Rational {
-	c  = abi + bai
-	ci = aibi
+method Rational + Rational {
+	c.numer  = a.numer*b.denom + b.numer*a.denom
+	c.denom  = a.denom*b.denom
 	
-	var g = gcd(c, ci)
+	var g = gcd(c.numer, c.denom)
 	
-	c = c/g
-	ci = ci/g
+	c.numer  = c.numer/g
+	c.denom  = c.denom/g
 }
 
-Rational - Rational {
-	c  = abi - bai
-	ci = aibi
+method Rational - Rational {
+	c.numer  = a.numer*b.denom - b.numer*a.denom
+	c.denom  = a.denom*b.denom
 	
-	var g = gcd(c, ci)
+	var g = gcd(c.numer, c.denom)
 	
-	c = c/g
-	ci = ci/g
+	c.numer  = c.numer/g
+	c.denom  = c.denom/g
 }
 
-Rational / Rational {
-	c  = abi
-	ci = aib
+method Rational / Rational {
+	c.numer  = a.numer*b.denom
+	c.denom  = a.denom*b.numer
 	
-	var g = gcd(c, ci)
+	var g = gcd(c.numer, c.denom)
 	
-	c = c/g
-	ci = ci/g
+	c.numer  = c.numer/g
+	c.denom  = c.denom/g
 }
 
-method text() [] {
-	return text(Rational.numer)+"/"+text(Rational.denom)
+method text(Rational) "" {
+	return text(numer)+"/"+text(denom)
 }
 
 software {
-	var r is Rational
+	var r = Rational()
 	
 	r.numer = 8
 	r.denom = 16
 	
-	var n is Rational(2, 5)
+	var n = Rational{2, 5}
 	
 	print(r)
 	
-	r = r*r
+	r = r * r
 	
 	print(r)
 	

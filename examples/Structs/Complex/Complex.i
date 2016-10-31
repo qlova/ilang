@@ -4,36 +4,36 @@ type Complex {
 	real, imag
 }
 
-Complex * Complex {
-	c  = ab - aibi
-	ci = abi + bai
+method Complex * Complex {
+	c.real = a.real*b.real - a.imag*b.imag
+	c.imag = a.real*b.imag + b.real*a.imag
 }
 
 
-Complex + Complex {
-	c  = a + b
-	ci = ai + bi
+method Complex + Complex {
+	c.real  = a.real + b.real
+	c.imag  = a.imag + b.imag
 }
 
-Complex - Complex { 
-	c  = a - b
-	ci = ai - bi
+method Complex - Complex { 
+	c.real  = a.real - b.real
+	c.imag  = a.imag - b.imag
 }
 
-Complex / Complex {
-	var d = b*b + bi*bi
-	c  = (ab + aibi) / d
-	ci = (aib - abi) / d
+method Complex / Complex {
+	var d = b.real² + b.imag²
+	c.real  = (a.real*b.real + a.imag*b.imag) / d
+	c.imag = (a.imag*b.real - a.real*b.imag) / d
 }
 
-method text() [] {
-	return text(Complex.real)+" + "+text(Complex.imag)+"i"
+method text(Complex) "" {
+	return text(real)+" + "+text(imag)+"i"
 }
 
 
 software {
 
-	var n is Complex(3, 6)
+	var n is Complex{3, 6}
 	
 	var m is Complex
 	m.real = 2

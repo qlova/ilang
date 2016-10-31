@@ -23,6 +23,7 @@ software {
 	
 	loop {
 		! var event = grab("event")
+		print(event)
 		issues {
 			break
 		}
@@ -36,7 +37,7 @@ software {
 					var data = ""
 					loop {
 					
-						! data = data + reada@file('\n') + "\n"
+						! data = data + file('\n') + "\n"
 						issues {
 							break
 						}
@@ -57,7 +58,7 @@ software {
 			
 				delete(filename)
 				var file = open(filename)
-				! output@file(data)
+				! file(data)
 				issues {
 					print("failed to write file!")
 				}

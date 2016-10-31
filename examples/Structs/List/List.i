@@ -2,7 +2,7 @@ type Item {
 	value
 }
 
-method text() "" {
+method text(Item) "" {
 	return text(value)
 }
 
@@ -10,27 +10,24 @@ type Bank {
 	{..}Items
 }
 
-new Bank {
+method new(Bank) {
 	Items has Item(s)
 }
 
-method clear() {
+method clear(Bank) {
 	Items has Item(s)
-}
-
-function clear() {
 }
 
 software {
 	var list has Item(s)
-	list & Item(22)
+	list & Item{22}
 	
 	var b is Bank
 	b.Items = list
 	
-	list[0] = Item(44)
+	list[0] = Item{44}
 	
-	list & Item(33)
+	list & Item{33}
 	
 	print(list[0])
 	print(b.Items[1])

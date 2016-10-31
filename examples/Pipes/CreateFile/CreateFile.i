@@ -1,7 +1,7 @@
 
 function create( ""filename ) {
 !	var file = open(filename) 
-	output@file("")
+	file("")
 	issues {
 		print("Failed to create "+filename)
 		return
