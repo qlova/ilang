@@ -333,28 +333,6 @@ func (c *Compiler) RaiseError(message ...interface{}) {
 	os.Exit(1)
 }
 
-func (ic *Compiler) RunFunction(name string) string {
-	f, ok := ic.DefinedFunctions[name]
-	if !ok {
-		ic.RaiseError(name, " does not exist!")
-	}
-	
-	ic.LoadFunction(name)
-	
-	if f.Import != "" {
-		ic.LoadFunction(f.Import)
-	}
-	
-	if f.Inline {
-		return f.Data
-	} else if ic.Fork {
-		ic.Fork = false
-		return "FORK "+name
-	} else {
-		return "RUN "+name
-	}
-}
-
 func (ic *Compiler) LoadFunction(name string) {
 	f, ok := ic.DefinedFunctions[name]
 	if !ok {
@@ -569,6 +547,13 @@ func (ic *Compiler) Compile() {
 					ic.Assembly("RUN gui")
 					ic.LoadFunction("gui")
 					ic.LoadFunction("output_m_pipe")
+				}
+			
+			case "exit":
+				if len(ic.Scope) > 2 {
+					//TODO garbage collection.
+					//ic.CollectGarbage()
+					ic.Assembly("EXIT")
 				}
 			
 			case "return":
@@ -1078,6 +1063,12 @@ func (ic *Compiler) Compile() {
 										ic.RaiseError("blank expression!")
 									}
 							}
+						
+						case Something:
+							var name = token
+							ic.Scan('=')
+							var value = ic.ScanExpression()
+							ic.AssignSomething(name, value)
 							
 						case User:
 							if !ic.GetFlag(InMethod) {

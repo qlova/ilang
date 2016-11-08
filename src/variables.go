@@ -18,7 +18,7 @@ func (ic *Compiler) AssembleVar(name string, value string) {
 	list := ic.ExpressionType
 	list.List = true
 	list.User = false
-	if ic.GetFlag(InMethod) && ic.ExpressionType != List &&
+	if ic.GetFlag(InMethod) && ic.ExpressionType != List && len(ic.LastDefinedType.Detail.Elements) > 0 &&
 		ic.LastDefinedType.Detail.Elements[ic.LastDefinedType.Detail.Table[name]] == List {
 
 		ic.LastDefinedType.Detail.Elements[ic.LastDefinedType.Detail.Table[name]] = list

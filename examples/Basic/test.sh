@@ -45,5 +45,4 @@ BasicTest Split "192\n168\n1\n70"
 BasicTest Links "1\n2\n3\n"
 BasicTest Slices "Hello\nbob\nmy\n"
 BasicTest Universal "Hello World\n"
-BasicTest Threading "This is a thread!"
 

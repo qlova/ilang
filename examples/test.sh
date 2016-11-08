@@ -3,10 +3,10 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-if [ "$1" = "" ]; then
+if [ "$2" = "" ]; then
 	LANGUAGE=py
 else
-	LANGUAGE=$1
+	LANGUAGE=$2
 fi
 
 function runit {
@@ -73,5 +73,8 @@ export -f TESTING
 export -f BasicTest
 export -f runit
 
-cd Structs && ./test.sh && cd ../Basic && ./test.sh
-
+if [ "$1" != "" ]; then
+	cd ./$1 && ./test.sh $2 $3 $4
+else
+	cd Structs && ./test.sh && cd ../Basic && ./test.sh
+fi

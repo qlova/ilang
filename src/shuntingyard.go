@@ -8,11 +8,15 @@ func (ic *Compiler) Shunt(name string) string {
 	var token = ic.Scan(0)
 	
 	switch token {
-		case ")", ",", "\n", "]", ";", "{", "}":
+		case ")", ",", "\n", "]", ";", "{", "}", "|":
 			ic.NextToken = token
 			return name
 		
 		case ".":
+			if ic.ExpressionType == Something {
+				var cast = ic.Scan(Name)
+				ic.Shunt(ic.IndexSomething(name, cast))
+			}
 			if ic.ExpressionType.IsUser() == Undefined {
 				ic.RaiseError("Type '%v', cannot be indexed!", ic.ExpressionType.Name)
 			}
@@ -94,7 +98,7 @@ func (ic *Compiler) Shunt(name string) string {
 						ic.Scan(')')
 						return ic.Shunt(r)	
 					case Number:
-						var r = ic.Tmp("reada")
+						var r = ic.Tmp("read")
 						ic.Assembly("RELAY ", name)
 						ic.Assembly("PUSH ", argument)
 						ic.Assembly("IN")

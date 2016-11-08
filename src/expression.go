@@ -5,6 +5,10 @@ import "strconv"
 func (ic *Compiler) expression() string {
 	var token = ic.Scan(0)
 	
+	for token == "\n" {
+		token = ic.Scan(0)
+	}
+	
 	switch token {
 		case "true":
 			ic.ExpressionType = Number
@@ -15,6 +19,15 @@ func (ic *Compiler) expression() string {
 		case "error":
 			ic.ExpressionType = Number
 			return "ERROR"
+	}
+	
+	if token == "{" {
+		ic.Scan('}')
+		var tmp = ic.Tmp("something")
+		ic.Assembly("ARRAY ", tmp)
+		ic.Assembly("PUT 0")
+		ic.ExpressionType = Something
+		return tmp
 	}
 	
 	//Text.
@@ -42,6 +55,33 @@ func (ic *Compiler) expression() string {
 	//Arrays.
 	if token == "[" {
 		return ic.ScanArray()
+	}
+	
+	//Pipes.
+	if token == "|" {
+		var name = "open"
+		if ic.Peek() != "|" {
+			var arg = ic.ScanExpression()
+			name += "_m_"+ic.ExpressionType.Name
+			if f, ok := ic.DefinedFunctions[name]; ok {
+				var tmp = ic.Tmp("open")
+				ic.Assembly(ic.ExpressionType.Push, " ", arg)
+				ic.Assembly(ic.RunFunction(name))
+				ic.Assembly(f.Returns[0].Pop, " ", tmp)
+				ic.ExpressionType = f.Returns[0]
+				ic.Scan('|')
+				return tmp
+			} else {
+				ic.RaiseError("Cannot create a pipe out of a ", ic.ExpressionType.Name)
+			}
+		} else {
+			ic.Scan('|')
+			var tmp = ic.Tmp("pipe")
+			ic.Assembly("PIPE ", tmp)
+			ic.ExpressionType = Pipe
+			return tmp
+			//ic.RaiseError("Blank pipe!")
+		}
 	}
 	
 	//Subexpessions.

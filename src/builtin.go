@@ -78,10 +78,12 @@ RETURN
 	ic.DefinedFunctions["text_m_array"] = BlankMethod(Text)
 	
 	ic.DefinedFunctions["load"] = Method(Undefined, true, "")
+	ic.DefinedFunctions["open"] = Method(Undefined, true, "")
 	
-	ic.DefinedFunctions["open"] = InlineFunction([]Type{Text}, "OPEN", []Type{Pipe})
+	ic.DefinedFunctions["open_m_text"] = Method(Pipe, true, "LOAD")
 	ic.DefinedFunctions["execute"] = InlineFunction([]Type{Text}, "EXECUTE", nil)
 	ic.DefinedFunctions["delete"] = InlineFunction([]Type{Text}, "DELETE", nil)
+	ic.DefinedFunctions["rename"] = InlineFunction([]Type{Text, Text}, "MOVE", nil)
 	
 	ic.DefinedFunctions["read"] = InlineFunction(nil, "PUSH 0\nSTDIN", []Type{Text})
 	ic.DefinedFunctions["read_m_pipe"] = InlineFunction(nil, "PUSH 0\nIN", []Type{Text})
@@ -100,12 +102,54 @@ RETURN
 	
 	ic.DefinedFunctions["number_m_text"] = Method(Number, true, "PUSH 10\nRUN i_base_string", "i_base_string")
 	
+	ic.DefinedFunctions["inbox"] = InlineFunction(nil, "INBOX", []Type{Text})
+	ic.DefinedFunctions["outbox"] = InlineFunction([]Type{Text}, "OUTBOX", nil)
+	
 	ic.DefinedFunctions["output"] = InlineFunction([]Type{Text}, "STDOUT", nil)
 	ic.DefinedFunctions["output_m_pipe"] = InlineFunction([]Type{Text}, "OUT", nil)
 	
 	ic.DefinedFunctions["len"] = Method(Undefined, true, "")
 	ic.DefinedFunctions["len_m_array"] = InlineFunction([]Type{Array}, "LEN", nil)
 	ic.DefinedFunctions["len_m_text"] = InlineFunction([]Type{Text}, "LEN", nil)
+	
+		
+	ic.DefinedFunctions["load_m_number"] = Function{Exists:true, Returns:[]Type{Text}, Data: `
+FUNCTION load_m_number
+	ARRAY a
+	PULL b
+	PUT b
+	SHARE a
+	LOAD
+RETURN
+`}
+
+	ic.DefinedFunctions["load_m_letter"] = Function{Exists:true, Returns:[]Type{Text}, Data: `
+FUNCTION load_m_letter
+	ARRAY a
+	PULL b
+	MUL b b -1
+	PUT b
+	SHARE a
+	LOAD
+RETURN
+`}
+
+ic.DefinedFunctions["open_m_letter"] = Function{Exists:true, Returns:[]Type{Number}, Data: `
+FUNCTION open_m_letter
+	ARRAY a
+	PULL b
+	MUL b b -1
+	PUT b
+	SHARE a
+	ADD ERROR 0 0
+	LOAD
+	IF ERROR
+		PUSH 0
+	ELSE
+		PUSH 1
+	END
+RETURN
+`}
 	
 	ic.DefinedFunctions["reada"] = Function{Exists:true, Args:[]Type{Letter}, Returns:[]Type{Text}, Data: `
 FUNCTION reada
@@ -124,21 +168,22 @@ FUNCTION reada_m_pipe
 	IN
 END
 `}
-	
-	ic.DefinedFunctions["load_m_number"] = Function{Exists:true, Args:[]Type{Letter}, Returns:[]Type{Text}, Data: `
-FUNCTION reada
-	ARRAY a
-	PULL b
-	PUT b
-	LOAD
-RETURN
-`}
 
 
 ic.DefinedFunctions["close"] = Function{Exists:true, Args:[]Type{Pipe}, Data: `
 FUNCTION close
 	TAKE file
 	CLOSE file
+RETURN
+`}
+
+ic.DefinedFunctions["text_m_Something"] = Function{Exists:true, Returns:[]Type{Text}, Data: `
+FUNCTION text_m_Something
+	GRAB something
+	PUSH #something
+	PUSH 3
+	SHARE something
+	SLICE
 RETURN
 `}
 
@@ -376,6 +421,32 @@ RETURN
 	//ic.DefinedFunctions["text_m_letter"] = Alias("text_m_number", Text)
 	
 	ic.DefinedFunctions["strings.equal"] = Function{Exists:true, Args:[]Type{Text}, Returns:[]Type{Text}, Data: `
+
+FUNCTION collect_m_Something
+	GRAB something
+	PUSH 1
+	PLACE something
+	GET garbage
+	IF garbage
+		PUSH 0
+		GET address
+		MUL address -1 address
+		SUB garbage garbage 1
+		IF garbage
+			SUB garbage garbage 1
+			IF garbage
+				#Collect user type TODO
+				ADD garbage 0 0
+			ELSE
+				PUSH address
+				#HEAPIT
+			END
+		ELSE
+			PUSH address
+			HEAP
+		END
+	END
+RETURN
 
 FUNCTION unhash
 	PULL exp

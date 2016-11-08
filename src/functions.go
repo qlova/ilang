@@ -15,6 +15,56 @@ type Function struct {
 	Args []Type
 }
 
+func (ic *Compiler) RunFunction(name string) string {
+	f, ok := ic.DefinedFunctions[name]
+	if !ok {
+		/*var sort = name[:len(name)-len("_m_Something")]
+		if name[len(name)-len("_m_Something"):] == "_m_Something" {
+			ic.Library(`
+DATA `+name+`_string "`+sort+`"
+FUNCTION `+name+`
+	GRAB something
+	PLACE something
+	PUSH 2
+	GET name
+	JOIN name `+name+`_string name
+	SHARE name
+	EVAL
+	IF ERROR
+		ARRAY backup
+		`+string2type[sort].Push+` `+string2type[sort].DefaultValue()+`
+	END
+RETURN
+	 
+			`)
+			ic.DefinedFunctions[name] = Function{Exists:true}
+		} else {*/
+			ic.RaiseError(name, " does not exist!")
+		//}
+	}
+	
+	ic.LoadFunction(name)
+	
+	if f.Import != "" {
+		ic.LoadFunction(f.Import)
+	}
+	
+	if f.Inline {
+		return f.Data
+	} else if ic.Fork {
+		ic.Fork = false
+		
+		var returns string
+		for _, v := range f.Args {
+			returns += "\n"+v.Pop+" "+ic.Tmp("")
+		}
+		
+		return "FORK "+name+returns
+	} else {
+		return "RUN "+name
+	}
+}
+
 func (ic *Compiler) ScanFunctionCall(name string) string {
 	f := ic.DefinedFunctions[name]
 	

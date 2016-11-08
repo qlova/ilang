@@ -11,6 +11,18 @@ type Type struct {
 	Detail *UserType
 }
 
+func (t Type) DefaultValue() string {
+	switch t.Push {
+		case "PUSH":
+			return "0"
+		case "SHARE":
+			return "backup"
+		case "RELAY":
+			return "open"
+	}
+	return ""
+}
+
 func (t Type) IsUser() Type {
 	if t.User {
 		return t
@@ -41,6 +53,8 @@ func NewUserType(name string) Type {
 	return t
 }
 
+var string2type = map[string]Type{}
+
 func NewType(name string, options ...string) Type {
 	var t Type
 	t.Name = name
@@ -52,6 +66,8 @@ func NewType(name string, options ...string) Type {
 	
 	t.Int = TypeIota
 	TypeIota++
+	
+	string2type[name] = t
 	
 	return t
 }
@@ -89,9 +105,8 @@ func (ic *Compiler) ScanSymbolicType() Type {
 			ic.Scan(']')
 		case `""`:
 			result = Text
-		case "'":
+		case "' '":
 			result = Letter
-			ic.Scan('\'')
 		case "|":
 			result = Pipe
 			ic.Scan('|')
@@ -221,6 +236,9 @@ func (ic *Compiler) ScanConstructor() string {
 					ic.DefinedTypes[name].Detail.Elements[i])
 			}
 			token = ic.Scan(0)
+			for token == "\n" {
+				token = ic.Scan(0)
+			}
 			if token == "}" {
 				break
 			} else if token != "," {
