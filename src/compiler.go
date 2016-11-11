@@ -73,6 +73,10 @@ type Compiler struct {
 	Dirs []string
 	
 	Stop bool //If this variable is set, the compiler will stop.
+	
+	Translation bool
+	Translated bool
+	Language string
 }
 
 //Return a string for a variable which will not clash with any other variables.
@@ -456,7 +460,13 @@ func (ic *Compiler) Compile() {
 				}
 			case "plugin":
 				ic.ScanPlugin()
-				
+			
+			case "@":
+				ic.Language = ic.Scan(Name)
+				if ic.Language == "ch" {
+					ic.Language = "zh-CH"
+				}
+				ic.Translation = true
 				
 			case "!":
 				ic.Assembly("ADD ERROR 0 0")
@@ -539,7 +549,12 @@ func (ic *Compiler) Compile() {
 				ic.Scanner.Position.Filename = filename
 				ic.Scanner.Whitespace= 1<<'\t' | 1<<'\r' | 1<<' '
 				
-			case "software":
+			case "software", "ソフトウェア", "программного", "软件":
+				if token == "программного" {
+					if ic.Scan(0) != "обеспечения" {
+						ic.RaiseError("ожидая обеспечения")
+					}
+				}
 				ic.Header = false
 				ic.Scan('{')
 				ic.Assembly("SOFTWARE")
@@ -744,8 +759,9 @@ func (ic *Compiler) Compile() {
 				} else {
 					ic.RaiseError()
 				}
-			
-			case "print":
+		
+			//This is the inbuilt print function. It takes multiple arguments of any type which has a text method.			
+			case "print", "afdrukken", "印刷", "Распечатать", "打印":
 				ic.Scan('(')
 				arg := ic.ScanExpression()
 				ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
@@ -960,10 +976,20 @@ func (ic *Compiler) Compile() {
 										}
 									}
 									
+									//This appends elements to a list {..}
 									if t.List {
 										if ic.ExpressionType.Name != t.Name {
+											if t.Name == "Something" {
+												var tmp = ic.Tmp("something")
+												ic.Assembly("ARRAY ", tmp)
+												ic.SetVariable(tmp, t)
+												ic.AssignSomething(tmp, value)
+												ic.SetVariable(tmp, Undefined)
+												value = tmp	
+											} else {
 											ic.RaiseError("Type mismatch! Cannot add a ", ic.ExpressionType.Name,
 												 " to a List of ", t.Name)
+											}
 										}
 										
 										var tmp = ic.Tmp("index")
@@ -1069,7 +1095,7 @@ func (ic *Compiler) Compile() {
 									}
 							}
 						
-						case Something:
+						case t.IsSomething():
 							var name = token
 							ic.Scan('=')
 							var value = ic.ScanExpression()

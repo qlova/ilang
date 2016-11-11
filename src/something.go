@@ -1,5 +1,13 @@
 package main
 
+func (t Type) IsSomething() Type {
+	if t.Name == "Something" {
+		return t
+	} else {
+		return Undefined
+	}
+}
+
 func (ic *Compiler) IndexSomething(name string, cast string) string {
 	switch cast {
 		case "number", "letter":

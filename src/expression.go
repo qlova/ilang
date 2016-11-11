@@ -1,6 +1,8 @@
 package main
 
 import "strconv"
+import "strings"
+import "github.com/gedex/inflector"
 
 func (ic *Compiler) expression() string {
 	var token = ic.Scan(0)
@@ -179,6 +181,35 @@ func (ic *Compiler) expression() string {
 			ic.ExpressionType = InFunction
 			return token
 		}
+	}
+	
+	if ic.Translation && !ic.Translated {
+		ic.Translated = true
+		defer func() {
+			ic.Translated = false
+		}()
+		var err error
+		ic.NextToken, err = getTranslation(ic.Language, "en", token)
+		if strings.Contains(ic.NextToken, "\n") {
+			ic.NextToken = strings.Split(ic.NextToken, "\n")[0]
+		}
+		println(ic.NextToken, ic.Language)
+		if err != nil {
+			ic.RaiseError(err)
+		}
+		return ic.expression() 
+	}
+	
+	token = inflector.Singularize(token)
+	if t, ok := ic.DefinedTypes[token]; ok {
+		ic.Scan('(')
+		ic.Scan(')')
+		return ic.NewListOf(t)
+	}
+	if t, ok := ic.DefinedInterfaces[token]; ok {
+		ic.Scan('(')
+		ic.Scan(')')
+		return ic.NewListOf(t.GetType())
 	}
 	
 	ic.RaiseError()
