@@ -55,6 +55,23 @@ func (ic *Compiler) IndexSomething(name string, cast string) string {
 }
 
 func (ic *Compiler) AssignSomething(name string, value string) {
+	var intf = ic.GetVariable(name).Interface
+	if intf != nil {
+		for _, method := range intf.Methods {
+			if f, ok := ic.DefinedFunctions[method.Name+"_m_"+ic.ExpressionType.Name]; !ok {
+				ic.RaiseError("Invalid assignment, value of type ", ic.ExpressionType.Name, " does not implement the method ", method.Name)
+			} else {
+				ic.LoadFunction(method.Name+"_m_"+ic.ExpressionType.Name)
+				if f.Inline {
+					ic.Library(`
+FUNCTION `+method.Name+"_m_"+ic.ExpressionType.Name+`
+`+f.Data+`
+RETURN
+					`)
+				}
+			}
+		}
+	}
 	switch ic.ExpressionType {
 		case Number, Letter:
 			var tmp = ic.Tmp("number")

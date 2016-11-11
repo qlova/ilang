@@ -36,6 +36,7 @@ type Compiler struct {
 	
 	DefinedTypes map[string]Type			//A map of all the user created types.
 	DefinedFunctions map[string]Function	//A map of all the user created functions.
+	DefinedInterfaces map[string]Interface
 	CurrentFunction Function				//If we are currently in a function, this is it.
 	
 	//Flags for compiling.
@@ -356,6 +357,7 @@ func NewCompiler(input io.Reader) Compiler {
 	c := Compiler{
 		Scanner: &s,
 		DefinedFunctions: make(map[string]Function),
+		DefinedInterfaces: make(map[string]Interface),
 		DefinedTypes: make(map[string]Type),
 		LastDefinedType: Something,
 		Plugins: make(map[string][]Plugin),
@@ -465,6 +467,9 @@ func (ic *Compiler) Compile() {
 			
 			case "method":
 				ic.ScanMethod()
+			
+			case "interface":
+				ic.ScanInterface()
 			
 			case "type":
 				ic.Header = false
