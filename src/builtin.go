@@ -94,7 +94,6 @@ RETURN
 	ic.DefinedFunctions["load_m_text"] = Method(Text, true, "LOAD")
 	
 	ic.DefinedFunctions["text_m_number"] = Method(Text, true, "PUSH 10\nRUN i_base_number", "i_base_number")
-	ic.DefinedFunctions["text_m_letter"] = Method(Text, true, "PUSH 10\nRUN i_base_number", "i_base_number")
 	
 	ic.DefinedFunctions["binary_m_number"] = Method(Text, true, "PUSH 2\nRUN i_base_number", "i_base_number")
 	
@@ -131,6 +130,15 @@ FUNCTION load_m_letter
 	PUT b
 	SHARE a
 	LOAD
+RETURN
+`}
+
+	ic.DefinedFunctions["text_m_letter"] = Function{Exists:true, Returns:[]Type{Text}, Data: `
+FUNCTION text_m_letter
+	ARRAY a
+	PULL letter
+	PUT letter
+	SHARE a
 RETURN
 `}
 
