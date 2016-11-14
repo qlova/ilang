@@ -8,6 +8,8 @@ type Type struct {
 	User bool
 	List bool
 	
+	Super string
+	
 	Detail *UserType
 	Interface *Interface
 }
@@ -128,16 +130,38 @@ func (ic *Compiler) ScanSymbolicType() Type {
 	return result
 }
 
+//This scans a new type definition and creates the type.
+//eg. type Point { x, y }
 func (ic *Compiler) ScanType() {
 	var name = ic.Scan(Name)
 	
+	//This is for the grate engine.
+	//Are we declaring a game?
 	if name == "Game" {
 		ic.Game = true
 	}
 	
 	t := NewUserType(name)
 	
-	ic.Scan('{')
+	switch ic.Scan(0) {
+		case "{":
+		case "is": //Inheritance eg. type WeightedPoint is Point { weight }
+			super := ic.Scan(Name)
+			t = ic.DefinedTypes[super]
+			t.Super = t.Name
+			t.Name = name
+			switch ic.Scan(0) {
+				case "\n":
+					ic.DefinedTypes[name] = t
+					ic.LastDefinedType = t
+					return
+				case "{":
+				default:
+					ic.RaiseError()
+			}
+		default:
+			ic.RaiseError()
+	}
 		
 	ic.InsertPlugins(name)
 	//What are the elements?

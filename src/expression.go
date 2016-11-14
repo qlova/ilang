@@ -124,7 +124,7 @@ func (ic *Compiler) expression() string {
 	if t, ok := ic.DefinedTypes[token]; ok {
 		ic.ExpressionType = t
 		
-		if ic.Peek() == "(" || ic.Peek() == ")" {
+		if ic.Peek() == "(" || ic.NextToken == "(" {
 			ic.Scan('(')
 			ic.Scan(')')
 				
@@ -141,6 +141,11 @@ func (ic *Compiler) expression() string {
 			ic.SetVariable(variable, t)
 			ic.SetVariable(variable+"_use", Used)
 			return variable
+			
+		} else if ic.GetFlag(InMethod) && ic.LastDefinedType.Super == token {
+			ic.ExpressionType = ic.DefinedTypes[ic.LastDefinedType.Super]
+			return ic.LastDefinedType.Name
+			
 		} else {
 			ic.RaiseError()
 		}
