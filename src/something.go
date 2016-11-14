@@ -65,9 +65,22 @@ func (ic *Compiler) IndexSomething(name string, cast string) string {
 func (ic *Compiler) AssignSomething(name string, value string) {
 	var intf = ic.GetVariable(name).Interface
 	if intf != nil {
+		var originalname = ic.ExpressionType.Name
 		for _, method := range intf.Methods {
+			InheritMethodForInterface:
 			if f, ok := ic.DefinedFunctions[method.Name+"_m_"+ic.ExpressionType.Name]; !ok {
-				ic.RaiseError("Invalid assignment, value of type ", ic.ExpressionType.Name, " does not implement the method ", method.Name)
+				if ic.ExpressionType.Super != "" {
+					ic.ExpressionType = ic.DefinedTypes[ic.ExpressionType.Super]
+					
+					ic.Library(`
+FUNCTION `+method.Name+"_m_"+originalname+`
+	RUN `+method.Name+"_m_"+ic.ExpressionType.Name+`
+RETURN
+					`)
+					
+					goto InheritMethodForInterface
+				}
+				ic.RaiseError("Invalid assignment, value of type ", originalname, " does not implement the method ", method.Name)
 			} else {
 				ic.LoadFunction(method.Name+"_m_"+ic.ExpressionType.Name)
 				if f.Inline {
@@ -94,7 +107,7 @@ RETURN
 			ic.Assembly("RUN collect_m_Something")
 			ic.Assembly("PLACE ", tmp)
 			ic.Assembly("RENAME ", name)
-		case Text, Array:
+		case Text, Array, ic.ExpressionType.IsUser():
 			var tmp = ic.Tmp("text")
 			ic.Assembly("ARRAY ", tmp)
 			ic.Assembly("SHARE ", value)

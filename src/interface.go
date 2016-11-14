@@ -5,6 +5,12 @@ type InterfaceMethod struct {
 	Returns []Type
 }
 
+//This is an interface, for example:
+/*
+	interface Printable {
+		text() ""
+	}
+*/
 type Interface struct {
 	Name string
 	Methods []InterfaceMethod
