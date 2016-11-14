@@ -108,7 +108,12 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 				return "#"+arg
 			}
 			
+			InheritMethods:
 			if _, ok := ic.DefinedFunctions[name+"_m_"+ic.ExpressionType.Name]; !ok {
+				if ic.ExpressionType.Super != "" {
+					ic.ExpressionType = ic.DefinedTypes[ic.ExpressionType.Super]
+					goto InheritMethods
+				}
 				ic.RaiseError("Method ",name," for type ",ic.ExpressionType.Name, "does not exist!")
 			}
 			
