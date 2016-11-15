@@ -10,6 +10,10 @@ method drive(Car) {
     print("My top speed is: ", speed)
 }
 
+method stop(Car) {
+	speed = 0
+}
+
 type SportsCar is Car {}
 
 method new(SportsCar) {
@@ -24,4 +28,6 @@ method drive(SportsCar) {
 software {
     var car = new SportsCar()
     drive(car) //--> Should output "Vroom vroom! My top speed is: 200"
+    stop(car)
+    drive(car)
 }

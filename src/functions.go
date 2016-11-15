@@ -103,7 +103,7 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 			arg := ic.ScanExpression()
 			
 			//Hardcoded LEN optimisation.
-			if name == "len" {
+			if name == "len" && ic.ExpressionType.Push == "SHARE" {
 				ic.ExpressionType = Number
 				return "#"+arg
 			}

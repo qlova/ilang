@@ -74,18 +74,19 @@ RETURN
 `)
 	ic.DefinedFunctions["copy"] = Method(Undefined, true, "")
 	
+	ic.DefinedFunctions["number_m_letter"] = BlankMethod(Number)
 	ic.DefinedFunctions["text_m_text"] = BlankMethod(Text)
 	ic.DefinedFunctions["text_m_array"] = BlankMethod(Text)
 	
 	ic.DefinedFunctions["load"] = Method(Undefined, true, "")
 	ic.DefinedFunctions["open"] = Method(Undefined, true, "")
 	
-	ic.DefinedFunctions["open_m_text"] = Method(Pipe, true, "LOAD")
+	ic.DefinedFunctions["open_m_text"] = Method(Pipe, true, "OPEN")
 	ic.DefinedFunctions["execute"] = InlineFunction([]Type{Text}, "EXECUTE", nil)
 	ic.DefinedFunctions["delete"] = InlineFunction([]Type{Text}, "DELETE", nil)
 	ic.DefinedFunctions["rename"] = InlineFunction([]Type{Text, Text}, "MOVE", nil)
 	
-	ic.DefinedFunctions["read"] = InlineFunction(nil, "PUSH 0\nSTDIN", []Type{Text})
+	ic.DefinedFunctions["read"] = Method(Text, true, "PUSH 0\nSTDIN")
 	ic.DefinedFunctions["read_m_pipe"] = InlineFunction(nil, "PUSH 0\nIN", []Type{Text})
 	
 	ic.DefinedFunctions["link"] = InlineFunction([]Type{Text, Number}, "LINK", nil)
@@ -110,6 +111,7 @@ RETURN
 	ic.DefinedFunctions["len"] = Method(Undefined, true, "")
 	ic.DefinedFunctions["len_m_array"] = InlineFunction([]Type{Array}, "LEN", nil)
 	ic.DefinedFunctions["len_m_text"] = InlineFunction([]Type{Text}, "LEN", nil)
+	ic.DefinedFunctions["len_m_number"] = Method(Array, true, "MAKE")
 	
 		
 	ic.DefinedFunctions["load_m_number"] = Function{Exists:true, Returns:[]Type{Text}, Data: `
@@ -159,8 +161,8 @@ FUNCTION open_m_letter
 RETURN
 `}
 	
-	ic.DefinedFunctions["reada"] = Function{Exists:true, Args:[]Type{Letter}, Returns:[]Type{Text}, Data: `
-FUNCTION reada
+	ic.DefinedFunctions["read_m_letter"] = Function{Exists:true, Args:[]Type{Letter}, Returns:[]Type{Text}, Data: `
+FUNCTION read_m_letter
 	PULL delim
 	MUL delim delim -1
 	PUSH delim
@@ -929,6 +931,69 @@ FUNCTION gui
 	RELAY server
 RETURN
 `}
+	
+	ic.DefinedFunctions["print_m_array"] = Function{Exists:true, Args:[]Type{Array}, Data:`
+FUNCTION print_m_array
+	GRAB a
+	
+	IF 1
+	ARRAY i_delete4
+	VAR i_i2
+	VAR i_backup3
+	LOOP
+		VAR i_in1
+		ADD i_i2 0 i_backup3
+		SGE i_in1 i_i2 #a
+		IF i_in1
+			BREAK
+		END
+		PLACE a
+		PUSH i_i2
+		GET i
+		ADD i_backup3 i_i2 1
+	
+		PUSH i
+		PUSH 10
+		RUN i_base_number
+		GRAB i_result5
+		ARRAY i_string7
+		PUT 32
+		ARRAY i_operator6
+		JOIN i_operator6 i_result5 i_string7
+		SHARE i_operator6
+		STDOUT
+	REPEAT
+	
+		VAR ii_i8
+		VAR ii_backup9
+		LOOP
+			VAR ii_in7
+			ADD ii_i8 0 ii_backup9
+			SGE ii_in7 ii_i8 #i_delete4
+			IF ii_in7
+				BREAK
+			END
+			PLACE i_delete4
+			PUSH ii_i8
+			GET i_v
+			ADD ii_backup9 ii_i8 1
+	
+			VAR ii_operator11
+			SUB ii_operator11 #a 1
+			PLACE a
+			PUSH ii_operator11
+			GET ii_index12
+			PLACE a
+			PUSH i_v
+			SET ii_index12
+			PLACE a
+			POP n
+			ADD n 0 0
+		REPEAT
+							
+	END
+RETURN
+	`}
 
 	ic.DefinedFunctions["edit"] = Function{Exists:true, Args:[]Type{Text, Text}, Data:`
 FUNCTION edit

@@ -603,59 +603,13 @@ func (ic *Compiler) Compile() {
 				}
 				
 			case "switch":
-				var expression = ic.ScanExpression()
-				if ic.ExpressionType != Number {
-					ic.RaiseError("switch statements must have numeric conditions!")
-				}
-				ic.Scan('{')
-				ic.GainScope()
-				ic.SetFlag(Type{Name: "flag_switch", Push: expression})
-				
-				for {
-					token := ic.Scan(0)
-					if token != "\n" {
-						if token != "case" {
-							ic.RaiseError("Expecting case")
-						}
-						break
-					}
-				}
-				expression = ic.ScanExpression()
-				var condition = ic.Tmp("case")
-				ic.Assembly("VAR ", condition)
-				ic.Assembly("SEQ %v %v %v", condition, expression, ic.GetVariable("flag_switch").Push)
-				ic.Assembly("IF ",condition)
-				ic.GainScope()
+				ic.ScanSwitch()
 			
 			case "default":
-				if ic.GetVariable("flag_switch") == Undefined {
-					ic.RaiseError("'default' must be within a 'switch' block!")
-				}
-				ic.LoseScope()
-				ic.Assembly("ELSE")
-				ic.GainScope()
+				ic.ScanDefault()
 			
 			case "case":
-				if ic.GetVariable("flag_switch") == Undefined {
-					ic.RaiseError("'case' must be within a 'switch' block!")
-				}
-			
-				var expression = ic.ScanExpression()
-				var condition = ic.Tmp("case")
-				nesting, ok := ic.Scope[len(ic.Scope)-2]["flag_nesting"]
-				if !ok {
-					nesting.Int = 0
-				}
-				
-				ic.LoseScope()
-				
-				ic.Assembly("ELSE")
-				ic.SetVariable("flag_nesting", Type{Int:nesting.Int+1})
-				
-				ic.Assembly("VAR ", condition)
-				ic.Assembly("SEQ %v %v %v", condition, expression, ic.GetVariable("flag_switch").Push)
-				ic.Assembly("IF ",condition)
-				ic.GainScope()
+				ic.ScanCase()
 			
 			case "issues":
 				ic.Scan('{')
@@ -736,6 +690,14 @@ func (ic *Compiler) Compile() {
 			case "loop":
 				ic.Assembly("LOOP")
 				ic.GainScope()
+				ic.NextToken = ic.Scan(0)
+				if ic.NextToken != "{" {
+					condition := ic.ScanExpression()
+					ic.Assembly("SEQ ", condition, " 0 ", condition)
+					ic.Assembly("IF ", condition)
+					ic.Assembly("BREAK")
+					ic.Assembly("END")
+				}
 				ic.Scan('{')
 				ic.SetFlag(Loop)
 			
@@ -765,8 +727,14 @@ func (ic *Compiler) Compile() {
 				ic.Scan('(')
 				arg := ic.ScanExpression()
 				ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
-				ic.Assembly(ic.RunFunction("text_m_"+ic.ExpressionType.Name))
-				ic.Assembly("STDOUT")
+				if ic.ExpressionType == Array {
+					ic.LoadFunction("print_m_array")
+					ic.LoadFunction("i_base_number")
+					ic.Assembly("RUN print_m_array")
+				} else {
+					ic.Assembly(ic.RunFunction("text_m_"+ic.ExpressionType.Name))
+					ic.Assembly("STDOUT")
+				}
 				
 				for {
 					token := ic.Scan(0)
@@ -778,8 +746,14 @@ func (ic *Compiler) Compile() {
 					}
 					arg := ic.ScanExpression()
 					ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
-					ic.Assembly(ic.RunFunction("text_m_"+ic.ExpressionType.Name))
-					ic.Assembly("STDOUT")
+					if ic.ExpressionType == Array {
+						ic.LoadFunction("print_m_array")
+						ic.LoadFunction("i_base_number")
+						ic.Assembly("RUN print_m_array")
+					} else {
+						ic.Assembly(ic.RunFunction("text_m_"+ic.ExpressionType.Name))
+						ic.Assembly("STDOUT")
+					}
 				}
 				
 				ic.Assembly("SHARE i_newline")
@@ -960,9 +934,19 @@ func (ic *Compiler) Compile() {
 							
 							switch token {
 								case "&", "+":
+									if t != List {
+										ic.ExpressionType = t
+										ic.NextToken = token
+										ic.Shunt(name)
+										if ic.ExpressionType != Undefined {
+											ic.RaiseError("blank expression!", ic.ExpressionType.Name)
+										}
+										continue
+									}
 									if token == "+" {
 										ic.Scan('=')
 									}
+									
 									value := ic.ScanExpression()
 									
 									if t == List {
@@ -1061,7 +1045,7 @@ func (ic *Compiler) Compile() {
 									if ic.ExpressionType != Pipe {
 										ic.RaiseError("Only ",Func.Name," values can be assigned to ",name,".")
 									}
-									ic.Assembly("PLACE ", value)
+									ic.Assembly("RELAY ", value)
 									ic.Assembly("RELOAD ", name)
 								default:
 									ic.ExpressionType = t

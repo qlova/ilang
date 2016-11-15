@@ -1,7 +1,7 @@
 
 software {
 	loop {
-		var line = reada('\n')
+		var line = read('\n')
 		if len(line) = 0
 			break
 		end

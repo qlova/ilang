@@ -41,7 +41,7 @@ BasicTest Delete "5\n2\n3\n4"
 BasicTest Shortcuts "4\n6\n1\n2"
 
 BasicTest Sort "2\n3\n4\n5\n6"
-BasicTest Split "192\n168\n1\n70"
+#BasicTest Split "192\n168\n1\n70"
 BasicTest Links "1\n2\n3\n"
 BasicTest Slices "Hello\nbob\nmy\n"
 BasicTest Universal "Hello World\n"

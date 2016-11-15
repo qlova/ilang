@@ -22,13 +22,13 @@ function runit {
 			./$1.bash <<< $(echo -e "$2")
 		;;
 		java) 
-			javac $1.java && java $1 <<< $(echo -e "$2")
+			cd ./.it && javac $1.java && java $1 <<< $(echo -e "$2")
 		;;
 		cs) 
 			mcs -nowarn:414 /r:mscorlib.dll /r:System.Numerics.dll $1.cs && mono $1.exe <<< $(echo -e "$2")
 		;;
 		rb)
-			ruby $1.rb <<< $(echo -e "$2")
+			cd ./.it && ruby $1.rb <<< $(echo -e "$2")
 		;;
 		lua)
 			cd ./.it && lua $1.lua <<< $(echo -e "$2") && cd .. 

@@ -1,7 +1,7 @@
 
 software {
-	var a = number(reada(' '))
-	var b = number(reada('\n'))
+	var a = number(read(' '))
+	var b = number(read('\n'))
 	
 	if a = b
 		print( a, " is equal to ", b)

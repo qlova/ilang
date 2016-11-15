@@ -102,7 +102,11 @@ func init() {
 	NewOperator(Itype, "=", Itype, "VAR %c\nSEQ %c %a %b", true)
 	
 	NewOperator(Text, "+", Text, "ARRAY %c\nJOIN %c %a %b", false)
-	NewOperator(Text, "+=", Text, "JOIN %a %a %b", false)
+	NewOperator(Array, "+", Array, "ARRAY %c\nJOIN %c %a %b", false)
+	
+	NewOperator(Text, "+=", Text, "JOIN %a %a %b", false, Undefined)
+	NewOperator(Array, "+=", Array, "JOIN %a %a %b", false, Undefined)
+	
 	NewOperator(Text, "=", Text, "SHARE %a\n SHARE %b\nRUN strings.equal\nPULL %c\n", false, Number)
 	NewOperator(Text, "!=", Text, "SHARE %a\n SHARE %b\nRUN strings.equal\nPULL %c\nDIV %c %c 0\n", false, Number)
 	
