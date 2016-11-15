@@ -106,8 +106,9 @@ pipe 		||
 type		<>
 function 	()
 
-Something() {}
+thing() {}
 List() {..}
+Something() ?
 ```
 
 **number**
@@ -131,9 +132,12 @@ A type is a representation of a type in the I language.
 **function**
 A function is a special form of pipe, one which you can call.
 
+**thing**
+Any types which are added in a program are "things".
+
 **Something** (WIP)
 Something is the only builtin struture type, it can hold any value and needs to be type checked when used.  
-Any types which are added in a program are "things".
+
 
 ##DOWNLOAD AND INSTALL
 
