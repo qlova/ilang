@@ -1,5 +1,5 @@
 
-function largest(""l) r {
+function largest(""l) ' ' {
 	var i = 0
 	var r = l[0]
 	loop {
@@ -7,7 +7,7 @@ function largest(""l) r {
 			return r 
 		end
 		
-		if l[i] > r
+		if number(l[i]) > number(r)
 			r = l[i]
 		end
 		

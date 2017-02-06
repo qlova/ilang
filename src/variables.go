@@ -48,7 +48,7 @@ func (ic *Compiler) GetVariable(name string) Type {
 	}
 	
 	//Allow table values to be indexed in a method.
-	if ic.GetFlag(InMethod) {
+	if ic.GetFlag(InMethod) && ic.LastDefinedType.Detail != nil {
 		if _, ok := ic.LastDefinedType.Detail.Table[name]; ok {
 			var value = ic.IndexUserType(ic.LastDefinedType.Name, name)
 			ic.AssembleVar(name, value)

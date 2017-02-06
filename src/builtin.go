@@ -63,8 +63,12 @@ func Alias(f string, r Type) Function {
 
 func (ic *Compiler) Builtin() {
 	ic.DefinedFunctions["number"] = Method(Number, true, "PUSH 0")
+	ic.DefinedFunctions["letter"] = Method(Letter, true, "PUSH 0")
 	ic.DefinedFunctions["binary"] = Method(Number, true, "PUSH 0")
 	ic.DefinedFunctions["binary"] = Method(Number, true, "PUSH 0")
+	
+	ic.DefinedFunctions["random"] = Method(Number, true, "PUSH 0")
+	
 	ic.DefinedFunctions["load"] = Method(Text, true, "PUSH 0")
 	ic.DefinedFunctions["text"] = Method(Number, false, `
 FUNCTION text
@@ -72,9 +76,13 @@ FUNCTION text
 	SHARE a
 RETURN
 `)
+	
+	ic.DefinedFunctions["random_m_decimal"] = Alias("random_m_number", Decimal)
+
 	ic.DefinedFunctions["copy"] = Method(Undefined, true, "")
 	
 	ic.DefinedFunctions["number_m_letter"] = BlankMethod(Number)
+	ic.DefinedFunctions["letter_m_number"] = BlankMethod(Letter)
 	ic.DefinedFunctions["text_m_text"] = BlankMethod(Text)
 	ic.DefinedFunctions["text_m_array"] = BlankMethod(Text)
 	
@@ -113,6 +121,17 @@ RETURN
 	ic.DefinedFunctions["len_m_text"] = InlineFunction([]Type{Text}, "LEN", nil)
 	ic.DefinedFunctions["len_m_number"] = Method(Array, true, "MAKE")
 	
+	ic.DefinedFunctions["len_m_pipe"] = Function{Exists:true, Returns:[]Type{Number}, Data: `
+FUNCTION len_m_pipe
+	ARRAY a
+	SHARE a
+	STAT
+	GRAB s
+	PLACE s
+	POP n
+	PUSH n
+RETURN
+`}
 		
 	ic.DefinedFunctions["load_m_number"] = Function{Exists:true, Returns:[]Type{Text}, Data: `
 FUNCTION load_m_number
@@ -1030,6 +1049,352 @@ FUNCTION edit
 	SHARE i+shunt+4
 	OUT
 	RELAY grabserver
+RETURN
+`}
+
+ic.DefinedFunctions["random_m_number"] = Function{Exists:true, Args:[]Type{Number}, Returns:[]Type{Number}, Data:`
+FUNCTION random_m_number
+	PULL limit
+	PUSH limit
+	PUSH 255
+	RUN unhash
+	GRAB i_operator1
+	
+	SHARE i_operator1
+	GRAB bits
+	IF 1
+	VAR i
+	VAR i_backup3
+	ADD i_backup3 0 0
+	ADD i 0 0
+	LOOP
+		VAR i_over2
+		SNE i_over2 i #bits
+		ADD i 0 i_backup3
+		IF i_over2
+			SLT i_over2 i #bits
+			IF i_over2
+				ADD i_backup3 i 1
+			ELSE
+				SUB i_backup3 i 1
+			END
+			SEQ i_over2 0 #bits
+			IF i_over2
+				BREAK
+			END
+		ELSE
+			SEQ i_over2 0 #bits
+			IF i_over2
+				ADD i i 1
+	       ELSE
+				BREAK
+			END
+		END
+	
+		VAR i_operator4
+		DIV i_operator4 0 0
+		PLACE bits
+		PUSH i
+		SET i_operator4
+	REPEAT
+	END
+	SHARE bits
+	PUSH 255
+	RUN hash
+	PULL i_operator5
+	
+	VAR i_operator6
+	MOD i_operator6 i_operator5 limit
+	PUSH i_operator6
+RETURN
+`}
+
+ic.DefinedFunctions["text_m_decimal"] = Function{Exists:true, Args:[]Type{Number}, Import:"i_base_number", Returns:[]Type{Text}, Data:`
+FUNCTION text_m_decimal
+	PULL value
+	VAR i_operator2
+	MOD i_operator2 value 1000000
+	
+	VAR test
+	VAR test2
+	SLT test value 0
+	IF test
+		SUB i_operator2 1000000 i_operator2 
+	END
+	
+	SGT test2 value -1000000
+	IF test
+	IF test2
+		ADD value 0 0
+	END
+	END
+	
+	PUSH i_operator2
+	PUSH 10
+	RUN i_base_number
+	GRAB i_result3
+	SHARE i_result3
+	GRAB decimal
+	VAR i_operator4
+	SNE i_operator4 #decimal 6
+	IF i_operator4
+		IF 1
+		VAR each
+		VAR i_backup6
+		ADD i_backup6 0 #decimal
+		ADD each 0 #decimal
+		LOOP
+			VAR i_over5
+			SNE i_over5 each 6
+			ADD each 0 i_backup6
+			IF i_over5
+				SLT i_over5 each 6
+				IF i_over5
+					ADD i_backup6 each 1
+				ELSE
+					SUB i_backup6 each 1
+				END
+				SEQ i_over5 #decimal 6
+				IF i_over5
+					BREAK
+				END
+			ELSE
+				SEQ i_over5 #decimal 6
+				IF i_over5
+					ADD each each 1
+		       ELSE
+					BREAK
+				END
+			END
+		
+			ARRAY i_string7
+			PUT 48
+			ARRAY i_operator8
+			JOIN i_operator8 i_string7 decimal
+			PLACE i_operator8
+			RENAME decimal
+		REPEAT
+		END
+	END
+	VAR i_operator9
+	SUB i_operator9 #decimal 1
+	IF 1
+	VAR i
+	VAR i_backup11
+	ADD i_backup11 0 i_operator9
+	ADD i 0 i_operator9
+	LOOP
+		VAR i_over10
+		SNE i_over10 i 0
+		ADD i 0 i_backup11
+		IF i_over10
+			SLT i_over10 i 0
+			IF i_over10
+				ADD i_backup11 i 1
+			ELSE
+				SUB i_backup11 i 1
+			END
+			SEQ i_over10 i_operator9 0
+			IF i_over10
+				BREAK
+			END
+		ELSE
+			SEQ i_over10 i_operator9 0
+			IF i_over10
+				ADD i i 1
+	       ELSE
+				BREAK
+			END
+		END
+	
+		PLACE decimal
+		PUSH i
+		GET i_index12
+		PUSH 48
+		
+		PULL i_result14
+		VAR i_operator13
+		SEQ i_operator13 i_index12 i_result14
+		IF i_operator13
+			PLACE decimal
+			POP i_tmp16
+			ADD i_tmp16 0 0
+		ELSE
+			BREAK
+		END
+	REPEAT
+	END
+	VAR i_operator17
+	SGT i_operator17 #decimal 0
+	IF i_operator17
+		ARRAY i_string18
+		PUT 46
+		ARRAY i_operator19
+		JOIN i_operator19 i_string18 decimal
+		PLACE i_operator19
+		RENAME decimal
+	END
+	VAR i_operator20
+	DIV i_operator20 value 1000000
+	PUSH i_operator20
+	PUSH 10
+	RUN i_base_number
+	GRAB i_result21
+	IF test
+	IF test2
+		POP n
+		ADD n 0 0
+		PUT 45
+		PUT 48
+	END
+	END
+	ARRAY i_operator22
+	JOIN i_operator22 i_result21 decimal
+	SHARE i_operator22
+RETURN
+`}
+
+ic.DefinedFunctions["replace_m_text"] = Function{Exists:true, Args:[]Type{Text, Text}, Returns:[]Type{Text}, Data:`
+FUNCTION replace_m_text
+	GRAB b
+	GRAB a
+	GRAB s
+	ARRAY i_string1
+	SHARE i_string1
+	GRAB result
+	PUSH 0
+	PULL found
+	PUSH 0
+	PULL skip
+	
+	IF 1
+	ARRAY i_delete4
+	VAR i
+	VAR i_backup3
+	LOOP
+		VAR i_in2
+		ADD i 0 i_backup3
+		SGE i_in2 i #s
+		IF i_in2
+			BREAK
+		END
+		PLACE s
+		PUSH i
+		GET char
+		ADD i_backup3 i 1
+	
+		IF skip
+			SUB skip skip 1
+		ELSE
+			PLACE a
+			PUSH 0
+			GET i_index7
+			VAR i_operator6
+			SEQ i_operator6 char i_index7
+			IF i_operator6
+				ADD found 0 1
+				
+				IF 1
+				ARRAY i_delete10
+				VAR j
+				VAR i_backup9
+				LOOP
+					VAR i_in8
+					ADD j 0 i_backup9
+					SGE i_in8 j #a
+					IF i_in8
+						BREAK
+					END
+					PLACE a
+					PUSH j
+					GET lettr
+					ADD i_backup9 j 1
+				
+					VAR i_operator11
+					ADD i_operator11 i j
+					PLACE s
+					PUSH i_operator11
+					GET i_index12
+					VAR i_operator13
+					SNE i_operator13 i_index12 lettr
+					IF i_operator13
+						ADD found 0 0
+					END
+				REPEAT
+				
+					VAR ii_i8
+					VAR ii_backup9
+					LOOP
+						VAR ii_in7
+						ADD ii_i8 0 ii_backup9
+						SGE ii_in7 ii_i8 #i_delete10
+						IF ii_in7
+							BREAK
+						END
+						PLACE i_delete10
+						PUSH ii_i8
+						GET i_v
+						ADD ii_backup9 ii_i8 1
+				
+						VAR ii_operator11
+						SUB ii_operator11 #a 1
+						PLACE a
+						PUSH ii_operator11
+						GET ii_index12
+						PLACE a
+						PUSH i_v
+						SET ii_index12
+						PLACE a
+						POP n
+						ADD n 0 0
+					REPEAT
+										
+				END
+				IF found
+					VAR i_operator14
+					SUB i_operator14 #a 1
+					ADD skip 0 i_operator14
+					JOIN result result b
+				ELSE
+					PLACE result
+					PUT char
+				END
+			ELSE
+				PLACE result
+				PUT char
+			END
+		END
+	REPEAT
+	
+		VAR ii_i8
+		VAR ii_backup9
+		LOOP
+			VAR ii_in7
+			ADD ii_i8 0 ii_backup9
+			SGE ii_in7 ii_i8 #i_delete4
+			IF ii_in7
+				BREAK
+			END
+			PLACE i_delete4
+			PUSH ii_i8
+			GET i_v
+			ADD ii_backup9 ii_i8 1
+	
+			VAR ii_operator11
+			SUB ii_operator11 #s 1
+			PLACE s
+			PUSH ii_operator11
+			GET ii_index12
+			PLACE s
+			PUSH i_v
+			SET ii_index12
+			PLACE s
+			POP n
+			ADD n 0 0
+		REPEAT
+							
+	END
+	SHARE result
 RETURN
 `}
 }

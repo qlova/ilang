@@ -75,6 +75,7 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 	
 		ic.Assembly("SHARE ", id)
 	} else if len(f.Args) > 0 {
+	
 		for i := range f.Args {
 			arg := ic.ScanExpression()
 			
@@ -99,6 +100,12 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 			}
 		}
 	} else {
+		
+		//Calls methods such as:
+		//(Similar to function overloading!)
+		/*
+			read(Type) read(AnotherType)
+		*/
 		if f.Method && ic.Peek() != ")" {
 			arg := ic.ScanExpression()
 			
@@ -117,7 +124,11 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 				ic.RaiseError("Method ",name," for type ",ic.ExpressionType.Name, "does not exist!")
 			}
 			
-			ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
+			//Only pass the argument if it has a value, for example, the following type would not be passed:
+			// type Blank {}
+			if ic.ExpressionType.Detail == nil || len(ic.ExpressionType.Detail.Elements) > 0 {
+				ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
+			}
 			f = ic.DefinedFunctions[name+"_m_"+ic.ExpressionType.Name]
 			name = name+"_m_"+ic.ExpressionType.Name
 		}
@@ -201,6 +212,8 @@ func (ic *Compiler) ScanMethod() {
 				ic.NextToken = token
 			}
 		}
+		
+		ic.LastDefinedType = MethodType
 	
 	
 		if MethodType.Name == "Game" && name == "new" {
@@ -217,10 +230,12 @@ func (ic *Compiler) ScanMethod() {
 	
 		ic.Assembly("FUNCTION ", name)
 		ic.GainScope()
-	
-		ic.Assembly("%v %v", MethodType.Pop, MethodType.Name)
-		ic.SetVariable(MethodType.Name, MethodType)
-		ic.SetVariable(MethodType.Name+"_use", Used)
+
+		if len(MethodType.Detail.Elements) > 0 {	
+			ic.Assembly("%v %v", MethodType.Pop, MethodType.Name)
+			ic.SetVariable(MethodType.Name, MethodType)
+			ic.SetVariable(MethodType.Name+"_use", Used)
+		}
 	
 		ic.function(name)
 		f = ic.DefinedFunctions[name]
@@ -235,6 +250,42 @@ func (ic *Compiler) ScanMethod() {
 		ic.DefinedFunctions[name] = f
 	
 		ic.InsertPlugins(name)
+	
+	//Functional methods.
+	} else if token == "." {	
+	
+		if !ic.TypeExists(name) {
+			ic.RaiseError("Undefined type: ", name)
+		}
+		
+		
+		t := ic.DefinedTypes[name]
+		ic.LastDefinedType = t
+		
+		
+		name = ic.Scan(Name)
+		name += "_m_"+t.Name
+		
+		ic.Assembly("FUNCTION ", name)
+		ic.GainScope()
+		ic.Scan('(')
+	
+		ic.function(name)
+		
+		if len(t.Detail.Elements) > 0 {
+			ic.Assembly("%v %v", t.Pop, t.Name)
+			ic.SetVariable(t.Name, t)
+			ic.SetVariable(t.Name+"_use", Used)
+		}
+		
+		f = ic.DefinedFunctions[name]
+		ic.SetFlag(InMethod)
+		
+		f.Method = true
+		ic.DefinedFunctions[name] = f
+	
+		ic.InsertPlugins(name)
+	
 	} else {
 		var symbol = token
 		var other = ic.Scan(Name)
@@ -247,6 +298,8 @@ func (ic *Compiler) ScanMethod() {
 		var a = MethodType
 		
 		MethodType = ic.DefinedTypes[other]
+		
+		ic.LastDefinedType = MethodType
 		
 		var b = MethodType
 		
@@ -287,6 +340,7 @@ func (ic *Compiler) function(name string) {
 			var name = ic.Scan(Name)
 		
 			ic.SetVariable(name, ArgumentType)
+			ic.SetVariable(name+"_use", Used)
 		
 			toReverse = append(toReverse, ArgumentType.Pop+" "+name)
 		

@@ -19,6 +19,7 @@ func CheckForUpdate(uptodate time.Time) {
 	}
 	
 	//Check if we are already uptodate.
+	//TODO windows compatibillity.
 	if repo.UpdatedAt.Time.Sub(uptodate) <= 0 {
 		exec.Command("touch", os.Args[0]).Start()
 		return
@@ -37,6 +38,32 @@ func verify(err error) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func uct(language, out string) {
+	compile := exec.Command(UCT, language, out)
+	compile.Stdout = os.Stdout
+	compile.Stderr = os.Stderr
+	compile.Dir = path.Dir(mainFile)+"/.it/"
+	verify(compile.Run())
+}
+
+func cargo(mode string) {
+	
+	dir := os.Getenv("HOME")+"/.cargo/target"
+	os.Mkdir(dir, 0700)
+	
+	env := os.Environ()
+	env = append(env, fmt.Sprintf("CARGO_TARGET_DIR="+dir))
+
+	compile := exec.Command("cargo", mode)
+	compile.Stdout = os.Stdout
+	compile.Stderr = os.Stderr
+	compile.Env = env
+	compile.Dir = path.Dir(mainFile)+"/.it/"
+	verify(compile.Run())
+	
+	verify(os.Rename(dir+"/debug/"+path.Base(mainFile[:len(mainFile)-2]), "./"+path.Base(mainFile[:len(mainFile)-2])))
 }
 
 func main() {
@@ -91,17 +118,37 @@ func main() {
 				
 				//Other languages.
 				if len(os.Args) > 2 {
-					compile = exec.Command(uct, os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
-					compile.Stdout = os.Stdout
-					compile.Stderr = os.Stderr
-					compile.Dir = path.Dir(mainFile)+"/.it/"
-					verify(compile.Run())
+					
+					
+					
+					switch os.Args[2] {
+						case "-rs": //Rust needs to be handled differently.
+							uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
+							os.Mkdir("./.it/src", 0755)
+							verify(os.Rename("./.it/"+path.Base(mainFile[:len(mainFile)-2]+".rs"), "./.it/src/main.rs"))
+							verify(os.Rename("./.it/stack.rs","./.it/src/stack.rs"))
+							f, err := os.Create("./.it/Cargo.toml")
+							verify(err)
+							f.Write([]byte(`[package]
+name = "`+path.Base(mainFile[:len(mainFile)-2])+`"
+version = "0.1.0"
+
+[dependencies]
+num = "0.1"
+rand = "0.3"
+`))
+							f.Close()
+							
+							cargo("build")
+							
+							
+						default:
+							uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
+					}
+					
+					
 				} else {
-					compile = exec.Command(uct, "-go", path.Base(mainFile[:len(mainFile)-2]+".u"))
-					compile.Stdout = os.Stdout
-					compile.Stderr = os.Stderr
-					compile.Dir = path.Dir(mainFile)+"/.it/"
-					verify(compile.Run())
+					uct("-go", path.Base(mainFile[:len(mainFile)-2]+".u"))
 					compile = exec.Command(goc, "build", "-o",  "../"+path.Base(mainFile[:len(mainFile)-2])+ext)
 					compile.Stdout = os.Stdout
 					compile.Stderr = os.Stderr

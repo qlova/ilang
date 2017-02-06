@@ -3,6 +3,8 @@ package main
 import "strconv"
 import "strings"
 import "github.com/gedex/inflector"
+import "fmt"
+import "math"
 
 func (ic *Compiler) expression() string {
 	var token = ic.Scan(0)
@@ -38,7 +40,7 @@ func (ic *Compiler) expression() string {
 	}
 	
 	//Text.
-	if token[0] == '"' {
+	if token[0] == '"' || token[0] == '`' {
 		ic.ExpressionType = Text
 		return ic.ParseString(token)
 	}
@@ -57,6 +59,11 @@ func (ic *Compiler) expression() string {
 	if len(token) > 2 && token[0] == '0' && token[1] == 'x' { 
 		ic.ExpressionType = Number
 		return token
+	}
+	
+	//Arrays.
+	if token == "$" && ic.Peek() == "[" {
+		return ic.ScanArray()
 	}
 	
 	//Arrays.
@@ -105,6 +112,15 @@ func (ic *Compiler) expression() string {
 		return token
 	}
 	
+	//Decimal numbers.
+	if strings.Contains(token, ".") {
+		parts := strings.Split(token, ".")
+		a, _ := strconv.Atoi(parts[0])
+		b, _ := strconv.Atoi(parts[1])
+		ic.ExpressionType = Decimal
+		return fmt.Sprint(a*1000000+b*int(math.Pow(10, 6-float64(len(parts[1])))))
+	}
+	
 	//Minus.
 	if token == "-" {
 		ic.NextToken = token
@@ -115,10 +131,26 @@ func (ic *Compiler) expression() string {
 	if t := ic.GetVariable(token); t != Undefined {
 		ic.ExpressionType = t
 		ic.SetVariable(token+"_use", Used)
-		if t.User {
+		if tok := ic.Scan(0); tok == "[" || tok == "." {
+			ic.NextToken = tok
 			return ic.Shunt(token)
+		} else {
+			ic.NextToken = tok
 		}
 		return token
+	}
+	
+	//Scope methods with multiple arguments inside the method.
+	//eg. method Package.dosomething(22)
+	// in a Package method, dosomething(22) should be local.
+	if ic.GetFlag(InMethod) {
+		if f, ok := ic.DefinedFunctions[token+"_m_"+ic.LastDefinedType.Name]; ok && len(f.Args) > 0 {
+			if ic.LastDefinedType.Detail == nil || len(ic.LastDefinedType.Detail.Elements) > 0 {
+				ic.Assembly("%v %v", ic.LastDefinedType.Push, ic.LastDefinedType.Name)
+			}
+			ic.ExpressionType = InFunction
+			return token+"_m_"+ic.LastDefinedType.Name
+		}
 	}
 	
 	if t, ok := ic.DefinedTypes[token]; ok {
@@ -134,9 +166,11 @@ func (ic *Compiler) expression() string {
 				ic.Assembly("PUT 0")
 			}
 			return array
+			
+		//This is a type literal.
 		} else if ic.Peek() == "{" {
 			ic.NextToken = token
-			variable := ic.ScanConstructor()
+			variable := ic.ScanTypeLiteral()
 				//TODO better gc protection.
 			ic.SetVariable(variable, t)
 			ic.SetVariable(variable+"_use", Used)
@@ -145,7 +179,14 @@ func (ic *Compiler) expression() string {
 		} else if ic.GetFlag(InMethod) && ic.LastDefinedType.Super == token {
 			ic.ExpressionType = ic.DefinedTypes[ic.LastDefinedType.Super]
 			return ic.LastDefinedType.Name
-			
+		
+		
+		} else if len(t.Detail.Elements) == 0 && ic.Peek() == "." {
+			ic.Scan('.')
+			ic.ExpressionType = InFunction
+			var name = ic.Scan(Name)
+			return name+"_m_"+token
+		
 		} else {
 			ic.RaiseError()
 		}
@@ -217,7 +258,9 @@ func (ic *Compiler) expression() string {
 		return ic.NewListOf(t.GetType())
 	}
 	
-	ic.RaiseError()
+	ic.NextToken = token
+	ic.ExpressionType = Undefined
+	//ic.RaiseError()
 	return ""
 }
 

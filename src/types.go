@@ -1,5 +1,7 @@
 package main
 
+import "strings"
+
 var TypeIota int
 
 type Type struct {
@@ -9,6 +11,8 @@ type Type struct {
 	List bool
 	
 	Super string
+	
+	Decimal bool
 	
 	Detail *UserType
 	Interface *Interface
@@ -28,6 +32,23 @@ func (t Type) DefaultValue() string {
 
 func (t Type) IsUser() Type {
 	if t.User {
+		return t
+	} else {
+		return Undefined
+	}
+}
+
+
+func (t Type) IsMatrix() Type {
+	if t.Name == "matrix" {
+		return t
+	} else {
+		return Undefined
+	}
+}
+
+func (t Type) IsArray() Type {
+	if t.Name == "array" {
 		return t
 	} else {
 		return Undefined
@@ -77,9 +98,12 @@ func NewType(name string, options ...string) Type {
 
 var Undefined = NewType("undefined")
 var Number = NewType("number", "PUSH", "PULL")
+var Decimal = NewType("decimal", "PUSH", "PULL")
 var Letter = NewType("letter", "PUSH", "PULL")
 var Text = NewType("text", "SHARE", "GRAB")
 var Array = NewType("array", "SHARE", "GRAB")
+var Matrix = NewType("matrix", "SHARE", "GRAB")
+
 var Itype = NewType("type", "PUSH", "PULL")
 var User = NewType("usertype", "SHARE", "GRAB")
 var List = NewType("list", "SHARE", "GRAB")
@@ -106,6 +130,15 @@ func (ic *Compiler) ScanSymbolicType() Type {
 		case "[":
 			result = Array
 			ic.Scan(']')
+			if tok := ic.Scan(0); tok == "[" {
+				result = Matrix
+				ic.Scan(']')
+			} else {
+				ic.NextToken = tok
+			}
+		case "$":
+			result = ic.ScanSymbolicType()
+			result.Decimal = true
 		case `""`:
 			result = Text
 		case "' '":
@@ -120,14 +153,24 @@ func (ic *Compiler) ScanSymbolicType() Type {
 			result = Itype
 			ic.Scan('>')
 		case ".":
-			result = Variadic
-			ic.Scan('.')
+			if tok := ic.Scan(0); tok == "." {
+				result = Variadic
+			} else {
+				ic.NextToken = tok
+				result = Decimal
+			}
 		default:
 			result = Number
 			ic.NextToken = symbol
 			return result
 	}
 	return result
+}
+
+//Check if the given type exists or not.
+func (ic *Compiler) TypeExists(name string) bool {
+	_, ok := ic.DefinedTypes[name]
+	return ok
 }
 
 //This scans a new type definition and creates the type.
@@ -180,8 +223,30 @@ func (ic *Compiler) ScanType() {
 		if ident == "}" {
 			break
 		}
-		t.Detail.Elements = append(t.Detail.Elements, MemberType)
-		t.Detail.Table[ident] = len(t.Detail.Elements)-1
+		
+		//Embedded structs which are inferred.
+		//eg.
+		/*
+			type Member {}
+			type Base {
+				Member() //This will be accessed as 'member'.
+			}
+		*/
+		if ic.Peek() == "(" {
+			if MemberType != Number {
+				ic.RaiseError("Unexpected (")
+			}
+			ic.Scan('(')
+			ic.Scan(')')
+			MemberType = ic.DefinedTypes[ident]
+			ident = strings.ToLower(ident)
+		}
+		
+		
+		if ident != "\n" { 
+			t.Detail.Elements = append(t.Detail.Elements, MemberType)
+			t.Detail.Table[ident] = len(t.Detail.Elements)-1
+		}
 		
 	}
 	ic.DefinedTypes[name] = t
@@ -212,20 +277,42 @@ func (ic *Compiler) ScanList() string {
 	t.List = true
 	t.User = false
 	
+	var list = ic.Tmp("list")
+	
 	ic.Scan('(')
-	if (ic.Scan(0) != "s") {
-		ic.RaiseError("Expecting list size!")
+	if tok := ic.Scan(0); tok != "s" {
+		ic.NextToken = tok
+		size := ic.ScanExpression()
+		if ic.ExpressionType != Number {
+			ic.RaiseError("Expecting list size!")
+		}
+		ic.Assembly("PUSH ", size)
+		ic.Assembly("MAKE")
+		ic.Assembly("GRAB ", list)
+	} else {
+		ic.Assembly("ARRAY ", list)
 	}
 	ic.Scan(')')
 	
 	ic.ExpressionType = t
 	
-	var list = ic.Tmp("list")
 	
-	ic.Assembly("ARRAY ", list)
 	
 	return list
 }	
+
+
+
+//This scans a type literal.
+// eg. 
+/*
+	type Object {value}
+	
+	software { var o = Object{22} }
+*/
+func (ic *Compiler) ScanTypeLiteral() string {
+	return ic.ScanConstructor()
+}
 
 func (ic *Compiler) ScanConstructor() string {
 	var name = ic.Scan(Name)
@@ -256,7 +343,7 @@ func (ic *Compiler) ScanConstructor() string {
 				ic.Assembly("PUT %v", expr)
 			} else {
 				var tmp = ic.Tmp("heap")
-				ic.Assembly("SHARE ", expr)
+				ic.Assembly(ic.ExpressionType.Push," ", expr)
 				ic.Assembly("PUSH 0")
 				if ic.ExpressionType.Push == "RELAY" {
 					ic.Assembly("HEAPIT")
@@ -351,8 +438,8 @@ func (ic *Compiler) IndexUserType(name, element string) string {
 					ic.Assembly("HEAP")
 				}
 				tmp = ic.Tmp("index")
-				ic.Assembly("GRAB ", tmp)
-				ic.Assembly("SHARE ", tmp)
+				ic.Assembly(t.Elements[index].Pop, " ", tmp)
+				ic.Assembly(t.Elements[index].Push, " ", tmp)
 				ic.LoseScope()
 				ic.Assembly("ELSE")
 				ic.GainScope()
@@ -363,9 +450,12 @@ func (ic *Compiler) IndexUserType(name, element string) string {
 				}
 				}
 				ic.Assembly("SHARE ", tmp)
+				if t.Elements[index].Push == "RELAY" {
+					ic.Assembly("OPEN")
+				}
 				ic.LoseScope()
 				ic.Assembly("END")
-				ic.Assembly("GRAB ", tmp)
+				ic.Assembly(t.Elements[index].Pop, " ", tmp)
 				
 				return tmp
 				
@@ -389,13 +479,13 @@ func (ic *Compiler) SetUserType(name, element, value string) {
 		ic.RaiseError(name+" does not have an element named "+element)
 	} else {
 	
-		if t.Elements[index] == User || (t.Elements[index] == List && ic.ExpressionType.Push == "SHARE") {
+		if t.Elements[index] == User || (t.Elements[index] == List && ic.ExpressionType.Push == "SHARE") || ic.ExpressionType.Name == "matrix" {
 			t.Elements[index] = ic.ExpressionType
 			
-			if ic.LastDefinedType == ic.GetVariable(name) && ic.GetFlag(InMethod) {
+			if  ic.GetFlag(InMethod) {
 				ic.Assembly("PLACE ", value)
 				ic.Assembly("RENAME ", element)
-				ic.SetVariable(element, ic.ExpressionType)
+				//ic.SetVariable(element, ic.ExpressionType)
 			}
 		}
 	
@@ -413,7 +503,7 @@ func (ic *Compiler) SetUserType(name, element, value string) {
 				
 				//TODO garbage collect
 				var tmp = ic.Tmp("index")
-				ic.Assembly("SHARE ", value)
+				ic.Assembly(t.Elements[index].Push, " ", value)
 				ic.Assembly("PUSH 0")
 				if t.Elements[index].Push == "RELAY" {
 					ic.Assembly("HEAPIT")

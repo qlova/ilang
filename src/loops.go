@@ -76,6 +76,7 @@ func (ic *Compiler) ScanForLoop() {
 				return
 			}
 			ic.NextToken = token
+			OverList = true
 			fallthrough
 		case "in":
 			var array = ic.ScanExpression()
@@ -140,6 +141,9 @@ LOOP
 	GET %v
 	ADD %v %v 1
 `, del, i,backup, condition, i, backup,  condition, i, array, condition, array, i, v, backup, i)
+		if ic.ExpressionType == Array || ic.ExpressionType == Text {
+			//ic.Assembly("ADD %v %v %v", name, 0, i)
+		}
 	}
 
 			if ic.ExpressionType.List {
@@ -150,14 +154,23 @@ LOOP
 			
 			ic.GainScope()
 			ic.SetVariable(i, Number)
+			
+			if !OverList {
 			if ic.ExpressionType.List {
 				list := ic.ExpressionType
 				list.User = true
 				list.List = false
 				ic.SetVariable(vo, list)
 				ic.SetVariable(vo+".", Protected)
-			} else {
+			} else if ic.ExpressionType == Text {
+				ic.SetVariable(vo, Letter)
+			} else if ic.ExpressionType == Array {
 				ic.SetVariable(vo, Number)
+			} else if ic.ExpressionType.Decimal {
+				ic.SetVariable(vo, Decimal)
+			} else {
+				ic.RaiseError("Cannot find values inside ", ic.ExpressionType)
+			}
 			}
 			ic.SetVariable("i_for_delete", Type{Name:del})
 			ic.SetVariable("i_for_id", Type{Name:i})

@@ -17,10 +17,21 @@ func (ic *Compiler) Shunt(name string) string {
 				var cast = ic.Scan(Name)
 				ic.Shunt(ic.IndexSomething(name, cast))
 			}
+			
+			var index = ic.Scan(Name)
+			
+			
+			if _, ok  := ic.DefinedFunctions[index+"_m_"+ic.ExpressionType.Name]; ok {
+				var f = index+"_m_"+ic.ExpressionType.Name
+				ic.Assembly(ic.ExpressionType.Push," ", name)
+				ic.ExpressionType = InFunction
+				return ic.Shunt(f)
+			}
+			
 			if ic.ExpressionType.IsUser() == Undefined {
 				ic.RaiseError("Type '%v', cannot be indexed!", ic.ExpressionType.Name)
 			}
-			var index = ic.Scan(Name)
+			
 			return ic.Shunt(ic.IndexUserType(name, index))
 		
 		case ":":
@@ -123,27 +134,64 @@ func (ic *Compiler) Shunt(name string) string {
 		case "[":
 			var list bool
 			var typename string
+			
+			
 			if ic.ExpressionType.Push != "SHARE" {
 				ic.RaiseError("Cannot index "+name+", not an array! ("+ic.ExpressionType.Name+")")
 			}
 			if ic.ExpressionType.List {
 				list = true
 				typename = ic.ExpressionType.Name
+			}	
+			
+			if ic.ExpressionType.Name == "matrix" {
+			
+				var result Type
+			
+				if ic.ExpressionType.Decimal {
+					result = Decimal
+				} else {
+					result = Number
+				}
+			
+				var x = ic.ScanExpression()
+				ic.Scan(']')
+				ic.Scan('[')
+				var y = ic.ScanExpression()
+				ic.Scan(']')
+				
+				ic.ExpressionType = result
+				
+				return ic.Shunt(ic.IndexMatrix(name, x, y))
 			}
+			
+			var result Type
+			
+			if ic.ExpressionType == Text {
+				result = Letter
+			} else if ic.ExpressionType.Decimal {
+				result = Decimal
+			} else {
+				result = Number		
+			}
+			
 			var index = ic.ScanExpression()
 			ic.Scan(']')
 			
-			ic.ExpressionType = Number
-			if ic.ExpressionType == Text {
-				ic.ExpressionType = Letter
-			}
+			ic.ExpressionType = result
 			
 			if !list {
 				return ic.Shunt(ic.Index(name, index))
 			} else {
 				var listdex = ic.Tmp("listdex")
-				ic.Assembly("PUSH ", ic.Index(name, index))
-				ic.Assembly("HEAP")
+				var index = ic.Index(name, index)
+				ic.Assembly("IF ", index)
+					ic.Assembly("PUSH ", index)
+					ic.Assembly("HEAP")
+				ic.Assembly("ELSE")
+					ic.Assembly("ARRAY ", listdex)
+					ic.Assembly("SHARE ", listdex)
+				ic.Assembly("END")
 				ic.Assembly("GRAB ", listdex)
 				ic.ExpressionType = ic.DefinedTypes[typename]
 				return ic.Shunt(listdex)
@@ -165,7 +213,12 @@ func (ic *Compiler) Shunt(name string) string {
 				var A = ic.ExpressionType
 				var B Type
 				var next string
-				if operator, ok = GetOperator(token, ic.ExpressionType, Undefined); !ok {
+				if operator, ok = GetOperator(token, ic.ExpressionType, Undefined); token == "²" {
+					next = name
+					B = ic.ExpressionType
+					operator, ok = GetOperator("*", A, B)
+					token = "*"
+				} else if !ok {
 			
 					if OperatorPrecident(token) {
 						next = ic.ScanExpression()
@@ -176,11 +229,6 @@ func (ic *Compiler) Shunt(name string) string {
 					
 					operator, ok = GetOperator(token, A, B)
 					ic.ExpressionType = operator.ExpressionType
-				} else if token == "²" {
-					next = name
-					B = ic.ExpressionType
-					operator, ok = GetOperator("*", A, B)
-					token = "*"
 				}
 
 				if ok {
@@ -189,6 +237,10 @@ func (ic *Compiler) Shunt(name string) string {
 					asm = strings.Replace(asm, "%a", name, -1)
 					asm = strings.Replace(asm, "%b", next, -1)
 					asm = strings.Replace(asm, "%c", id, -1)
+					
+					if strings.Contains(asm, "%t") {
+						asm = strings.Replace(asm, "%t", ic.Tmp("tmp"), -1)
+					}
 				
 					ic.Assembly(asm)
 				
@@ -205,6 +257,7 @@ func (ic *Compiler) Shunt(name string) string {
 		}
 	}
 	
-	ic.RaiseError()
-	return ""
+	//ic.RaiseError()
+	ic.NextToken = token
+	return name
 }

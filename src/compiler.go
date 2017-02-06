@@ -759,6 +759,11 @@ func (ic *Compiler) Compile() {
 				ic.Assembly("SHARE i_newline")
 				ic.Assembly("STDOUT")
 			
+			case "{":
+				ic.Assembly("IF 1")
+				ic.GainScope()
+				ic.SetFlag(Block)
+			
 			case "if":
 				var expression = ic.ScanExpression()
 				if ic.ExpressionType != Number {
@@ -863,6 +868,7 @@ func (ic *Compiler) Compile() {
 				functionbefore := ic.GetFlag(InFunction)
 				issuesbefore := ic.GetFlag(Issues)
 				loopbefore := ic.GetScopedFlag(Loop)
+				codeblock := ic.GetScopedFlag(Block)
 				
 				newbefore := ic.GetFlag(New)
 				
@@ -887,7 +893,7 @@ func (ic *Compiler) Compile() {
 					}
 					ic.Assembly("RETURN")
 				}
-				if issuesbefore != issuesafter {
+				if issuesbefore != issuesafter || codeblock  {
 					ic.Assembly("END")
 				}
 				if loopbefore {
@@ -897,9 +903,11 @@ func (ic *Compiler) Compile() {
 				
 			default:
 				
+				//println(token)
+				
 				if t := ic.GetVariable(token); t != Undefined {
 					switch t {
-						case Number:
+						case Number, Decimal, Letter:
 							var name = token
 							if name == "error" {
 								name = "ERROR"
@@ -928,13 +936,43 @@ func (ic *Compiler) Compile() {
 										ic.SetUserType(ic.LastDefinedType.Name, name, name)
 									}
 							}
-						case Array, Text, List, t.IsList():
+						case t.IsMatrix():
+							var name = token
+							token = ic.Scan(0)
+							switch token {
+								case "[":
+									var x = ic.ScanExpression()
+									ic.Scan(']')
+									ic.Scan('[')
+									var y = ic.ScanExpression()
+									ic.Scan(']')
+									ic.Scan('=')
+									var value = ic.ScanExpression()
+									
+									ic.SetMatrix(name, x, y, value)
+								
+								case "=":
+								
+									value := ic.ScanExpression()
+									if ic.ExpressionType != t {
+										ic.RaiseError("Only ",t.Name," values can be assigned to ",name,".")
+									}
+									
+									if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
+										ic.SetUserType(ic.LastDefinedType.Name, name, value)	
+									} else {									
+										ic.Assembly("PLACE ", value)
+										ic.Assembly("RENAME ", name)
+									}
+							}	
+						
+						case Array, Text, List, t.IsList(), t.IsArray():
 							var name = token
 							token = ic.Scan(0)
 							
 							switch token {
 								case "&", "+":
-									if t != List {
+									if !t.List && t != List {
 										ic.ExpressionType = t
 										ic.NextToken = token
 										ic.Shunt(name)
@@ -955,6 +993,7 @@ func (ic *Compiler) Compile() {
 										list.User = false
 										t = list
 										ic.SetVariable(name, list)
+										//println(name)
 										if ic.GetFlag(InMethod) {
 											ic.LastDefinedType.Detail.Elements[ic.LastDefinedType.Detail.Table[name]] = t
 										}
@@ -1033,13 +1072,24 @@ func (ic *Compiler) Compile() {
 							switch token {
 								case "(":
 									argument := ic.ScanExpression()
+									ic.Scan(')')
 									if ic.ExpressionType != Text && ic.ExpressionType != Array {
-										ic.RaiseError("Only text values can be passed to a pipe call (outside of an expression).")
+										if ic.ExpressionType == Number {
+											ic.Assembly("RELAY ", name)
+											if argument != "" {
+												ic.Assembly("PUSH ", argument)
+											} else {
+												ic.Assembly("PUSH 0")
+											}
+											ic.Assembly("IN")
+											ic.Assembly("GRAB ", ic.Tmp("discard"))
+											continue
+										}
+										ic.RaiseError("Only text and number values can be passed to a pipe call (outside of an expression).")
 									}
 									ic.Assembly("RELAY ", name)
 									ic.Assembly("SHARE ", argument)
 									ic.Assembly("OUT")
-									ic.Scan(')')
 								case "=":
 									value := ic.ScanExpression()
 									if ic.ExpressionType != Pipe {
@@ -1123,13 +1173,18 @@ func (ic *Compiler) Compile() {
 								value = ic.ScanExpression()
 							}
 							
-							//TODO garbage collection
-							if index == "" {
-								ic.Assembly("PLACE ", value)
-								ic.Assembly("RENAME ", name)
-							} else {
-								ic.SetUserType(name, index, value)
-							}
+							
+								//Set a usertype from within a method.
+								if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
+									ic.SetUserType(ic.LastDefinedType.Name, name, value)
+										
+								} else if index == "" {
+									//TODO garbage collection.
+									ic.Assembly("PLACE ", value)
+									ic.Assembly("RENAME ", name)
+								} else {
+									ic.SetUserType(name, index, value)
+								}
 							
 						default:
 							ic.RaiseError()
@@ -1148,6 +1203,11 @@ func (ic *Compiler) Compile() {
 					} else {
 						ic.RaiseError()
 					}
+				
+				} else if ic.GetFlag(InMethod) {
+					ic.NextToken = token
+					ic.ScanExpression()	
+				
 				} else {
 					ic.RaiseError()
 				}

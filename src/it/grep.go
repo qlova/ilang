@@ -28,5 +28,27 @@ func grep(wg *sync.WaitGroup, path string) {
 			mainFile = path
 			return
 		}
+		if strings.Contains(scanner.Text(), "ソフトウェア") {
+			mainFile = path
+			return
+		}
+		if strings.Contains(scanner.Text(), "программного") {
+			mainFile = path
+			return
+		}
+		if strings.Contains(scanner.Text(), "软件") {
+			mainFile = path
+			return
+		}
+		if strings.Contains(scanner.Text(), "grate") {
+			mainFile = path
+			return
+		}
+		if strings.Contains(scanner.Text(), "gui") {
+			if strings.Contains(scanner.Text(), "{") {
+				mainFile = path
+				return
+			}
+		}
 	}
 }

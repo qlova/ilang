@@ -21,6 +21,7 @@ var Loop = NewFlag()
 var ForLoop = NewFlag()
 var New = NewFlag()
 var Delete = NewFlag()
+var Block = NewFlag()
 
 var Unused = NewFlag()
 var Used = NewFlag()
