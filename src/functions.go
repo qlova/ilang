@@ -76,7 +76,16 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 		ic.Assembly("SHARE ", id)
 	} else if len(f.Args) > 0 {
 	
+		var defaultarguments bool
 		for i := range f.Args {
+			if defaultarguments {
+				if f.Args[i] == Number {
+					ic.Assembly("PUSH 0")
+				} else {
+					ic.RaiseError("Not enough arguments!", " Expected ", len(f.Args), " but got ", i+1)
+				}
+				continue
+			}
 			arg := ic.ScanExpression()
 			
 			if f.Args[i] != ic.ExpressionType {
@@ -95,8 +104,10 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 				ic.RaiseError()
 			}
 			if token == ")" {
+				if i+1 != len(f.Args) {
+					defaultarguments = true
+				}
 				ic.NextToken = ")"
-				break
 			}
 		}
 	} else {
