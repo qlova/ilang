@@ -464,7 +464,7 @@ func (ic *Compiler) Compile() {
 			case "@":
 				ic.Language = ic.Scan(Name)
 				if ic.Language == "ch" {
-					ic.Language = "zh-CH"
+					ic.Language = "zh-CN"
 				}
 				ic.Translation = true
 				
@@ -709,7 +709,7 @@ func (ic *Compiler) Compile() {
 			case "for":
 				ic.ScanForLoop()
 			
-			case "var":
+			case "var", "ver", "变量":
 				name := ic.Scan(Name)
 				token := ic.Scan(0)
 				if token == "=" {
