@@ -67,7 +67,7 @@ I:
 	software {
 		var file = open("input.txt")
 		loop {
-			print(read(file))
+			print(file())
 			issues {
 				exit
 			}
@@ -162,7 +162,7 @@ Hacking instructions: (Linux and Mac)
 		
 		#You can now play around with the examples.
 		#Standard building looks like this:
-		ic File.i && uct -go File.u && go build File.go
+		cd Code/ && it run
 
 Please be aware that many features are missing or incomplete in i!
 		
