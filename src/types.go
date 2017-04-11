@@ -1,6 +1,7 @@
 package main
 
 import "strings"
+import "github.com/gedex/inflector"
 
 var TypeIota int
 
@@ -238,7 +239,17 @@ func (ic *Compiler) ScanType() {
 			}
 			ic.Scan('(')
 			ic.Scan(')')
-			MemberType = ic.DefinedTypes[ident]
+			var ok bool
+			MemberType, ok = ic.DefinedTypes[ident]
+			if !ok {
+				ident := inflector.Singularize(ident)
+				MemberType, ok = ic.DefinedTypes[ident]
+				MemberType.List = true
+				MemberType.User = false
+				if !ok {
+					ic.RaiseError("No such type! ", ident)
+				}
+			}
 			ident = strings.ToLower(ident)
 		}
 		
