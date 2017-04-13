@@ -63,6 +63,7 @@ func Alias(f string, r Type) Function {
 
 func (ic *Compiler) Builtin() {
 	ic.DefinedFunctions["number"] = Method(Number, true, "PUSH 0")
+	ic.DefinedFunctions["array"] = Method(Array, true, "PUSH 0\nMAKE")
 	ic.DefinedFunctions["letter"] = Method(Letter, true, "PUSH 0")
 	ic.DefinedFunctions["binary"] = Method(Number, true, "PUSH 0")
 	ic.DefinedFunctions["binary"] = Method(Number, true, "PUSH 0")
@@ -120,6 +121,7 @@ RETURN
 	ic.DefinedFunctions["len_m_array"] = InlineFunction([]Type{Array}, "LEN", nil)
 	ic.DefinedFunctions["len_m_text"] = InlineFunction([]Type{Text}, "LEN", nil)
 	ic.DefinedFunctions["len_m_number"] = Method(Array, true, "MAKE")
+	ic.DefinedFunctions["array_m_number"] = Method(Array, true, "MAKE")
 	
 	ic.DefinedFunctions["len_m_pipe"] = Function{Exists:true, Returns:[]Type{Number}, Data: `
 FUNCTION len_m_pipe
