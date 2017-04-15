@@ -437,11 +437,13 @@ func (ic *Compiler) IndexUserType(name, element string) string {
 				return tmp
 			
 			case "SHARE", "RELAY":
-				ic.Assembly("PLACE ", name)
-				ic.Assembly("PUSH ", index)
-				ic.Assembly("GET ", tmp)
-				ic.Assembly("IF ",tmp)
+				ic.Assembly("PLACE ", name) //The array we are indexing, the place.
+				ic.Assembly("PUSH ", index) //Push the index onto the stack.
+				ic.Assembly("GET ", tmp)	//Get the value of the array at the index on the stack.
+				ic.Assembly("IF ",tmp)		//If there is a valid address, (greater than zero)
 				ic.GainScope()
+				
+				//Retrieve the array.
 				ic.Assembly("PUSH ", tmp)
 				if t.Elements[index].Push == "RELAY" {
 					ic.Assembly("HEAPIT")
@@ -452,7 +454,8 @@ func (ic *Compiler) IndexUserType(name, element string) string {
 				ic.Assembly(t.Elements[index].Pop, " ", tmp)
 				ic.Assembly(t.Elements[index].Push, " ", tmp)
 				ic.LoseScope()
-				ic.Assembly("ELSE")
+				
+				ic.Assembly("ELSE") //We will return a new array.
 				ic.GainScope()
 				ic.Assembly("ARRAY ", tmp)
 				if t.Elements[index].User {
@@ -490,7 +493,7 @@ func (ic *Compiler) SetUserType(name, element, value string) {
 		ic.RaiseError(name+" does not have an element named "+element)
 	} else {
 	
-		if t.Elements[index] == User || (t.Elements[index] == List && ic.ExpressionType.Push == "SHARE") || ic.ExpressionType.Name == "matrix" {
+		if t.Elements[index] == User || (t.Elements[index].List && ic.ExpressionType.Push == "SHARE") || ic.ExpressionType.Name == "matrix" {
 			t.Elements[index] = ic.ExpressionType
 			
 			if  ic.GetFlag(InMethod) {
