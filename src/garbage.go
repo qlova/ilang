@@ -1,4 +1,4 @@
-package main
+package ilang
 
 func (ic *Compiler) Collect(t Type) {
 	if t.IsUser() == Undefined {

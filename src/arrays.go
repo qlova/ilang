@@ -1,4 +1,4 @@
-package main
+package ilang
 
 //Index a 1D array, returns the value at the index.
 func (ic *Compiler) Index(array, index string) string {

@@ -1,4 +1,4 @@
-package main
+package ilang
 
 type InterfaceMethod struct {
 	Name string

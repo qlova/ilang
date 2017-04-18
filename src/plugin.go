@@ -1,4 +1,4 @@
-package main
+package ilang
 
 //Plugins are like code injections or aspect-based programming.
 //VERY POWERFUL.

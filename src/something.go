@@ -1,4 +1,4 @@
-package main
+package ilang
 
 func (t Type) IsSomething() Type {
 	if t.Name == "Something" {

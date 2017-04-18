@@ -4,9 +4,9 @@ import (
 	"flag"
 	"path"
 	"os"
+	"github.com/qlova/ilang/src"
 )
 
-//TODO, this needs to be a seperate package.
 var directory string
 func init() {
 	flag.StringVar(&directory, "o", "", "directory to output to")
@@ -20,7 +20,7 @@ func main() {
 		return
 	}
 	
-	ic := NewCompiler(file)
+	ic := ilang.NewCompiler(file)
 	
 	if directory == "" {
 		directory = path.Dir(flag.Arg(0))

@@ -1,4 +1,4 @@
-package main
+package ilang
 
 func (ic *Compiler) ScanSwitch() {
 	var expression = ic.ScanExpression()

@@ -1,4 +1,4 @@
-package main
+package ilang
 
 //YES, this file is a mess. Maybe this needs to be bindata.
 

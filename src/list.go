@@ -1,4 +1,4 @@
-package main
+package ilang
 
 func (t Type) MakeList() Type {
 	t.List = true
