@@ -8,7 +8,7 @@ import "net/http"
 
 var git = "git.exe"
 var goc = "go.exe"
-var uct = "uct.exe"
+const UCT = "uct.exe"
 var ic  = "ic.exe"
 var ext = ".exe"
 
@@ -21,12 +21,15 @@ func downloadFile(filepath string, url string) (err error) {
   }
   defer out.Close()
 
+ fmt.Println("Downloading...")
   // Get the data
   resp, err := http.Get(url)
   if err != nil {
     return err
   }
   defer resp.Body.Close()
+  
+  fmt.Println(resp)
 
   // Writer the body to file
   _, err = io.Copy(out, resp.Body)
@@ -66,7 +69,7 @@ func SystemChecks() {
 	err = exec.Command("git.exe", "--version").Run()
 	if err != nil {
 		fmt.Println("Git is required for IT in order to function and will now be downloaded... Please Wait =D")
-		err = downloadFile("./InstallGit.exe", "https://github.com/git-for-windows/git/releases/download/v2.10.1.windows.1/Git-2.10.1-32-bit.exe")
+		err = downloadFile("./InstallGit.exe", "http://github.com/git-for-windows/git/releases/download/v2.10.1.windows.1/Git-2.10.1-32-bit.exe")
 		if err != nil {
 			fmt.Println("Git cannot be automatically installed on your system.")
 			fmt.Println("Please visit https://github.com/git-for-windows/git/releases/tag/v2.10.1.windows.1 and install it manually.")

@@ -8,4 +8,12 @@ package main
 		UCT
 		I
 		
+	For python:
+		Python3
+		Pyinstaller
+		Pygame?
+	
+	For java:
+		Java
+	
 */

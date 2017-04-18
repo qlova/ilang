@@ -6,7 +6,7 @@ import "fmt"
 
 var git = "git"
 var goc = "go"
-var uct = "uct"
+const UCT = "uct"
 var ic  = "ic"
 var ext = ""
 
