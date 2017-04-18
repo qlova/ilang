@@ -7,4 +7,5 @@ software {
 	.ruby		puts "Hello World"
 	.lua		print("Hello World")
 	.javascript	console.log("Hello World")
+	.rust		println!("Hello World")
 }
