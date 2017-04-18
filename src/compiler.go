@@ -1005,28 +1005,7 @@ func (ic *Compiler) Compile() {
 									
 									//This appends elements to a list {..}
 									if t.List {
-										if ic.ExpressionType.Name != t.Name {
-											if t.Name == "Something" {
-												var tmp = ic.Tmp("something")
-												ic.Assembly("ARRAY ", tmp)
-												ic.SetVariable(tmp, t)
-												ic.AssignSomething(tmp, value)
-												ic.SetVariable(tmp, Undefined)
-												value = tmp	
-											} else {
-											ic.RaiseError("Type mismatch! Cannot add a ", ic.ExpressionType.Name,
-												 " to a List of ", t.Name)
-											}
-										}
-										
-										var tmp = ic.Tmp("index")
-										ic.Assembly("SHARE ", value)
-										ic.Assembly("PUSH 0")
-										ic.Assembly("HEAP")
-										ic.Assembly("PULL ", tmp)
-				
-										ic.Assembly("PLACE ", name)
-										ic.Assembly("PUT ", tmp)
+										ic.PutList(t, name, value)
 										
 									} else {
 									

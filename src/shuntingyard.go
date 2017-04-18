@@ -133,7 +133,7 @@ func (ic *Compiler) Shunt(name string) string {
 			
 		case "[":
 			var list bool
-			var typename string
+			var ListType Type
 			
 			
 			if ic.ExpressionType.Push != "SHARE" {
@@ -141,7 +141,7 @@ func (ic *Compiler) Shunt(name string) string {
 			}
 			if ic.ExpressionType.List {
 				list = true
-				typename = ic.ExpressionType.Name
+				ListType = ic.ExpressionType.ListType()
 			}	
 			
 			if ic.ExpressionType.Name == "matrix" {
@@ -193,7 +193,7 @@ func (ic *Compiler) Shunt(name string) string {
 					ic.Assembly("SHARE ", listdex)
 				ic.Assembly("END")
 				ic.Assembly("GRAB ", listdex)
-				ic.ExpressionType = ic.DefinedTypes[typename]
+				ic.ExpressionType = ListType
 				return ic.Shunt(listdex)
 			}
 		

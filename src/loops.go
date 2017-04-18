@@ -81,6 +81,17 @@ func (ic *Compiler) ScanForLoop() {
 		case "in":
 			var array = ic.ScanExpression()
 			
+			if ic.ExpressionType == List {
+				//ic.RaiseError("Cannot loop over an empty list!")
+				//We can ignore this loop.
+				for {
+					var token = ic.Scan(0)
+					if token == "end" {
+						return
+					}
+				}
+			}
+			
 			if ic.ExpressionType.Push != "SHARE" {
 				ic.RaiseError("Cannot iterate over '", ic.ExpressionType.Name, "'")
 			}

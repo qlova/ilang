@@ -115,7 +115,10 @@ func (ic *Compiler) ScanArray() string {
 	//This is the size of the array, eg. 
 	//		var a = [...50] 
 	// (an array with 50 elements)
-	if ic.Peek() == "." {
+	//
+	// I think this is depreciated.
+	// use array(50) instead!
+	/*if ic.Peek() == "." {
 		ic.Scan('.')
 		ic.Scan('.')
 		size := ic.ScanExpression()
@@ -126,21 +129,32 @@ func (ic *Compiler) ScanArray() string {
 		ic.ExpressionType = result
 		return id
 	} else {
-		ic.Assembly("ARRAY ", id)
-	}
-	
-	ic.ExpressionType = result
+	}*/
+	ic.Assembly("ARRAY ", id)
 		
 	if ic.Peek() == "]" {
 		ic.Scan(0)
+		ic.ExpressionType = List
 		return id
 	}
 
 	//Push all the values.
 	for {
 		value := ic.ScanExpression()
-		ic.Assembly("PLACE ", id)
-		ic.Assembly("PUT ", value)
+		
+		//This is not a numeric array?
+		if ic.ExpressionType != Number || result.List {
+			if !result.List {
+				result = ic.ExpressionType.MakeList()
+			}
+			
+			ic.PutList(result, id, value)
+			
+			//ic.RaiseError("Cannot create a numeric array with type ", ic.ExpressionType.Name)
+		} else {
+			ic.Assembly("PLACE ", id)
+			ic.Assembly("PUT ", value)
+		}
 		
 		token := ic.Scan(0)
 		if token != "," {
