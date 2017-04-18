@@ -8,11 +8,14 @@ import "os/exec"
 import "github.com/kardianos/osext"
 import "path"
 import "path/filepath"
+import "context"
 
 func CheckForUpdate(uptodate time.Time) {
+	ctx := context.Background()
+
 	client := github.NewClient(nil)
 	
-	repo, _, err := client.Repositories.Get("qlova", "ilang")
+	repo, _, err := client.Repositories.Get(ctx, "qlova", "ilang")
 	if err != nil {
 		fmt.Println(err)
 		return
