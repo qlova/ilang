@@ -16,11 +16,7 @@ func (t Type) ListType() Type {
 
 //Add a value to a list of type t.
 func (ic *Compiler) PutList(t Type, list string, value string) {
-	if ic.ExpressionType.Push != "SHARE" {
-		ic.RaiseError("Cannot put numeric value on list.")
-	}
-	
-	if ic.ExpressionType.Name != t.Name {
+		if ic.ExpressionType.Name != t.Name {
 		if t.Name == "Something" {
 			var tmp = ic.Tmp("something")
 			ic.Assembly("ARRAY ", tmp)
