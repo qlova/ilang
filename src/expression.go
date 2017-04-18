@@ -42,6 +42,15 @@ func (ic *Compiler) expression() string {
 	if token == "something" {
 		ic.Scan('(')
 		ic.Scan(')')
+		ic.ExpressionType = Something
+		var tmp = ic.Tmp("something")
+		ic.Assembly("ARRAY ", tmp)
+		ic.Assembly("PUT 0")
+		return tmp
+	}
+	
+	if token == "?" {
+		ic.ExpressionType = Something
 		var tmp = ic.Tmp("something")
 		ic.Assembly("ARRAY ", tmp)
 		ic.Assembly("PUT 0")

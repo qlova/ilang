@@ -1,6 +1,6 @@
 
 software {
-	var s = {}
+	var s = ?
 	s = 4
 	print(s, " ", s.number)
 	s = "hello"
