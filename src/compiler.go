@@ -991,6 +991,13 @@ func (ic *Compiler) Compile() {
 									
 									value := ic.ScanExpression()
 									
+									if t == List && ic.ExpressionType.Push == "PUSH" {
+										ic.SetVariable(name, Array)
+										ic.Assembly("PLACE ", name)
+										ic.Assembly("PUT ", value)
+										continue
+									}
+									
 									if t == List {
 										list := ic.ExpressionType
 										list.List = true
