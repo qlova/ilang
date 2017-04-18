@@ -10,7 +10,7 @@ func (t Type) IsSomething() Type {
 
 func (ic *Compiler) IndexSomething(name string, cast string) string {
 	switch cast {
-		case "number", "letter":
+		case "number", "letter", "decimal":
 			var test = ic.Tmp("test")
 			ic.Assembly("PUSH 2")
 			ic.Assembly("PLACE ", name)
@@ -28,9 +28,16 @@ func (ic *Compiler) IndexSomething(name string, cast string) string {
 			ic.Assembly("PUSH 0")
 			ic.Assembly("END")
 			ic.Assembly("PULL ", num)
-			ic.ExpressionType = Number
+			switch cast {
+				case "number":
+					ic.ExpressionType = Number
+				case "letter":
+					ic.ExpressionType = Letter
+				case "decimal":
+					ic.ExpressionType = Decimal
+			}
 			return num
-		case "text", "array":
+		default:
 			var test = ic.Tmp("test")
 			ic.Assembly("PUSH 2")
 			ic.Assembly("PLACE ", name)
@@ -53,11 +60,19 @@ func (ic *Compiler) IndexSomething(name string, cast string) string {
 			ic.Assembly("END")
 			
 			ic.Assembly("GRAB ", txt)
-			ic.ExpressionType = Text
+			switch cast {
+				case "text":
+					ic.ExpressionType = Text
+				case "array":
+					ic.ExpressionType = Array
+				default:
+					var ok bool
+					ic.ExpressionType, ok = string2type[cast]
+					if ! ok {
+						ic.RaiseError("Cannot cast something to ", cast)
+					}
+			}
 			return txt
-			
-		default:
-			ic.RaiseError("Cannot cast something to ", cast)
 	}
 	return ""
 }
@@ -94,7 +109,7 @@ RETURN
 		}
 	}
 	switch ic.ExpressionType {
-		case Number, Letter:
+		case Number, Letter, Decimal:
 			var tmp = ic.Tmp("number")
 			ic.Assembly("ARRAY ", tmp)
 			ic.Assembly("PUT ", value)
