@@ -13,3 +13,8 @@
 *.bash
 *.class
 *.pyc
+*.rs
+*.lock
+*.toml
+*.rlib
+*.json
