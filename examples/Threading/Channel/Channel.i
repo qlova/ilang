@@ -8,6 +8,5 @@ software {
 	var p = ||
 	fork communicateWithMe(p)
 	p("Hello thread")
-	var r = inbox()
-	print("Reply: ", r)
+	print("Reply: ", inbox())
 }

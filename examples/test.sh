@@ -18,6 +18,10 @@ function runit {
 			cd ./.it && go build -o ../$1 && cd .. && ./$1 <<< $(echo -e "$2")
 		;;
 		
+		rs)
+			./$1 <<< $(echo -e "$2")
+		;;
+		
 		bash) 
 			./$1.bash <<< $(echo -e "$2")
 		;;
