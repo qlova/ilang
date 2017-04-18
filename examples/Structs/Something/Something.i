@@ -1,17 +1,15 @@
+
 software {
-	var a is Something
+	var s = {}
+	s = 4
+	print(s, " ", s.number)
+	s = "hello"
+	print(s, " ", s.text)
 	
-	a = [97]
+	print(s.number)
+	issues {
+		print("s is not a number")
+	}
 	
-	print(a) //This is slow.
-	if a.type = number
-		print("a is a number!")
-		print(a.number) //This is fast.
-	end
-	if a.type = text
-		print("a is text")
-	end
-	if a.type = array
-		print("a is array")
-	end
+	
 }

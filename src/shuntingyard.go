@@ -15,7 +15,7 @@ func (ic *Compiler) Shunt(name string) string {
 		case ".":
 			if ic.ExpressionType == Something {
 				var cast = ic.Scan(Name)
-				ic.Shunt(ic.IndexSomething(name, cast))
+				return ic.Shunt(ic.IndexSomething(name, cast))
 			}
 			
 			var index = ic.Scan(Name)
