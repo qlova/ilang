@@ -5,7 +5,7 @@ interface Printable {
 }
 
 software {
-	var s has Printable(s)
+	var s = Printables()
 	s += 4
 	s += "lol"
 	s += 'a'
