@@ -77,7 +77,7 @@ I:
 
 So you can hopefully see some of the philosophy of i.
 
-##Features
+## Features
 
 * Big integars.
 * Clean.
@@ -88,16 +88,17 @@ So you can hopefully see some of the philosophy of i.
 * Has a Gui library.
 * Has a **WIP** game engine.
 
-##Documentation
+## Documentation
 
 Documentation is minimal but take a look at the [Wiki](https://github.com/Qlova/ilang/wiki).
 The Rosetta Code [page](http://rosettacode.org/wiki/Category:I) may be helpful. 
 Flick me an email (splizard @ splizard dot com) if you have any questions =)
 
-##Types
+## Types
 There are 8 types in the i language.
 ```
 number()
+decimal()   .
 letter()	''
 array() 	[]
 text() 		""
@@ -113,6 +114,9 @@ Something() ?
 
 **number**
 Numbers in the i language can be integers of any size.
+
+**decimal**
+Decimals are fixed-precision numbers.
 
 **letter**
 Letters correspond to a character in a piece of text, for example "a", "!" etc.
@@ -139,7 +143,7 @@ Any types which are added in a program are "things".
 Something is the only builtin struture type, it can hold any value and needs to be type checked when used.  
 
 
-##DOWNLOAD AND INSTALL
+## DOWNLOAD AND INSTALL
 
 There are no official releases yet as the language is in a alpha state but you can grab the source and start hacking!  
 Hacking instructions: (Linux and Mac)
