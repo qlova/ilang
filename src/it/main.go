@@ -9,6 +9,7 @@ import "github.com/kardianos/osext"
 import "path"
 import "path/filepath"
 import "context"
+import "bufio"
 
 func CheckForUpdate(uptodate time.Time) {
 	ctx := context.Background()
@@ -41,14 +42,6 @@ func verify(err error) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-}
-
-func uct(language, out string) {
-	compile := exec.Command(UCT, language, out)
-	compile.Stdout = os.Stdout
-	compile.Stderr = os.Stderr
-	compile.Dir = path.Dir(mainFile)+"/.it/"
-	verify(compile.Run())
 }
 
 func cargo(mode string) {
@@ -91,48 +84,48 @@ func main() {
 	//If the executable hasn't been updated in an hour, check for an update.
 	//(This will be scaled back before public use TODO)
 	if time.Now().Sub(info.ModTime()) > time.Hour*24 {
-		CheckForUpdate(info.ModTime())
+		//CheckForUpdate(info.ModTime())
 	}
+	
 	
 	//Command.
 	if len(os.Args) > 1 {
-		switch os.Args[1] {
-			case "build", "run":
-				//TODO clean this up along with (grep.go)
-				filepath.Walk("./", func(name string, file os.FileInfo, err error) error {
-					if !file.IsDir() && path.Ext(name) == ".i" {
-						wg.Add(1)
-						go grep(&wg, name)
-					}
-					return nil
-				})
-				wg.Wait()
-				if mainFile == "" {
-					fmt.Println("Could not find a 'software' block!")
-					os.Exit(1)
-				}
-				
-				//Compile.
-				os.Mkdir(path.Dir(mainFile)+"/.it", 0700)
-				compile := exec.Command(ic, "-o", path.Dir(mainFile)+"/.it", mainFile)
-				compile.Stdout = os.Stdout
-				compile.Stderr = os.Stderr
-				verify(compile.Run())
-				
-				//Other languages.
-				if len(os.Args) > 2 {
-					
-					
-					
-					switch os.Args[2] {
-						case "-rs": //Rust needs to be handled differently.
-							uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
-							os.Mkdir("./.it/src", 0755)
-							verify(os.Rename("./.it/"+path.Base(mainFile[:len(mainFile)-2]+".rs"), "./.it/src/main.rs"))
-							verify(os.Rename("./.it/stack.rs","./.it/src/stack.rs"))
-							f, err := os.Create("./.it/Cargo.toml")
-							verify(err)
-							f.Write([]byte(`[package]
+		os.Chdir(os.Args[1])
+	}
+	
+	//TODO clean this up along with (grep.go)
+	filepath.Walk("./", func(name string, file os.FileInfo, err error) error {
+		if !file.IsDir() && path.Ext(name) == ".i" {
+			wg.Add(1)
+			go grep(&wg, name)
+		}
+		return nil
+	})
+	wg.Wait()
+	if mainFile == "" {
+		fmt.Println("Could not find a 'software' block!")
+		os.Exit(1)
+	}
+	
+	//Compile.
+	
+	os.Mkdir(path.Dir(mainFile)+"/.it", 0700)
+	ic(mainFile, path.Dir(mainFile)+"/.it")
+	
+	//Other languages.
+	if len(os.Args) > 2 {
+		
+		
+		
+		switch os.Args[2] {
+			case "-rs": //Rust needs to be handled differently.
+				uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
+				os.Mkdir("./.it/src", 0755)
+				verify(os.Rename("./.it/"+path.Base(mainFile[:len(mainFile)-2]+".rs"), "./.it/src/main.rs"))
+				verify(os.Rename("./.it/stack.rs","./.it/src/stack.rs"))
+				f, err := os.Create("./.it/Cargo.toml")
+				verify(err)
+				f.Write([]byte(`[package]
 name = "`+path.Base(mainFile[:len(mainFile)-2])+`"
 version = "0.1.0"
 
@@ -140,32 +133,36 @@ version = "0.1.0"
 num = "0.1"
 rand = "0.3"
 `))
-							f.Close()
-							
-							cargo("build")
-							
-							
-						default:
-							uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
-					}
-					
-					
-				} else {
-					uct("-go", path.Base(mainFile[:len(mainFile)-2]+".u"))
-					compile = exec.Command(goc, "build", "-o",  "../"+path.Base(mainFile[:len(mainFile)-2])+ext)
-					compile.Stdout = os.Stdout
-					compile.Stderr = os.Stderr
-					compile.Dir = path.Dir(mainFile)+"/.it/"
-					verify(compile.Run())
+				f.Close()
 				
-					if os.Args[1] == "run" {
-						run := exec.Command("./"+path.Base(mainFile[:len(mainFile)-2]))
-						run.Stdout = os.Stdout
-						run.Stderr = os.Stderr
-						run.Stdin = os.Stdin
-						run.Run()
-					}
-				}
+				cargo("build")
+				
+				
+			default:
+				os.Chdir(".it")
+				uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
 		}
+		
+		
+	} else {
+		os.Chdir(".it")
+		uct("go", path.Base(mainFile[:len(mainFile)-2]+".u"))
+		compile := exec.Command(goc, "build", "-o",  "../"+path.Base(mainFile[:len(mainFile)-2])+ext)
+		compile.Stdout = os.Stdout
+		compile.Stderr = os.Stderr
+		verify(compile.Run())
+	
+		os.Chdir("../")
+		//if os.Args[1] == "run" {
+			run := exec.Command("./"+path.Base(mainFile[:len(mainFile)-2]))
+			run.Stdout = os.Stdout
+			run.Stderr = os.Stderr
+			run.Stdin = os.Stdin
+			run.Run()
+		//}
+		
+		fmt.Println("\n[SOFTWARE EXIT]\nPress 'Enter' to close...")
+		reader := bufio.NewReader(os.Stdin)
+		reader.ReadString('\n')
 	}
 }

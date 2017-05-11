@@ -6,8 +6,6 @@ import "fmt"
 
 var git = "git"
 var goc = "go"
-const UCT = "uct"
-var ic  = "ic"
 var ext = ""
 
 func AptGetInstall(name string) error {
@@ -37,17 +35,5 @@ func SystemChecks() {
 			os.Exit(1)
 		}
 	}
-	
-	err = exec.Command("which", "git").Run()
-	if err != nil {
-		fmt.Println("Git version control is required for IT to function and will now be installed...")
-		err := AptGetInstall("git")
-		if err != nil {
-			fmt.Println("Git cannot be automatically installed on your system.")
-			fmt.Println("Please visit https://git-scm.com/downloads and install it manually.")
-			os.Exit(1)
-		}
-	}
-	
 	
 }
