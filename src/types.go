@@ -64,6 +64,10 @@ func (t Type) IsList() Type {
 	}
 }
 
+func (t Type) Empty() bool { 
+	return t.Detail != nil && len(t.Detail.Elements) == 0 && t != Something
+}
+
 type UserType struct {	
 	Elements []Type
 	Table map[string]int
@@ -174,6 +178,19 @@ func (ic *Compiler) TypeExists(name string) bool {
 	return ok
 }
 
+func (ic *Compiler) CallType(name string) string {
+	if ic.DefinedTypes[name].Empty() {
+		return ""
+	} else {
+		var array = ic.Tmp("user")
+		ic.Assembly("ARRAY ", array)
+		for range ic.DefinedTypes[name].Detail.Elements {
+			ic.Assembly("PUT 0")
+		}
+		return array
+	}
+}
+
 //This scans a new type definition and creates the type.
 //eg. type Point { x, y }
 func (ic *Compiler) ScanType() {
@@ -260,6 +277,7 @@ func (ic *Compiler) ScanType() {
 		}
 		
 	}
+	
 	ic.DefinedTypes[name] = t
 
 	ic.LastDefinedType = t

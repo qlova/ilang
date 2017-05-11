@@ -1,6 +1,7 @@
 package ilang
 
 //Index a 1D array, returns the value at the index.
+//Result will be numeric.
 func (ic *Compiler) Index(array, index string) string {
 	var result = ic.Tmp("index")
 	ic.Assembly("PLACE ", array)
@@ -10,6 +11,7 @@ func (ic *Compiler) Index(array, index string) string {
 }
 
 //Index a matrix at pos (x,y) returns the value.
+//Result is numeric.
 func (ic *Compiler) IndexMatrix(matrix, x, y string) string {
 	var width = ic.Tmp("width")
 	ic.Assembly("PLACE ", matrix)
@@ -40,6 +42,7 @@ func (ic *Compiler) IndexMatrix(matrix, x, y string) string {
 }
 
 //Set the value at pos (x,y) in the matrix.
+//Value must be numeric.
 func (ic *Compiler) SetMatrix(matrix, x, y, value string) {
 	var width = ic.Tmp("width")
 	ic.Assembly("PLACE ", matrix)
@@ -68,6 +71,7 @@ func (ic *Compiler) SetMatrix(matrix, x, y, value string) {
 }
 
 //Set the value of an array at the specified index.
+//Value must be numeric.
 func (ic *Compiler) Set(array, index, value string) {
 	ic.Assembly("PLACE ", array)
 	ic.Assembly("PUSH ", index)

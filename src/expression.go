@@ -171,26 +171,22 @@ func (ic *Compiler) expression() string {
 		}
 	}
 	
-	if t, ok := ic.DefinedTypes[token]; ok {
-		ic.ExpressionType = t
+	if ic.TypeExists(token) {
+		ic.ExpressionType = ic.DefinedTypes[token]
 		
+		//This is a constructor. eg. var bug = Bug(); where Bug is a type.
 		if ic.Peek() == "(" || ic.NextToken == "(" {
 			ic.Scan('(')
 			ic.Scan(')')
-				
-			var array = ic.Tmp("user")
-			ic.Assembly("ARRAY ", array)
-			for range ic.DefinedTypes[token].Detail.Elements {
-				ic.Assembly("PUT 0")
-			}
-			return array
+			
+			return ic.CallType(token)
 			
 		//This is a type literal.
 		} else if ic.Peek() == "{" {
 			ic.NextToken = token
 			variable := ic.ScanTypeLiteral()
 				//TODO better gc protection.
-			ic.SetVariable(variable, t)
+			ic.SetVariable(variable, ic.DefinedTypes[token])
 			ic.SetVariable(variable+"_use", Used)
 			return variable
 			
@@ -199,7 +195,7 @@ func (ic *Compiler) expression() string {
 			return ic.LastDefinedType.Name
 		
 		
-		} else if len(t.Detail.Elements) == 0 && ic.Peek() == "." {
+		} else if len(ic.DefinedTypes[token].Detail.Elements) == 0 && ic.Peek() == "." {
 			ic.Scan('.')
 			ic.ExpressionType = InFunction
 			var name = ic.Scan(Name)

@@ -302,7 +302,7 @@ func (ic *Compiler) LoseScope() {
 				continue
 			}
 			
-			if variable.IsUser() != Undefined {
+			if variable.IsUser() != Undefined && !variable.Empty() {
 				ic.Assembly("SHARE ", name)
 				ic.Assembly("RUN collect_m_", variable.Name)
 			}
@@ -413,6 +413,8 @@ func (ic *Compiler) Compile() {
 					ic.NextToken = peeking 
 				}
 				
+				//Do some magic so that we can use variables in inline assembly.
+				//Keep track of braces so we can have blocks of code.
 				var braces = 0
 				for {
 					var token = ic.Scan(0)
@@ -730,7 +732,9 @@ func (ic *Compiler) Compile() {
 			case "print", "afdrukken", "印刷", "Распечатать", "打印":
 				ic.Scan('(')
 				arg := ic.ScanExpression()
-				ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
+				if !ic.ExpressionType.Empty() {
+					ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
+				}
 				if ic.ExpressionType == Array {
 					ic.LoadFunction("print_m_array")
 					ic.LoadFunction("i_base_number")
@@ -749,7 +753,9 @@ func (ic *Compiler) Compile() {
 						break
 					}
 					arg := ic.ScanExpression()
-					ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
+					if !ic.ExpressionType.Empty() {
+						ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
+					}
 					if ic.ExpressionType == Array {
 						ic.LoadFunction("print_m_array")
 						ic.LoadFunction("i_base_number")
@@ -1169,9 +1175,11 @@ func (ic *Compiler) Compile() {
 									ic.SetUserType(ic.LastDefinedType.Name, name, value)
 										
 								} else if index == "" {
-									//TODO garbage collection.
-									ic.Assembly("PLACE ", value)
-									ic.Assembly("RENAME ", name)
+									if !t.Empty() {
+										//TODO garbage collection.
+										ic.Assembly("PLACE ", value)
+										ic.Assembly("RENAME ", name)
+									}
 								} else {
 									ic.SetUserType(name, index, value)
 								}

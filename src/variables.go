@@ -11,8 +11,13 @@ func (ic *Compiler) CreateVariable(name, value string) {
 //Assign a value to a variable, this will generate assembly.
 func (ic *Compiler) AssembleVar(name string, value string) {
 
-	ic.Assembly("%v %v", ic.ExpressionType.Push, value)
-	ic.Assembly("%v %v", ic.ExpressionType.Pop, name)
+	if !ic.ExpressionType.Empty() {
+		ic.Assembly("%v %v", ic.ExpressionType.Push, value)
+	}
+	
+	if !ic.ExpressionType.Empty() {
+		ic.Assembly("%v %v", ic.ExpressionType.Pop, name)
+	}
 	ic.SetVariable(name, ic.ExpressionType)
 	
 	list := ic.ExpressionType

@@ -1,7 +1,7 @@
 package ilang
 
 func (ic *Compiler) Collect(t Type) {
-	if t.IsUser() == Undefined {
+	if t.IsUser() == Undefined || t.Empty() {
 		return
 	}
 	

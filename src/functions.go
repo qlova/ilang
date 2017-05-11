@@ -137,7 +137,7 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 			
 			//Only pass the argument if it has a value, for example, the following type would not be passed:
 			// type Blank {}
-			if ic.ExpressionType.Detail == nil || len(ic.ExpressionType.Detail.Elements) > 0 {
+			if ic.ExpressionType.Detail == nil || !ic.ExpressionType.Empty() {
 				ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
 			}
 			f = ic.DefinedFunctions[name+"_m_"+ic.ExpressionType.Name]
