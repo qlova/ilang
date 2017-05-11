@@ -73,6 +73,10 @@ func (ic *Compiler) SetMatrix(matrix, x, y, value string) {
 //Set the value of an array at the specified index.
 //Value must be numeric.
 func (ic *Compiler) Set(array, index, value string) {
+	if ic.ExpressionType.Empty() {
+		ic.RaiseError("Cannot create an array of ",ic.ExpressionType.Name,"! (The type has no size)")
+	}
+
 	ic.Assembly("PLACE ", array)
 	ic.Assembly("PUSH ", index)
 	if ic.GetVariable(array).List {
