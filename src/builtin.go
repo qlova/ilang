@@ -89,6 +89,7 @@ RETURN
 	
 	ic.DefinedFunctions["load"] = Method(Undefined, true, "")
 	ic.DefinedFunctions["open"] = Method(Undefined, true, "")
+	ic.DefinedFunctions["trim"] = Method(Undefined, true, "")
 	
 	ic.DefinedFunctions["open_m_text"] = Method(Pipe, true, "OPEN")
 	ic.DefinedFunctions["execute"] = InlineFunction([]Type{Text}, "EXECUTE", nil)
@@ -197,7 +198,7 @@ FUNCTION reada_m_pipe
 	MUL delim delim -1
 	PUSH delim
 	IN
-END
+RETURN
 `}
 
 
@@ -356,7 +357,7 @@ FUNCTION i_base_number
 		DIV exp exp base
 	REPEAT
 	SHARE txt
-END
+RETURN
 `}
 	ic.DefinedFunctions["copy_m_array"] = Function{Exists:true, Args:[]Type{Array}, Returns:[]Type{Array}, Data: `
 #Compiled with IC.
@@ -381,7 +382,7 @@ FUNCTION copy_m_array
 			PUT v
 		ADD i i 1
 	REPEAT
-END
+RETURN
 `}
 
 	ic.DefinedFunctions["copy_m_text"] = Alias("copy_m_array", Text)
@@ -450,6 +451,104 @@ RETURN
 `)
 	
 	//ic.DefinedFunctions["text_m_letter"] = Alias("text_m_number", Text)
+
+	ic.DefinedFunctions["split_m_text"] = Function{Exists:true, Args:[]Type{Letter, Number}, Returns:[]Type{TextArray}, Data: `
+FUNCTION split_m_text
+	PULL amount
+	PULL char
+	GRAB string
+	ARRAY i_array1
+	SHARE i_array1
+	GRAB result
+	ARRAY i_string2
+	SHARE i_string2
+	GRAB segment
+	PUSH 1
+	PULL split
+	
+	IF 1
+	ARRAY i_delete6
+	VAR i_i4
+	VAR i_backup5
+	LOOP
+		VAR i_in3
+		ADD i_i4 0 i_backup5
+		SGE i_in3 i_i4 #string
+		IF i_in3
+			BREAK
+		END
+		PLACE string
+		PUSH i_i4
+		GET c
+		ADD i_backup5 i_i4 1
+	
+		VAR i_operator7
+		SEQ i_operator7 c char
+		VAR i_operator8
+		MUL i_operator8 i_operator7 split
+		IF i_operator8
+			SHARE segment
+			PUSH 0
+			HEAP
+			PULL i_index9
+			PLACE result
+			PUT i_index9
+			ARRAY i_string10
+			PLACE i_string10
+			RENAME segment
+			SUB amount amount 1
+			VAR i_operator12
+			DIV i_operator12 amount 0
+			IF i_operator12
+				ADD split 0 0
+			END
+		ELSE
+			PLACE segment
+			PUT c
+		END
+	REPEAT
+	
+		VAR ii_i8
+		VAR ii_backup9
+		LOOP
+			VAR ii_in7
+			ADD ii_i8 0 ii_backup9
+			SGE ii_in7 ii_i8 #i_delete6
+			IF ii_in7
+				BREAK
+			END
+			PLACE i_delete6
+			PUSH ii_i8
+			GET i_v
+			ADD ii_backup9 ii_i8 1
+	
+			VAR ii_operator11
+			SUB ii_operator11 #string 1
+			PLACE string
+			PUSH ii_operator11
+			GET ii_index12
+			PLACE string
+			PUSH i_v
+			SET ii_index12
+			PLACE string
+			POP n
+			ADD n 0 0
+		REPEAT
+							
+	END
+	VAR i_operator14
+	SGT i_operator14 #segment 0
+	IF i_operator14
+		SHARE segment
+		PUSH 0
+		HEAP
+		PULL i_index15
+		PLACE result
+		PUT i_index15
+	END
+	SHARE result
+RETURN
+	`}
 	
 	ic.DefinedFunctions["strings.equal"] = Function{Exists:true, Args:[]Type{Text}, Returns:[]Type{Text}, Data: `
 
@@ -695,109 +794,157 @@ RETURN
 `}
 
 ic.DefinedFunctions["sort"] = Function{Exists:true, Args:[]Type{Array}, Data:`
-FUNCTION i_part
-PULL back
-PULL start
-GRAB alist
-PLACE alist
-PUSH back
-GET i+shunt+1
-VAR pivot
-ADD pivot 0 i+shunt+1
-VAR border
-ADD border 0 start
-VAR i+shunt+2
-SLT i+shunt+2 start back
-IF i+shunt+2
-VAR i
-ADD i 0 start
-LOOP
-VAR i+shunt+4
-ADD i+shunt+4 back 1
-VAR i+shunt+3
-SNE i+shunt+3 i i+shunt+4
-IF i+shunt+3
-ERROR 0
-ELSE
-BREAK
-END
-PLACE alist
-PUSH i
-GET i+shunt+5
-VAR i+shunt+6
-SLE i+shunt+6 i+shunt+5 pivot
-IF i+shunt+6
-PLACE alist
-PUSH i
-GET i+shunt+7
-VAR ab
-ADD ab 0 i+shunt+7
-PLACE alist
-PUSH border
-GET i+shunt+8
-VAR ai
-ADD ai 0 i+shunt+8
-PLACE alist
-PUSH i
-SET ai
-PLACE alist
-PUSH border
-SET ab
-VAR i+shunt+9
-SNE i+shunt+9 i back
-IF i+shunt+9
-VAR i+shunt+10
-ADD i+shunt+10 border 1
-ADD border 0 i+shunt+10
-END
-END
-VAR i+shunt+12
-ADD i+shunt+12 back 1
-VAR i+shunt+11
-SLT i+shunt+11 i i+shunt+12
-IF i+shunt+11
-VAR i+shunt+13
-ADD i+shunt+13 i 1
-ADD i 0 i+shunt+13
-ELSE
-VAR i+shunt+15
-ADD i+shunt+15 back 1
-VAR i+shunt+14
-SGT i+shunt+14 i i+shunt+15
-IF i+shunt+14
-VAR i+shunt+16
-SUB i+shunt+16 i 1
-ADD i 0 i+shunt+16
-END
-END
-REPEAT
-SHARE alist
-PUSH start
-VAR i+shunt+17
-SUB i+shunt+17 border 1
-PUSH i+shunt+17
-RUN i_part
-SHARE alist
-VAR i+shunt+18
-ADD i+shunt+18 border 1
-PUSH i+shunt+18
-PUSH back
-RUN i_part
-END
-RETURN
 FUNCTION sort
-GRAB alist
-VAR i+shunt+20
-SLE i+shunt+20 #alist 1
-IF i+shunt+20
-RETURN
-END
-SHARE alist
-PUSH 0
-VAR i+shunt+22
-SUB i+shunt+22 #alist 1
-PUSH i+shunt+22
-RUN i_part
+	GRAB a
+	PUSH #a
+	MAKE
+	GRAB i_result1
+	SHARE i_result1
+	GRAB b
+	PUSH #a
+	PULL num
+	PUSH 0
+	PULL rght
+	PUSH 0
+	PULL rend
+	PUSH 0
+	PULL i
+	PUSH 0
+	PULL j
+	PUSH 0
+	PULL m
+	PUSH 1
+	PULL k
+	LOOP
+		VAR i_operator2
+		SLT i_operator2 k num
+		VAR i_operator3
+		DIV i_operator3 i_operator2 0
+		IF i_operator3
+			BREAK
+		END
+		PUSH 0
+		PULL left
+		LOOP
+			VAR i_operator4
+			ADD i_operator4 left k
+			VAR i_operator5
+			SLT i_operator5 i_operator4 num
+			VAR i_operator6
+			DIV i_operator6 i_operator5 0
+			IF i_operator6
+				BREAK
+			END
+			VAR i_operator7
+			ADD i_operator7 left k
+			ADD rght 0 i_operator7
+			VAR i_operator8
+			ADD i_operator8 rght k
+			ADD rend 0 i_operator8
+			VAR i_operator9
+			SGT i_operator9 rend num
+			IF i_operator9
+				ADD rend 0 num
+			END
+			ADD m 0 left
+			ADD i 0 left
+			ADD j 0 rght
+			LOOP
+				VAR i_operator10
+				SLT i_operator10 i rght
+				VAR i_operator12
+				SLT i_operator12 j rend
+				VAR i_operator11
+				MUL i_operator11 i_operator10 i_operator12
+				VAR i_operator13
+				DIV i_operator13 i_operator11 0
+				IF i_operator13
+					BREAK
+				END
+				PLACE a
+				PUSH i
+				GET i_index14
+				PLACE a
+				PUSH j
+				GET i_index16
+				VAR i_operator15
+				SLE i_operator15 i_index14 i_index16
+				IF i_operator15
+					PLACE a
+					PUSH i
+					GET i_index17
+					PLACE b
+					PUSH m
+					SET i_index17
+					ADD i i 1
+				ELSE
+					PLACE a
+					PUSH j
+					GET i_index19
+					PLACE b
+					PUSH m
+					SET i_index19
+					ADD j j 1
+				END
+				ADD m m 1
+			REPEAT
+			LOOP
+				VAR i_operator22
+				SLT i_operator22 i rght
+				VAR i_operator23
+				DIV i_operator23 i_operator22 0
+				IF i_operator23
+					BREAK
+				END
+				PLACE a
+				PUSH i
+				GET i_index24
+				PLACE b
+				PUSH m
+				SET i_index24
+				ADD i i 1
+				ADD m m 1
+			REPEAT
+			LOOP
+				VAR i_operator27
+				SLT i_operator27 j rend
+				VAR i_operator28
+				DIV i_operator28 i_operator27 0
+				IF i_operator28
+					BREAK
+				END
+				PLACE a
+				PUSH j
+				GET i_index29
+				PLACE b
+				PUSH m
+				SET i_index29
+				ADD j j 1
+				ADD m m 1
+			REPEAT
+			ADD m 0 left
+			LOOP
+				VAR i_operator32
+				SLT i_operator32 m rend
+				VAR i_operator33
+				DIV i_operator33 i_operator32 0
+				IF i_operator33
+					BREAK
+				END
+				PLACE b
+				PUSH m
+				GET i_index34
+				PLACE a
+				PUSH m
+				SET i_index34
+				ADD m m 1
+			REPEAT
+			VAR i_operator37
+			MUL i_operator37 k 2
+			ADD left left i_operator37
+		REPEAT
+		MUL k k 2
+	REPEAT
 RETURN
 `}
 
@@ -1051,6 +1198,128 @@ FUNCTION edit
 	SHARE i+shunt+4
 	OUT
 	RELAY grabserver
+RETURN
+`}
+
+ic.DefinedFunctions["trim_m_text"] = Function{Exists:true, Args:[]Type{Text}, Returns:[]Type{Text}, Data: `
+FUNCTION trim_m_text
+	GRAB s
+	ARRAY i_string1
+	SHARE i_string1
+	GRAB result
+	PUSH 0
+	PULL done
+	
+	IF 1
+	ARRAY i_delete5
+	VAR i_i3
+	VAR i_backup4
+	LOOP
+		VAR i_in2
+		ADD i_i3 0 i_backup4
+		SGE i_in2 i_i3 #s
+		IF i_in2
+			BREAK
+		END
+		PLACE s
+		PUSH i_i3
+		GET char
+		ADD i_backup4 i_i3 1
+	
+		VAR i_operator6
+		SNE i_operator6 char 32
+		VAR i_operator8
+		SNE i_operator8 char 9
+		VAR i_operator7
+		MUL i_operator7 i_operator6 i_operator8
+		VAR i_operator10
+		SNE i_operator10 char 10
+		VAR i_operator9
+		MUL i_operator9 i_operator7 i_operator10
+		VAR i_operator12
+		SNE i_operator12 char 13
+		VAR i_operator11
+		MUL i_operator11 i_operator9 i_operator12
+		VAR i_operator13
+		ADD i_operator13 i_operator11 done
+		IF i_operator13
+			ADD done 0 1
+			PLACE result
+			PUT char
+		END
+	REPEAT
+	
+		VAR ii_i8
+		VAR ii_backup9
+		LOOP
+			VAR ii_in7
+			ADD ii_i8 0 ii_backup9
+			SGE ii_in7 ii_i8 #i_delete5
+			IF ii_in7
+				BREAK
+			END
+			PLACE i_delete5
+			PUSH ii_i8
+			GET i_v
+			ADD ii_backup9 ii_i8 1
+	
+			VAR ii_operator11
+			SUB ii_operator11 #s 1
+			PLACE s
+			PUSH ii_operator11
+			GET ii_index12
+			PLACE s
+			PUSH i_v
+			SET ii_index12
+			PLACE s
+			POP n
+			ADD n 0 0
+		REPEAT
+							
+	END
+	LOOP
+		VAR i_operator15
+		SUB i_operator15 0 1
+		PLACE result
+		PUSH i_operator15
+		GET i_index16
+		VAR i_operator17
+		SEQ i_operator17 i_index16 32
+		VAR i_operator19
+		SUB i_operator19 0 1
+		PLACE result
+		PUSH i_operator19
+		GET i_index20
+		VAR i_operator21
+		SEQ i_operator21 i_index20 9
+		VAR i_operator23
+		SUB i_operator23 0 1
+		PLACE result
+		PUSH i_operator23
+		GET i_index24
+		VAR i_operator25
+		SEQ i_operator25 i_index24 13
+		VAR i_operator27
+		SUB i_operator27 0 1
+		PLACE result
+		PUSH i_operator27
+		GET i_index28
+		VAR i_operator29
+		SEQ i_operator29 i_index28 10
+		VAR i_operator26
+		ADD i_operator26 i_operator25 i_operator29
+		VAR i_operator22
+		ADD i_operator22 i_operator21 i_operator26
+		VAR i_operator18
+		ADD i_operator18 i_operator17 i_operator22
+		IF i_operator18
+			PLACE result
+			POP i_tmp31
+		ELSE
+			BREAK
+		END
+	REPEAT
+	SHARE result
 RETURN
 `}
 
