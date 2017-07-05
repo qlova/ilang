@@ -91,6 +91,8 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 			if f.Args[i] != ic.ExpressionType {
 				if f.Args[i] == User {
 					f.Args[i] = ic.ExpressionType
+				} else if f.Args[i] == List && (ic.ExpressionType.List || ic.ExpressionType == Array) {
+					f.Args[i] = ic.ExpressionType
 				} else {
 					ic.RaiseError("Type mismatch! Argument ",i+1," of '"+name+"()' expects ",
 						f.Args[i].Name,", got ",ic.ExpressionType.Name) 

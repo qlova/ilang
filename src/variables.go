@@ -43,6 +43,15 @@ func (c *Compiler) SetVariable(name string, sort Type) {
 	c.Scope[len(c.Scope)-1][name] = sort
 }
 
+//This will update a variable to be a new type.
+func (ic *Compiler) UpdateVariable(name string, sort Type) {
+	for i:=len(ic.Scope)-1; i>=0; i-- {
+		if _, ok := ic.Scope[i][name]; ok {
+			ic.Scope[i][name] = sort
+		}
+	}
+}
+
 //This will return the type of the variable. UNDEFINED for undefined variables.
 func (ic *Compiler) GetVariable(name string) Type {
 	for i:=len(ic.Scope)-1; i>=0; i-- {

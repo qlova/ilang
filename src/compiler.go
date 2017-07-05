@@ -590,6 +590,14 @@ func (ic *Compiler) Compile() {
 						ic.CurrentFunction.Returns[0] = ic.ExpressionType
 					}
 					
+					if ic.CurrentFunction.Returns[0] == List {
+						if !ic.ExpressionType.List && ic.ExpressionType != Array {
+							ic.RaiseError("Cannot return '",ic.ExpressionType.Name,
+							"', not a list!")
+						}
+						ic.CurrentFunction.Returns[0] = ic.ExpressionType
+					}
+					
 					if ic.ExpressionType != ic.CurrentFunction.Returns[0] {
 						ic.RaiseError("Cannot return '",ic.ExpressionType.Name,
 							"', expecting ",ic.CurrentFunction.Returns[0].Name)
@@ -1009,7 +1017,7 @@ func (ic *Compiler) Compile() {
 										list.List = true
 										list.User = false
 										t = list
-										ic.SetVariable(name, list)
+										ic.UpdateVariable(name, list)
 										//println(name)
 										if ic.GetFlag(InMethod) {
 											ic.LastDefinedType.Detail.Elements[ic.LastDefinedType.Detail.Table[name]] = t
@@ -1153,27 +1161,56 @@ func (ic *Compiler) Compile() {
 									ic.SetVariable(name+".", Protected)
 								}
 							}
-							var value string
-							if token != "=" {
-								value = ic.IndexUserType(name, index)
+							
+							if maybelist := t.Detail.Elements[t.Detail.Table[index]]; 
+									(maybelist == List || maybelist.List) && token == "+" {
+								ic.Scan('=')
 								
-								var b = ic.ExpressionType
-								ic.NextToken = token
-								ic.Shunt(value)
-								if ic.ExpressionType != Undefined {
-									ic.RaiseError("blank expression!")
+								list := ic.IndexUserType(name, index)
+								var listtype = ic.ExpressionType
+								
+								value := ic.ScanExpression()
+								
+								if listtype == List && ic.ExpressionType.Push == "PUSH" {
+									t.Detail.Elements[t.Detail.Table[index]] = Array
+									ic.Assembly("PLACE ", list)
+									ic.Assembly("PUT ", value)
+									continue
 								}
-								ic.ExpressionType = b
 								
+								if listtype == List {
+									typedlist := ic.ExpressionType
+									typedlist.List = true
+									typedlist.User = false
+									listtype = typedlist
+									t.Detail.Elements[t.Detail.Table[index]] = typedlist
+								}
+								
+								ic.PutList(listtype, list, value)
+							
 							} else {
-								value = ic.ScanExpression()
-							}
+							
+								var value string
+								if token != "=" {
+									value = ic.IndexUserType(name, index)
+								
+									var b = ic.ExpressionType
+									ic.NextToken = token
+									ic.Shunt(value)
+									if ic.ExpressionType != Undefined {
+										ic.RaiseError("blank expression!")
+									}
+									ic.ExpressionType = b
+								
+								} else {
+									value = ic.ScanExpression()
+								}
 							
 							
 								//Set a usertype from within a method.
 								if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
 									ic.SetUserType(ic.LastDefinedType.Name, name, value)
-										
+									
 								} else if index == "" {
 									if !t.Empty() {
 										//TODO garbage collection.
@@ -1183,6 +1220,7 @@ func (ic *Compiler) Compile() {
 								} else {
 									ic.SetUserType(name, index, value)
 								}
+							}
 							
 						default:
 							ic.RaiseError()

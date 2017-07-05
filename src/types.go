@@ -109,6 +109,8 @@ var Text = NewType("text", "SHARE", "GRAB")
 var Array = NewType("array", "SHARE", "GRAB")
 var Matrix = NewType("matrix", "SHARE", "GRAB")
 
+var TextArray = Text
+
 var Itype = NewType("type", "PUSH", "PULL")
 var User = NewType("usertype", "SHARE", "GRAB")
 var List = NewType("list", "SHARE", "GRAB")
@@ -117,6 +119,10 @@ var Func = NewType("function", "RELAY", "TAKE")
 var Something = NewUserType("Something")
 
 var Variadic = NewFlag()
+
+func init() {
+	TextArray.List = true
+}
 
 func (ic *Compiler) ScanSymbolicType() Type {
 	var result Type = Undefined
@@ -133,7 +139,7 @@ func (ic *Compiler) ScanSymbolicType() Type {
 				ic.RaiseError()
 			}
 		case "[":
-			result = Array
+			result = List
 			ic.Scan(']')
 			if tok := ic.Scan(0); tok == "[" {
 				result = Matrix
