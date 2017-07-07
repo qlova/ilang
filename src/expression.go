@@ -89,6 +89,11 @@ func (ic *Compiler) expression() string {
 		return ic.ScanArray()
 	}
 	
+	//Sets.
+	if token == "<" {
+		return ic.ScanSet()
+	}
+	
 	//Pipes.
 	if token == "|" {
 		var name = "open"

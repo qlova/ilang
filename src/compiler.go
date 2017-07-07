@@ -77,6 +77,11 @@ type Compiler struct {
 	Translation bool
 	Translated bool
 	Language string
+	
+	
+	//Set variables. (Sets.i)
+	SetItemCount int
+	SetItems map[string]int
 }
 
 //Return a string for a variable which will not clash with any other variables.
@@ -365,6 +370,7 @@ func NewCompiler(input io.Reader) Compiler {
 		DefinedTypes: make(map[string]Type),
 		LastDefinedType: Something,
 		Plugins: make(map[string][]Plugin),
+		SetItems: make(map[string]int),
 	}
 	
 	c.Builtin()
@@ -925,7 +931,7 @@ func (ic *Compiler) Compile() {
 				
 				if t := ic.GetVariable(token); t != Undefined {
 					switch t {
-						case Number, Decimal, Letter:
+						case Number, Decimal, Letter, Set:
 							var name = token
 							if name == "error" {
 								name = "ERROR"

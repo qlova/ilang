@@ -92,6 +92,17 @@ func init() {
 	NewOperator(Decimal, "*=", Decimal, "MUL %c %a %b\nDIV %c %c 1000000", false, Undefined)
 	NewOperator(Decimal, "/=", Decimal, "VAR %t\nMUL %t %a 1000000\nDIV %c %t %b", false, Undefined)
 	
+	//Set Operations.
+	NewOperator(Set, "=", Set, "VAR %c\nSEQ %c %a %b", true, Number)
+	NewOperator(Set, "+", Set, "VAR %c\nMUL %c %a %b", false)
+	NewOperator(Set, "-", Set, "VAR %c\nDIV %c %a %b", false)
+	NewOperator(Set, "+=", Set, "MUL %a %a %b", false, Undefined)
+	NewOperator(Set, "-=", Set, "DIV %a %a %b", false, Undefined)
+	NewOperator(Set, "<=", Set, "VAR %c\nMOD %c %b %a\nDIV %c %c 0", true, Number)
+	NewOperator(Set, ">", Set, "VAR %c\nMOD %c %b %a\n", true, Number)
+	NewOperator(Set, ">=", Set, "VAR %c\nMOD %c %b %a\nVAR %t\nSEQ %t %a %b\nADD%c %c %t", true, Number)
+	NewOperator(Set, "<", Set, "VAR %c\nMOD %c %b %a\nDIV %c %c 0\nVAR %t\nSNE %t %a %b\nMUL%c %c %t", true, Number)
+	
 	NewOperator(Number, "or", Number, "VAR %c\nADD %c %a %b", false)
 	
 	NewOperator(Number, "and", Number, "VAR %c\nMUL %c %a %b", true)

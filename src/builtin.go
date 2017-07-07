@@ -63,6 +63,7 @@ func Alias(f string, r Type) Function {
 
 func (ic *Compiler) Builtin() {
 	ic.DefinedFunctions["number"] = Method(Number, true, "PUSH 0")
+	ic.DefinedFunctions["set"] = Method(Set, true, "PUSH 1")
 	ic.DefinedFunctions["array"] = Method(Array, true, "PUSH 0\nMAKE")
 	ic.DefinedFunctions["letter"] = Method(Letter, true, "PUSH 0")
 	ic.DefinedFunctions["binary"] = Method(Number, true, "PUSH 0")
@@ -83,6 +84,7 @@ RETURN
 	ic.DefinedFunctions["copy"] = Method(Undefined, true, "")
 	
 	ic.DefinedFunctions["number_m_letter"] = BlankMethod(Number)
+	ic.DefinedFunctions["number_m_set"] = BlankMethod(Number)
 	ic.DefinedFunctions["letter_m_number"] = BlankMethod(Letter)
 	ic.DefinedFunctions["text_m_text"] = BlankMethod(Text)
 	ic.DefinedFunctions["text_m_array"] = BlankMethod(Text)

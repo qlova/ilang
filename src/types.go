@@ -109,6 +109,8 @@ var Text = NewType("text", "SHARE", "GRAB")
 var Array = NewType("array", "SHARE", "GRAB")
 var Matrix = NewType("matrix", "SHARE", "GRAB")
 
+var Set = NewType("set", "PUSH", "PULL")
+
 var TextArray = Text
 
 var Itype = NewType("type", "PUSH", "PULL")
@@ -161,7 +163,7 @@ func (ic *Compiler) ScanSymbolicType() Type {
 			result = Func
 			ic.Scan(')')
 		case "<":
-			result = Itype
+			result = Set
 			ic.Scan('>')
 		case ".":
 			if tok := ic.Scan(0); tok == "." {
