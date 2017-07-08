@@ -4,7 +4,7 @@ func (ic *Compiler) ScanSet() string {
 	var id = ic.Tmp("set")
 	
 	ic.Assembly("VAR ", id)
-	ic.Assembly("ADD ", id, " 1 1")
+	ic.Assembly("ADD ", id, " 1 0")
 	
 	for {
 		var token = ic.Scan(0)

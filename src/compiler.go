@@ -586,11 +586,9 @@ func (ic *Compiler) Compile() {
 				}
 			
 			case "exit":
-				if len(ic.Scope) > 2 {
-					//TODO garbage collection.
-					//ic.CollectGarbage()
-					ic.Assembly("EXIT")
-				}
+				//TODO garbage collection.
+				//ic.CollectGarbage()
+				ic.Assembly("IF 1\nEXIT\nEND")
 			
 			case "return":
 				if !ic.CurrentFunction.Exists {
@@ -980,6 +978,9 @@ func (ic *Compiler) Compile() {
 				} else if ic.GetFlag(InMethod) {
 					ic.NextToken = token
 					ic.ScanExpression()	
+					if ic.ExpressionType == Undefined {
+						ic.RaiseError(token, " undefined!")
+					}
 				
 				} else {
 					ic.RaiseError()

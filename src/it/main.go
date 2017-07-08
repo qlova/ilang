@@ -7,9 +7,9 @@ import "time"
 import "os/exec"
 import "github.com/kardianos/osext"
 import "path"
-import "path/filepath"
 import "context"
 import "bufio"
+import "io/ioutil"
 
 func CheckForUpdate(uptodate time.Time) {
 	ctx := context.Background()
@@ -93,14 +93,13 @@ func main() {
 		os.Chdir(os.Args[1])
 	}
 	
-	//TODO clean this up along with (grep.go)
-	filepath.Walk("./", func(name string, file os.FileInfo, err error) error {
-		if !file.IsDir() && path.Ext(name) == ".i" {
-			wg.Add(1)
-			go grep(&wg, name)
-		}
-		return nil
-	})
+	files, _ := ioutil.ReadDir("./")
+    for _, f := range files {
+            if path.Ext(f.Name()) == ".i" {
+            	wg.Add(1)
+				go grep(&wg, f.Name())
+			}
+    }
 	wg.Wait()
 	if mainFile == "" {
 		fmt.Println("Could not find a 'software' block!")
