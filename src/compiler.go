@@ -426,6 +426,14 @@ func (ic *Compiler) Compile() {
 					var token = ic.Scan(0)
 					if strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") {
 						ic.GetVariable(token)
+						if cmd == "grab" {
+							ic.SetVariable(token, Array)
+							ic.SetVariable(token+"_use", Used)
+						}
+						if cmd == "pull" {
+							ic.SetVariable(token, Number)
+							ic.SetVariable(token+"_use", Used)
+						}
 					}
 					if data {
 						ic.SetVariable(token, Text)
@@ -927,310 +935,33 @@ func (ic *Compiler) Compile() {
 				
 			default:
 				
-				//println(token)
-				
 				if t := ic.GetVariable(token); t != Undefined {
+					ic.NextToken = token
 					switch t {
-						case Number, Decimal, Letter, Set:
-							var name = token
-							if name == "error" {
-								name = "ERROR"
-							}
-							token = ic.Scan(0)
-							switch token {
-								case "=":
-									value := ic.ScanExpression()
-									if ic.ExpressionType.Push != "PUSH" {
-										ic.RaiseError("Only numeric values can assigned to ",name,".")
-									}
-									if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
-										ic.SetUserType(ic.LastDefinedType.Name, name, value)	
-									} else {	
-										ic.Assembly("ADD %v %v %v", name, 0, value)
-									}
-								default:
-									ic.ExpressionType = t
-									ic.NextToken = token
-									ic.Shunt(name)
-									if ic.ExpressionType != Undefined {
-										ic.RaiseError("blank expression!")
-									}
-									ic.ExpressionType = t
-									if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
-										ic.SetUserType(ic.LastDefinedType.Name, name, name)
-									}
-							}
-						case t.IsMatrix():
-							var name = token
-							token = ic.Scan(0)
-							switch token {
-								case "[":
-									var x = ic.ScanExpression()
-									ic.Scan(']')
-									ic.Scan('[')
-									var y = ic.ScanExpression()
-									ic.Scan(']')
-									ic.Scan('=')
-									var value = ic.ScanExpression()
-									
-									ic.SetMatrix(name, x, y, value)
-								
-								case "=":
-								
-									value := ic.ScanExpression()
-									if ic.ExpressionType != t {
-										ic.RaiseError("Only ",t.Name," values can be assigned to ",name,".")
-									}
-									
-									if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
-										ic.SetUserType(ic.LastDefinedType.Name, name, value)	
-									} else {									
-										ic.Assembly("PLACE ", value)
-										ic.Assembly("RENAME ", name)
-									}
-							}	
+						case Table: 						ic.ScanTableStatement()
+							
+						case Number, Decimal, Letter, Set: 	ic.ScanNumericStatement()
+							
+						//This may become depreciated.
+						case t.IsMatrix(): 					ic.ScanMatrixStatement()
 						
-						case Array, Text, List, t.IsList(), t.IsArray():
-							var name = token
-							token = ic.Scan(0)
+						case Array, Text, t.IsArray():		ic.ScanArrayStatement()
 							
-							switch token {
-								case "&", "+":
-									if !t.List && t != List {
-										ic.ExpressionType = t
-										ic.NextToken = token
-										ic.Shunt(name)
-										if ic.ExpressionType != Undefined {
-											ic.RaiseError("blank expression!", ic.ExpressionType.Name)
-										}
-										continue
-									}
-									if token == "+" {
-										ic.Scan('=')
-									}
-									
-									value := ic.ScanExpression()
-									
-									if t == List && ic.ExpressionType.Push == "PUSH" {
-										ic.SetVariable(name, Array)
-										ic.Assembly("PLACE ", name)
-										ic.Assembly("PUT ", value)
-										continue
-									}
-									
-									if t == List {
-										list := ic.ExpressionType
-										list.List = true
-										list.User = false
-										t = list
-										ic.UpdateVariable(name, list)
-										//println(name)
-										if ic.GetFlag(InMethod) {
-											ic.LastDefinedType.Detail.Elements[ic.LastDefinedType.Detail.Table[name]] = t
-										}
-									}
-									
-									//This appends elements to a list {..}
-									if t.List {
-										ic.PutList(t, name, value)
-										
-									} else {
-									
-										if ic.ExpressionType.Push != "PUSH" {
-											ic.RaiseError("Only numeric values can be added to arrays.")
-										}
-										ic.Assembly("PLACE ", name)
-										ic.Assembly("PUT ", value)
-									}
-								case "[":
-									var index = ic.ScanExpression()
-									ic.Scan(']')
-									ic.Scan('=')
-									var value = ic.ScanExpression()
-									
-									ic.Set(name, index, value)
-								case "=":
-									value := ic.ScanExpression()
-									if ic.ExpressionType != t {
-										ic.RaiseError("Only ",t.Name," values can be assigned to ",name,".")
-									}
-									
-									if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
-										ic.SetUserType(ic.LastDefinedType.Name, name, value)	
-									} else {									
-										ic.Assembly("PLACE ", value)
-										ic.Assembly("RENAME ", name)
-									}
-								case "has":
-									if ic.GetFlag(InMethod) {
-										ic.SetUserType(ic.LastDefinedType.Name, name, ic.ScanList())
-									} else {
-										ic.AssembleVar(name, ic.ScanList())
-									}
-									
-								default:
-									ic.ExpressionType = t
-									ic.NextToken = token
-									ic.Shunt(name)
-									if ic.ExpressionType != Undefined {
-										ic.RaiseError("blank expression!")
-									}
-							}
-						case Pipe:
-							var name = token
-							token = ic.Scan(0)
-							switch token {
-								case "(":
-									argument := ic.ScanExpression()
-									ic.Scan(')')
-									if ic.ExpressionType != Text && ic.ExpressionType != Array {
-										if ic.ExpressionType == Number {
-											ic.Assembly("RELAY ", name)
-											if argument != "" {
-												ic.Assembly("PUSH ", argument)
-											} else {
-												ic.Assembly("PUSH 0")
-											}
-											ic.Assembly("IN")
-											ic.Assembly("GRAB ", ic.Tmp("discard"))
-											continue
-										}
-										ic.RaiseError("Only text and number values can be passed to a pipe call (outside of an expression).")
-									}
-									ic.Assembly("RELAY ", name)
-									ic.Assembly("SHARE ", argument)
-									ic.Assembly("OUT")
-								case "=":
-									value := ic.ScanExpression()
-									if ic.ExpressionType != Pipe {
-										ic.RaiseError("Only ",Func.Name," values can be assigned to ",name,".")
-									}
-									ic.Assembly("RELAY ", value)
-									ic.Assembly("RELOAD ", name)
-								default:
-									ic.ExpressionType = t
-									ic.NextToken = token
-									ic.Shunt(name)
-									if ic.ExpressionType != Undefined {
-										ic.RaiseError("blank expression!")
-									}
-							}
+						case List, t.IsList():				ic.ScanListStatement()
 							
-						case Func:
-							var name = token
-							token = ic.Scan(0)
-							switch token {
-								case "(":
-									ic.Scan(')')
-									ic.Assembly("EXE ", name)
-								case "=":
-									value := ic.ScanExpression()
-									if ic.ExpressionType != Func {
-										ic.RaiseError("Only ",Func.Name," values can be assigned to ",name,".")
-									}
-									ic.Assembly("PLACE ", value)
-									ic.Assembly("RELOAD ", name)
-								default:
-									ic.ExpressionType = t
-									ic.NextToken = token
-									ic.Shunt(name)
-									if ic.ExpressionType != Undefined {
-										ic.RaiseError("blank expression!")
-									}
-							}
+						case Pipe:							ic.ScanPipeStatement()
+							
+						case Func:							ic.ScanFuncStatement()
 						
-						case t.IsSomething():
-							var name = token
-							ic.Scan('=')
-							var value = ic.ScanExpression()
-							ic.AssignSomething(name, value)
+						case t.IsSomething():				ic.ScanSomethingStatement()
 							
-						case User:
-							if !ic.GetFlag(InMethod) {
-								ic.RaiseError()
-							}
-							var name = token
-							ic.Scan('=')
-							var value = ic.ScanExpression()
-							ic.SetUserType(ic.LastDefinedType.Name, name, value)
-						
-						case t.IsUser():
-							//Support indexing at any level
-							// eg. Monster.Pos.X = 4
-							var name = token
-							var index string
-							for token = ic.Scan(0); token == "."; {
-								index = ic.Scan(Name)
-								if token = ic.Scan(0); token == "." {
-									name = ic.IndexUserType(name, index)
-									ic.SetVariable(name, ic.ExpressionType) //This is required for setusertype to recognise.
-									ic.SetVariable(name+".", Protected)
-								}
-							}
-							
-							if maybelist := t.Detail.Elements[t.Detail.Table[index]]; 
-									(maybelist == List || maybelist.List) && token == "+" {
-								ic.Scan('=')
-								
-								list := ic.IndexUserType(name, index)
-								var listtype = ic.ExpressionType
-								
-								value := ic.ScanExpression()
-								
-								if listtype == List && ic.ExpressionType.Push == "PUSH" {
-									t.Detail.Elements[t.Detail.Table[index]] = Array
-									ic.Assembly("PLACE ", list)
-									ic.Assembly("PUT ", value)
-									continue
-								}
-								
-								if listtype == List {
-									typedlist := ic.ExpressionType
-									typedlist.List = true
-									typedlist.User = false
-									listtype = typedlist
-									t.Detail.Elements[t.Detail.Table[index]] = typedlist
-								}
-								
-								ic.PutList(listtype, list, value)
-							
-							} else {
-							
-								var value string
-								if token != "=" {
-									value = ic.IndexUserType(name, index)
-								
-									var b = ic.ExpressionType
-									ic.NextToken = token
-									ic.Shunt(value)
-									if ic.ExpressionType != Undefined {
-										ic.RaiseError("blank expression!")
-									}
-									ic.ExpressionType = b
-								
-								} else {
-									value = ic.ScanExpression()
-								}
-							
-							
-								//Set a usertype from within a method.
-								if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
-									ic.SetUserType(ic.LastDefinedType.Name, name, value)
-									
-								} else if index == "" {
-									if !t.Empty() {
-										//TODO garbage collection.
-										ic.Assembly("PLACE ", value)
-										ic.Assembly("RENAME ", name)
-									}
-								} else {
-									ic.SetUserType(name, index, value)
-								}
-							}
+						case User, t.IsUser():				ic.ScanUserStatement()
 							
 						default:
 							ic.RaiseError()
 					}
+				
+				//Function Calls and things.
 				} else if _, ok := ic.DefinedFunctions[token]; ok {
 					var check = ic.Scan(0)
 					if check == "(" {

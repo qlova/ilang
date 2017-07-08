@@ -137,6 +137,13 @@ func (ic *Compiler) Shunt(name string) string {
 			
 			
 			if ic.ExpressionType.Push != "SHARE" {
+			
+				
+				//Index table type.
+				if ic.ExpressionType == Table {
+					return ic.ShuntTable(name)
+				}
+			
 				ic.RaiseError("Cannot index "+name+", not an array! ("+ic.ExpressionType.Name+")")
 			}
 			if ic.ExpressionType.List {

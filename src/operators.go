@@ -150,8 +150,8 @@ func init() {
 	
 	NewOperator(Number, "²", Undefined, "VAR %c\nPOW %c %a %a", true)
 	
-	NewOperator(Text, "#", Number, "SHARE %a\nPUSH %b\nRUN hash\nPULL %c\n", true, Number)
-	NewOperator(Number, "?", Number, "PUSH %a\nPUSH %b\nRUN unhash\nGRAB %c\n", true,  Text)
+	NewOperator(Text, "#", Number, "SHARE %a\nPUSH %b\nRUN i_hash\nPULL %c\n", true, Number)
+	NewOperator(Number, "?", Number, "PUSH %a\nPUSH %b\nRUN i_unhash\nGRAB %c\n", true,  Text)
 	
 	//For grate engine.
 	NewOperator(Number, "px", Undefined, "VAR %c\nMUL %c %a 10", true)

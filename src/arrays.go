@@ -1,5 +1,57 @@
 package ilang
 
+/*
+	Scan an array statement for example,
+		array += value
+		array = newarray
+		array--
+		array++
+		
+*/
+func (ic *Compiler) ScanArrayStatement() {
+	var name = ic.Scan(0)
+	var array = ic.GetVariable(name)
+	
+	var token = ic.Scan(0)			
+	switch token {
+	case "&", "+":
+		ic.ExpressionType = array
+		ic.NextToken = token
+		ic.Shunt(name)
+		if ic.ExpressionType != Undefined {
+			ic.RaiseError("blank expression!", ic.ExpressionType.Name)
+		}
+	case "[":
+		var index = ic.ScanExpression()
+		ic.Scan(']')
+		ic.Scan('=')
+		var value = ic.ScanExpression()
+	
+		ic.Set(name, index, value)
+	case "=":
+		value := ic.ScanExpression()
+		if ic.ExpressionType != array {
+			ic.RaiseError("Only ",array.Name," values can be assigned to ",name,".")
+		}
+	
+		//Something to do with methods.
+		if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
+			ic.SetUserType(ic.LastDefinedType.Name, name, value)	
+		} else {									
+			ic.Assembly("PLACE ", value)
+			ic.Assembly("RENAME ", name)
+		}
+	
+	default:
+		ic.ExpressionType = array
+		ic.NextToken = token
+		ic.Shunt(name)
+		if ic.ExpressionType != Undefined {
+			ic.RaiseError("blank expression!")
+		}
+	}
+}
+
 //Index a 1D array, returns the value at the index.
 //Result will be numeric.
 func (ic *Compiler) Index(array, index string) string {
@@ -39,35 +91,6 @@ func (ic *Compiler) IndexMatrix(matrix, x, y string) string {
 	ic.Assembly("PUSH ", ytmp)
 	ic.Assembly("GET ", result)
 	return result
-}
-
-//Set the value at pos (x,y) in the matrix.
-//Value must be numeric.
-func (ic *Compiler) SetMatrix(matrix, x, y, value string) {
-	var width = ic.Tmp("width")
-	ic.Assembly("PLACE ", matrix)
-	ic.Assembly("PUSH 0")
-	ic.Assembly("GET ", width)
-	
-	var height = ic.Tmp("height")
-	ic.Assembly("PLACE ", matrix)
-	ic.Assembly("PUSH 1")
-	ic.Assembly("GET ", height)
-
-	var ytmp = ic.Tmp("y")
-	var xtmp = ic.Tmp("x")
-	ic.Assembly("VAR %v\nVAR %v", xtmp, ytmp)
-	ic.Assembly("MOD %v %v %v", xtmp, x, width)
-	ic.Assembly("ADD %v %v %v", xtmp, xtmp, 2)
-
-	ic.Assembly("MOD %v %v %v", ytmp, y, height)
-	
-	ic.Assembly("MUL %v %v %v", ytmp, ytmp, width)
-
-	ic.Assembly("ADD %v %v %v", ytmp, ytmp, xtmp)
-
-	ic.Assembly("PUSH ", ytmp)
-	ic.Assembly("SET ", value)
 }
 
 //Set the value of an array at the specified index.

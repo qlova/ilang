@@ -17,6 +17,35 @@ type Function struct {
 	Args []Type
 }
 
+/*
+	Scan a function pipe statement.
+		function()
+		function = newfunction
+*/
+func (ic *Compiler) ScanFuncStatement() {
+	var name = ic.Scan(0)
+	var token = ic.Scan(0)
+	switch token {
+		case "(":
+			ic.Scan(')')
+			ic.Assembly("EXE ", name)
+		case "=":
+			value := ic.ScanExpression()
+			if ic.ExpressionType != Func {
+				ic.RaiseError("Only ",Func.Name," values can be assigned to ",name,".")
+			}
+			ic.Assembly("PLACE ", value)
+			ic.Assembly("RELOAD ", name)
+		default:
+			ic.ExpressionType = Func
+			ic.NextToken = token
+			ic.Shunt(name)
+			if ic.ExpressionType != Undefined {
+				ic.RaiseError("blank expression!")
+			}
+	}
+}
+
 func (ic *Compiler) RunFunction(name string) string {
 	if strings.Contains(name, "_m_Something") && ic.ExpressionType.Interface != nil {
 		var sort = name[:len(name)-len("_m_Something")]

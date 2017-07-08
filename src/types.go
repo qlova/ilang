@@ -110,6 +110,7 @@ var Array = NewType("array", "SHARE", "GRAB")
 var Matrix = NewType("matrix", "SHARE", "GRAB")
 
 var Set = NewType("set", "PUSH", "PULL")
+var Table = NewType("table", "PUSH", "PULL")
 
 var TextArray = Text
 

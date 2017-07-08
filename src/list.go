@@ -14,6 +14,87 @@ func (t Type) ListType() Type {
 	return t
 }
 
+func (ic *Compiler) ScanListStatement() {
+	var name = ic.Scan(0)
+	var t  = ic.GetVariable(name)
+	var token = ic.Scan(0)
+	
+	//TODO CLEAN THIS UP!
+	switch token {
+		case "&", "+":
+		
+			if token == "+" {
+				ic.Scan('=')
+			}
+			value := ic.ScanExpression()
+			
+			if t == List && ic.ExpressionType.Push == "PUSH" {
+				ic.SetVariable(name, Array)
+				ic.Assembly("PLACE ", name)
+				ic.Assembly("PUT ", value)
+				return
+			}
+			
+			if t == List {
+				list := ic.ExpressionType
+				list.List = true
+				list.User = false
+				t = list
+				ic.UpdateVariable(name, list)
+				//println(name)
+				if ic.GetFlag(InMethod) {
+					ic.LastDefinedType.Detail.Elements[ic.LastDefinedType.Detail.Table[name]] = t
+				}
+			}
+			
+			//This appends elements to a list {..}
+			if t.List {
+				ic.PutList(t, name, value)
+				
+			} else {
+			
+				if ic.ExpressionType.Push != "PUSH" {
+					ic.RaiseError("Only numeric values can be added to arrays.")
+				}
+				ic.Assembly("PLACE ", name)
+				ic.Assembly("PUT ", value)
+			}
+		case "[":
+			var index = ic.ScanExpression()
+			ic.Scan(']')
+			ic.Scan('=')
+			var value = ic.ScanExpression()
+			
+			ic.Set(name, index, value)
+		case "=":
+			value := ic.ScanExpression()
+			if ic.ExpressionType != t {
+				ic.RaiseError("Only ",t.Name," values can be assigned to ",name,".")
+			}
+			
+			if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
+				ic.SetUserType(ic.LastDefinedType.Name, name, value)	
+			} else {									
+				ic.Assembly("PLACE ", value)
+				ic.Assembly("RENAME ", name)
+			}
+		case "has":
+			if ic.GetFlag(InMethod) {
+				ic.SetUserType(ic.LastDefinedType.Name, name, ic.ScanList())
+			} else {
+				ic.AssembleVar(name, ic.ScanList())
+			}
+			
+		default:
+			ic.ExpressionType = t
+			ic.NextToken = token
+			ic.Shunt(name)
+			if ic.ExpressionType != Undefined {
+				ic.RaiseError("blank expression!")
+			}
+	}
+}
+
 func (ic *Compiler) NewListOf(t Type) string {
 	if t.Empty() {
 		ic.RaiseError("Cannot create an array of ",t.Name,"! (The type has no size)")

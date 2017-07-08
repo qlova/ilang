@@ -8,6 +8,17 @@ func (t Type) IsSomething() Type {
 	}
 }
 
+/*
+	Scan something statement for example,
+		something = value
+*/
+func (ic *Compiler) ScanSomethingStatement() {
+	var name = ic.Scan(0)
+	ic.Scan('=') //TODO Maybe support other types of statements?
+	var value = ic.ScanExpression()
+	ic.AssignSomething(name, value)
+}
+
 func (ic *Compiler) IndexSomething(name string, cast string) string {
 	switch cast {
 		case "number", "letter", "decimal":
@@ -18,10 +29,11 @@ func (ic *Compiler) IndexSomething(name string, cast string) string {
 			ic.Assembly("SEQ %v %v %v", test, test, string2type[cast].Int)
 			ic.Assembly("IF ", test)
 			
+			var test2 = ic.Tmp("test")
 			var num = ic.Tmp("number")
 			ic.Assembly("PUSH 0")
-			ic.Assembly("GET ", test)
-			ic.Assembly("PUSH ", test)
+			ic.Assembly("GET ", test2)
+			ic.Assembly("PUSH ", test2)
 			
 			ic.Assembly("ELSE")
 			ic.Assembly("ERROR 404")
