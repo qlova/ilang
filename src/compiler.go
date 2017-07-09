@@ -737,21 +737,7 @@ func (ic *Compiler) Compile() {
 				ic.ScanForLoop()
 			
 			case "var", "ver", "变量":
-				if len(ic.Scope) > 1 {
-					name := ic.Scan(Name)
-					token := ic.Scan(0)
-					if token == "=" {
-						ic.AssembleVar(name, ic.ScanExpression())
-					} else if token == "is" {
-						ic.AssembleVar(name, ic.ScanConstructor())
-					} else if token == "has" {
-						ic.AssembleVar(name, ic.ScanList())
-					} else {
-						ic.RaiseError("A variable should have a value assigned to it with an '=' sign.")
-					}
-				} else {
-					ic.RaiseError("Global variables are not supported.")				
-				}
+				ic.ScanVar()
 		
 			//This is the inbuilt print function. It takes multiple arguments of any type which has a text method.			
 			case "print", "afdrukken", "印刷", "Распечатать", "打印":

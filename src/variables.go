@@ -2,6 +2,42 @@ package ilang
 
 import "strings"
 
+func (ic *Compiler) ScanVar() {
+	if len(ic.Scope) > 1 {
+		name := ic.Scan(Name)
+		token := ic.Scan(0)
+		if token == "=" {
+			ic.AssembleVar(name, ic.ScanExpression())
+		} else if token == "is" {
+			ic.AssembleVar(name, ic.ScanConstructor())
+		} else if token == "has" {
+			ic.AssembleVar(name, ic.ScanList())
+		} else if token == "," {
+			
+			var names = []string{name}
+			for {
+				token = ic.Scan(0)
+				if token == "=" {
+					break	
+				}
+				names = append(names, token)
+			}
+			
+			for i, name := range names {
+				ic.AssembleVar(name, ic.ScanExpression())
+				if i < len(names)-1 { 
+					ic.Scan(',')
+				}
+			}
+			
+		} else {
+			ic.RaiseError("A variable should have a value assigned to it with an '=' sign.")
+		}
+	} else {
+		ic.RaiseError("Global variables are not supported.")				
+	}
+}
+
 //Create the assembly for a new variable and keep track of it.
 //Type is inferred by the Compiler's ExpressionType value.
 func (ic *Compiler) CreateVariable(name, value string) {
