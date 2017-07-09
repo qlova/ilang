@@ -84,6 +84,8 @@ RETURN
 
 	ic.DefinedFunctions["copy"] = Method(Undefined, true, "")
 	
+	
+	ic.DefinedFunctions["collect_m_text"] = BlankMethod(Number)
 	ic.DefinedFunctions["number_m_letter"] = BlankMethod(Number)
 	ic.DefinedFunctions["number_m_set"] = BlankMethod(Number)
 	ic.DefinedFunctions["letter_m_number"] = BlankMethod(Letter)
@@ -91,6 +93,7 @@ RETURN
 	ic.DefinedFunctions["text_m_array"] = BlankMethod(Text)
 	
 	ic.DefinedFunctions["load"] = Method(Undefined, true, "")
+	ic.DefinedFunctions["sort"] = Method(Undefined, true, "")
 	ic.DefinedFunctions["open"] = Method(Undefined, true, "")
 	ic.DefinedFunctions["trim"] = Method(Undefined, true, "")
 	
@@ -796,13 +799,11 @@ FUNCTION reada_m_text
 RETURN
 `}
 
-ic.DefinedFunctions["sort"] = Function{Exists:true, Args:[]Type{Array}, Data:`
-FUNCTION sort
+ic.DefinedFunctions["sort_m_array"] = Function{Exists:true, Args:[]Type{Array}, Data:`
+FUNCTION sort_m_array
 	GRAB a
 	PUSH #a
 	MAKE
-	GRAB i_result1
-	SHARE i_result1
 	GRAB b
 	PUSH #a
 	PULL num
@@ -1914,6 +1915,399 @@ FUNCTION table_get
 		PUSH 0
 		RETURN
 	END
+RETURN
+`}
+
+//TODO fix this function, it needs to ignore the distinction between upper and lowercase letters.
+ic.DefinedFunctions["strings.compare"] = Function{Exists:true, Args:[]Type{Text, Text}, Returns:[]Type{Number}, Data:`
+FUNCTION strings.compare
+	GRAB b
+	GRAB a
+	PUSH 0
+	PULL cmp
+	
+	IF 1
+	ARRAY i_delete3
+	VAR i
+	VAR i_backup2
+	LOOP
+		VAR i_in1
+		ADD i 0 i_backup2
+		SGE i_in1 i #a
+		IF i_in1
+			BREAK
+		END
+		PLACE a
+		PUSH i
+		GET char
+		ADD i_backup2 i 1
+	
+		VAR i_operator4
+		SLT i_operator4 #b i
+		IF i_operator4
+			ADD cmp 0 1
+			BREAK
+		END
+		PLACE b
+		PUSH i
+		GET i_index5
+		PUSH i_index5
+		
+		PULL i_result6
+		PUSH char
+		
+		PULL i_result8
+		VAR i_operator7
+		SNE i_operator7 i_result6 i_result8
+		IF i_operator7
+			PLACE b
+			PUSH i
+			GET i_index9
+			PUSH i_index9
+			
+			PULL i_result10
+			PUSH char
+			
+			PULL i_result12
+			VAR i_operator11
+			SLT i_operator11 i_result10 i_result12
+			IF i_operator11
+				ADD cmp 0 1
+			ELSE
+				VAR i_operator13
+				SUB i_operator13 0 1
+				ADD cmp 0 i_operator13
+			END
+			BREAK
+		END
+	REPEAT
+	
+		VAR ii_i8
+		VAR ii_backup9
+		LOOP
+			VAR ii_in7
+			ADD ii_i8 0 ii_backup9
+			SGE ii_in7 ii_i8 #i_delete3
+			IF ii_in7
+				BREAK
+			END
+			PLACE i_delete3
+			PUSH ii_i8
+			GET i_v
+			ADD ii_backup9 ii_i8 1
+	
+			VAR ii_operator11
+			SUB ii_operator11 #a 1
+			PLACE a
+			PUSH ii_operator11
+			GET ii_index12
+			PLACE a
+			PUSH i_v
+			SET ii_index12
+			PLACE a
+			POP n
+			ADD n 0 0
+		REPEAT
+							
+	END
+	PUSH cmp
+RETURN
+`}
+
+ic.DefinedFunctions["sort_m_textarray"] = Function{Exists:true, List:true, Args:[]Type{TextArray}, Data:`
+FUNCTION sort_m_textarray
+	GRAB a
+	PUSH #a
+	MAKE
+	GRAB b
+	PUSH #a
+	PULL num
+	PUSH 0
+	PULL rght
+	PUSH 0
+	PULL rend
+	PUSH 0
+	PULL i
+	PUSH 0
+	PULL j
+	PUSH 0
+	PULL m
+	PUSH 1
+	PULL k
+	LOOP
+		VAR i_operator7
+		SLT i_operator7 k num
+		VAR i_operator8
+		DIV i_operator8 i_operator7 0
+		IF i_operator8
+			BREAK
+		END
+		PUSH 0
+		PULL left
+		LOOP
+			VAR i_operator9
+			ADD i_operator9 left k
+			VAR i_operator10
+			SLT i_operator10 i_operator9 num
+			VAR i_operator11
+			DIV i_operator11 i_operator10 0
+			IF i_operator11
+				BREAK
+			END
+			VAR i_operator12
+			ADD i_operator12 left k
+			ADD rght 0 i_operator12
+			VAR i_operator13
+			ADD i_operator13 rght k
+			ADD rend 0 i_operator13
+			VAR i_operator14
+			SGT i_operator14 rend num
+			IF i_operator14
+				ADD rend 0 num
+			END
+			ADD m 0 left
+			ADD i 0 left
+			ADD j 0 rght
+			LOOP
+				VAR i_operator15
+				SLT i_operator15 i rght
+				VAR i_operator17
+				SLT i_operator17 j rend
+				VAR i_operator16
+				MUL i_operator16 i_operator15 i_operator17
+				VAR i_operator18
+				DIV i_operator18 i_operator16 0
+				IF i_operator18
+					BREAK
+				END
+				PLACE a
+				PUSH i
+				GET i_index20
+				IF i_index20
+				PUSH i_index20
+				HEAP
+				ELSE
+				ARRAY i_listdex19
+				SHARE i_listdex19
+				END
+				GRAB i_listdex19
+				PLACE a
+				PUSH j
+				GET i_index23
+				IF i_index23
+				PUSH i_index23
+				HEAP
+				ELSE
+				ARRAY i_listdex22
+				SHARE i_listdex22
+				END
+				GRAB i_listdex22
+				SHARE i_listdex19
+				SHARE i_listdex22
+				RUN strings.compare
+				PULL i_operator21
+				SLE i_operator21 i_operator21 0
+				IF i_operator21
+					PLACE a
+					PUSH i
+					GET i_index25
+					IF i_index25
+					PUSH i_index25
+					HEAP
+					ELSE
+					ARRAY i_listdex24
+					SHARE i_listdex24
+					END
+					GRAB i_listdex24
+					PLACE b
+					PUSH m
+					PLACE b
+					PUSH m
+					GET i_index26
+					IF i_index26
+					PUSH i_index26
+					HEAP
+					
+					MUL i_index26 i_index26 -1
+					PUSH i_index26
+					HEAP
+					END
+					SHARE i_listdex24
+					PUSH 0
+					HEAP
+					PULL i_index27
+					PLACE b
+					PUSH m
+					SET i_index27
+					ADD i i 1
+				ELSE
+					PLACE a
+					PUSH j
+					GET i_index30
+					IF i_index30
+					PUSH i_index30
+					HEAP
+					ELSE
+					ARRAY i_listdex29
+					SHARE i_listdex29
+					END
+					GRAB i_listdex29
+					PLACE b
+					PUSH m
+					PLACE b
+					PUSH m
+					GET i_index31
+					IF i_index31
+					PUSH i_index31
+					HEAP
+					
+					MUL i_index31 i_index31 -1
+					PUSH i_index31
+					HEAP
+					END
+					SHARE i_listdex29
+					PUSH 0
+					HEAP
+					PULL i_index32
+					PLACE b
+					PUSH m
+					SET i_index32
+					ADD j j 1
+				END
+				ADD m m 1
+			REPEAT
+			LOOP
+				VAR i_operator35
+				SLT i_operator35 i rght
+				VAR i_operator36
+				DIV i_operator36 i_operator35 0
+				IF i_operator36
+					BREAK
+				END
+				PLACE a
+				PUSH i
+				GET i_index38
+				IF i_index38
+				PUSH i_index38
+				HEAP
+				ELSE
+				ARRAY i_listdex37
+				SHARE i_listdex37
+				END
+				GRAB i_listdex37
+				PLACE b
+				PUSH m
+				PLACE b
+				PUSH m
+				GET i_index39
+				IF i_index39
+				PUSH i_index39
+				HEAP
+				
+				MUL i_index39 i_index39 -1
+				PUSH i_index39
+				HEAP
+				END
+				SHARE i_listdex37
+				PUSH 0
+				HEAP
+				PULL i_index40
+				PLACE b
+				PUSH m
+				SET i_index40
+				ADD i i 1
+				ADD m m 1
+			REPEAT
+			LOOP
+				VAR i_operator43
+				SLT i_operator43 j rend
+				VAR i_operator44
+				DIV i_operator44 i_operator43 0
+				IF i_operator44
+					BREAK
+				END
+				PLACE a
+				PUSH j
+				GET i_index46
+				IF i_index46
+				PUSH i_index46
+				HEAP
+				ELSE
+				ARRAY i_listdex45
+				SHARE i_listdex45
+				END
+				GRAB i_listdex45
+				PLACE b
+				PUSH m
+				PLACE b
+				PUSH m
+				GET i_index47
+				IF i_index47
+				PUSH i_index47
+				HEAP
+				
+				MUL i_index47 i_index47 -1
+				PUSH i_index47
+				HEAP
+				END
+				SHARE i_listdex45
+				PUSH 0
+				HEAP
+				PULL i_index48
+				PLACE b
+				PUSH m
+				SET i_index48
+				ADD j j 1
+				ADD m m 1
+			REPEAT
+			ADD m 0 left
+			LOOP
+				VAR i_operator51
+				SLT i_operator51 m rend
+				VAR i_operator52
+				DIV i_operator52 i_operator51 0
+				IF i_operator52
+					BREAK
+				END
+				PLACE b
+				PUSH m
+				GET i_index54
+				IF i_index54
+				PUSH i_index54
+				HEAP
+				ELSE
+				ARRAY i_listdex53
+				SHARE i_listdex53
+				END
+				GRAB i_listdex53
+				PLACE a
+				PUSH m
+				PLACE a
+				PUSH m
+				GET i_index55
+				IF i_index55
+				PUSH i_index55
+				HEAP
+				
+				MUL i_index55 i_index55 -1
+				PUSH i_index55
+				HEAP
+				END
+				SHARE i_listdex53
+				PUSH 0
+				HEAP
+				PULL i_index56
+				PLACE a
+				PUSH m
+				SET i_index56
+				ADD m m 1
+			REPEAT
+			VAR i_operator59
+			MUL i_operator59 k 2
+			ADD left left i_operator59
+		REPEAT
+		MUL k k 2
+	REPEAT
 RETURN
 `}
 

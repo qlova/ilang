@@ -22,7 +22,7 @@ func (ic *Compiler) Collect(t Type) {
 			if element.IsUser() != Undefined {
 				ic.Library("PUSH ", tmp)
 				ic.Library("HEAP")
-				ic.Library("RUN collect_m_", element.Name)
+				ic.Library(ic.RunFunction("collect_m_"+element.Name))
 			}
 			ic.Library("MUL %v %v -1", tmp, tmp)
 			ic.Library("PUSH ", tmp)

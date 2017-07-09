@@ -138,6 +138,11 @@ func init() {
 	NewOperator(Text, "+", Text, "ARRAY %c\nJOIN %c %a %b", false)
 	NewOperator(Array, "+", Array, "ARRAY %c\nJOIN %c %a %b", false)
 	
+	NewOperator(Text, "<", Text, "SHARE %a\nSHARE %b\nRUN strings.compare\nPULL %c\nSEQ %c %c -1", true, Number)
+	NewOperator(Text, ">", Text, "SHARE %a\nSHARE %b\nRUN strings.compare\nPULL %c\nSEQ %c %c 1", true, Number)
+	NewOperator(Text, "<=",Text, "SHARE %a\nSHARE %b\nRUN strings.compare\nPULL %c\nSLE %c %c 0", true, Number)
+	NewOperator(Text, ">=",Text, "SHARE %a\nSHARE %b\nRUN strings.compare\nPULL %c\nSGE %c %c 0", true, Number)
+	
 	NewOperator(Text, "--", Undefined, "PLACE %a\nPOP %t", false, Undefined)
 	
 	NewOperator(Text, "+=", Letter, "PLACE %a\nPUT %b", false, Undefined)

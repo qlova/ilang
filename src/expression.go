@@ -26,16 +26,11 @@ func (ic *Compiler) expression() string {
 	}
 	
 	if token == "{" {
-		var t = ic.Scan(0)
-		if t == "}" {
-			ic.ExpressionType = Something
-		} else {
-			ic.ExpressionType = ic.DefinedInterfaces[t].GetType()
-			ic.Scan('}')
-		}
-		var tmp = ic.Tmp("something")
+		ic.Scan('}')
+		ic.ExpressionType = User
+		
+		var tmp = ic.Tmp("user")
 		ic.Assembly("ARRAY ", tmp)
-		ic.Assembly("PUT 0")
 		return tmp
 	}
 	

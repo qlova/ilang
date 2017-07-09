@@ -169,7 +169,9 @@ LOOP
 			if !OverList {
 			if ic.ExpressionType.List {
 				list := ic.ExpressionType
-				list.User = true
+				if list.Push == "SHARE" && list.Name != "text" {
+					list.User = true
+				}
 				list.List = false
 				ic.SetVariable(vo, list)
 				ic.SetVariable(vo+".", Protected)

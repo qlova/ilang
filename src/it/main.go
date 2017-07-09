@@ -56,7 +56,6 @@ func cargo(mode string) {
 	compile.Stdout = os.Stdout
 	compile.Stderr = os.Stderr
 	compile.Env = env
-	compile.Dir = path.Dir(mainFile)+"/.it/"
 	verify(compile.Run())
 	
 	verify(os.Rename(dir+"/debug/"+path.Base(mainFile[:len(mainFile)-2]), "./"+path.Base(mainFile[:len(mainFile)-2])))
@@ -117,12 +116,13 @@ func main() {
 		
 		
 		switch os.Args[2] {
-			case "-rs": //Rust needs to be handled differently.
+			case "rs": //Rust needs to be handled differently.
+				os.Chdir(".it")
 				uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
-				os.Mkdir("./.it/src", 0755)
-				verify(os.Rename("./.it/"+path.Base(mainFile[:len(mainFile)-2]+".rs"), "./.it/src/main.rs"))
-				verify(os.Rename("./.it/stack.rs","./.it/src/stack.rs"))
-				f, err := os.Create("./.it/Cargo.toml")
+				os.Mkdir("src", 0755)
+				verify(os.Rename(path.Base(mainFile[:len(mainFile)-2]+".rs"), "src/main.rs"))
+				verify(os.Rename("stack.rs","src/stack.rs"))
+				f, err := os.Create("Cargo.toml")
 				verify(err)
 				f.Write([]byte(`[package]
 name = "`+path.Base(mainFile[:len(mainFile)-2])+`"

@@ -17,6 +17,7 @@ type Type struct {
 	
 	Detail *UserType
 	Interface *Interface
+	SubType *Type
 }
 
 func (t Type) DefaultValue() string {
@@ -143,13 +144,23 @@ func (ic *Compiler) ScanSymbolicType() Type {
 			}
 		case "[":
 			result = List
-			ic.Scan(']')
-			if tok := ic.Scan(0); tok == "[" {
+			token := ic.Scan(0)
+			
+			if token != "]" {
+				ic.NextToken = token
+				result = ic.ScanSymbolicType()
+				ic.Scan(']')
+				result.List = true
+				if result == Text {
+					result = TextArray
+				}
+			}
+			/*if tok := ic.Scan(0); tok == "[" {
 				result = Matrix
 				ic.Scan(']')
 			} else {
 				ic.NextToken = tok
-			}
+			}*/
 		case "$":
 			result = ic.ScanSymbolicType()
 			result.Decimal = true
@@ -377,139 +388,4 @@ func (ic *Compiler) ScanConstructor() string {
 	}
 	ic.ExpressionType = ic.DefinedTypes[name]
 	return array
-}
-
-func (ic *Compiler) IndexUserType(name, element string) string {
-	var t UserType
-	if ic.GetVariable(name) != Undefined {
-		t = *ic.GetVariable(name).Detail
-		ic.SetVariable(name+"_use", Used)
-	} else {
-		t = *ic.ExpressionType.Detail
-	}
-	
-	//Deal with indexing Something types.
-	/*if GetVariable(name) == SOMETHING {
-		switch element {
-			case "number":
-				ExpressionType = NUMBER
-				fmt.Fprintf(output, "PLACE %s\n", name)
-				fmt.Fprintf(output, "PUSH 0\n")
-				fmt.Fprintf(output, "GET %s%v\n", "i+user+", unique)
-				return "i+user+"+fmt.Sprint(unique)
-		}
-	}*/
-	
-	if index, ok := t.Table[element]; !ok {
-		ic.RaiseError(name+" does not have an element named "+element)
-	} else {
-	
-		var tmp = ic.Tmp("index")
-		ic.ExpressionType = t.Elements[index]
-	
-		switch t.Elements[index].Push {
-			case "PUSH":
-				ic.Assembly("PLACE ", name)
-				ic.Assembly("PUSH ", index)
-				ic.Assembly("GET ", tmp)
-				return tmp
-			
-			case "SHARE", "RELAY":
-				ic.Assembly("PLACE ", name) //The array we are indexing, the place.
-				ic.Assembly("PUSH ", index) //Push the index onto the stack.
-				ic.Assembly("GET ", tmp)	//Get the value of the array at the index on the stack.
-				ic.Assembly("IF ",tmp)		//If there is a valid address, (greater than zero)
-				ic.GainScope()
-				
-				//Retrieve the array.
-				ic.Assembly("PUSH ", tmp)
-				if t.Elements[index].Push == "RELAY" {
-					ic.Assembly("HEAPIT")
-				} else {
-					ic.Assembly("HEAP")
-				}
-				tmp = ic.Tmp("index")
-				ic.Assembly(t.Elements[index].Pop, " ", tmp)
-				ic.Assembly(t.Elements[index].Push, " ", tmp)
-				ic.LoseScope()
-				
-				ic.Assembly("ELSE") //We will return a new array.
-				ic.GainScope()
-				ic.Assembly("ARRAY ", tmp)
-				if t.Elements[index].User {
-				for range t.Elements[index].Detail.Elements {
-					ic.Assembly("PUT 0")
-				}
-				}
-				ic.Assembly("SHARE ", tmp)
-				if t.Elements[index].Push == "RELAY" {
-					ic.Assembly("OPEN")
-				}
-				ic.LoseScope()
-				ic.Assembly("END")
-				ic.Assembly(t.Elements[index].Pop, " ", tmp)
-				
-				return tmp
-				
-			default:
-				ic.RaiseError(name+" cannot index "+element+", type is unindexable!!!")
-		}
-	}
-	return ""
-}
-
-func (ic *Compiler) SetUserType(name, element, value string) {
-	var t UserType
-	if ic.GetVariable(name) != Undefined {
-		t = *ic.GetVariable(name).Detail
-		ic.SetVariable(name+"_use", Used)
-	} else {
-		ic.RaiseError("Cannot set type without type identity!")
-	}
-	
-	if index, ok := t.Table[element]; !ok {
-		ic.RaiseError(name+" does not have an element named "+element)
-	} else {
-	
-		if t.Elements[index] == User || (t.Elements[index].List && ic.ExpressionType.Push == "SHARE") || ic.ExpressionType.Name == "matrix" {
-			t.Elements[index] = ic.ExpressionType
-			
-			if  ic.GetFlag(InMethod) {
-				ic.Assembly("PLACE ", value)
-				ic.Assembly("RENAME ", element)
-				//ic.SetVariable(element, ic.ExpressionType)
-			}
-		}
-	
-		if ic.ExpressionType != t.Elements[index] {
-			ic.RaiseError("Type mismatch, cannot assign '",ic.ExpressionType.Name,"', to a element of type '",t.Elements[index].Name,"'")		
-		}
-
-		switch t.Elements[index].Push {
-			case "PUSH":
-				ic.Assembly("PLACE ", name)
-				ic.Assembly("PUSH ", index)
-				ic.Assembly("SET ", value)
-			
-			case "SHARE", "RELAY":
-				
-				//TODO garbage collect
-				var tmp = ic.Tmp("index")
-				ic.Assembly(t.Elements[index].Push, " ", value)
-				ic.Assembly("PUSH 0")
-				if t.Elements[index].Push == "RELAY" {
-					ic.Assembly("HEAPIT")
-				} else {
-					ic.Assembly("HEAP")
-				}
-				ic.Assembly("PULL ", tmp)
-				
-				ic.Assembly("PLACE ", name)
-				ic.Assembly("PUSH ", index)
-				ic.Assembly("SET ", tmp)
-				
-			default:
-				ic.RaiseError(name+" cannot index "+element+", type is unindexable!!!")
-		}
-	}
 }

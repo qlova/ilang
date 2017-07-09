@@ -33,6 +33,8 @@ type Compiler struct {
 	Scanner *scanner.Scanner	//This is the current scanner.
 	Scanners []*scanner.Scanner //Multiple files, multiple scanners.
 	NextToken string			//You can overide the next token, this will be returned by the next call to scan.
+	NextNextToken string
+	NextNextNextToken string
 	
 	DefinedTypes map[string]Type			//A map of all the user created types.
 	DefinedFunctions map[string]Function	//A map of all the user created functions.
@@ -150,7 +152,9 @@ func (c *Compiler) Scan(verify rune) string {
 			text = strconv.Quote(text)
 			c.RaiseError("Unexpected "+text+", expecting "+string(verify))
 		}
-		c.NextToken = ""
+		c.NextToken = c.NextNextToken
+		c.NextNextToken = c.NextNextNextToken
+		c.NextNextNextToken = ""
 		return text
 	}
 
@@ -210,6 +214,7 @@ func (c *Compiler) Scan(verify rune) string {
 			
 			fmt.Fprintf(c.Lib, `DATA i_newline "\n"`+"\n")
 			c.LoadFunction("strings.equal")
+			c.LoadFunction("strings.compare")
 		
 			//Create a software block.
 			if !c.SoftwareBlockExists && c.GUIExists && c.GUIMainExists {
@@ -309,7 +314,7 @@ func (ic *Compiler) LoseScope() {
 			
 			if variable.IsUser() != Undefined && !variable.Empty() {
 				ic.Assembly("SHARE ", name)
-				ic.Assembly("RUN collect_m_", variable.Name)
+				ic.Assembly(ic.RunFunction("collect_m_"+variable.Name))
 			}
 		}
 	}
@@ -933,58 +938,18 @@ func (ic *Compiler) Compile() {
 				
 			default:
 				
-				if t := ic.GetVariable(token); t != Undefined {
-					ic.NextToken = token
-					switch t {
-						case Table: 						ic.ScanTableStatement()
-							
-						case Number, Decimal, Letter, Set: 	ic.ScanNumericStatement()
-							
-						//This may become depreciated.
-						case t.IsMatrix(): 					ic.ScanMatrixStatement()
-						
-						case Array, Text, t.IsArray():		ic.ScanArrayStatement()
-							
-						case List, t.IsList():				ic.ScanListStatement()
-							
-						case Pipe:							ic.ScanPipeStatement()
-							
-						case Func:							ic.ScanFuncStatement()
-						
-						case t.IsSomething():				ic.ScanSomethingStatement()
-							
-						case User, t.IsUser():				ic.ScanUserStatement()
-							
-						default:
-							ic.RaiseError()
+				if ic.GetFlag(InMethod) {
+					if _, ok := ic.LastDefinedType.Detail.Table[token]; ok {
+						ic.NextToken = ic.LastDefinedType.Name
+						ic.NextNextToken = "."
+						ic.NextNextNextToken = token
+						ic.ScanUserStatement()
+						continue
 					}
-				
-				//Function Calls and things.
-				} else if _, ok := ic.DefinedFunctions[token]; ok {
-					var check = ic.Scan(0)
-					if check == "(" {
-						ic.ScanFunctionCall(token)
-						ic.Scan(')')
-					} else if check == "@" {
-						var variable = ic.expression()
-						ic.Assembly("%v %v", ic.ExpressionType.Push, variable)
-						ic.Scan('(')
-						ic.ScanFunctionCall(token+"_m_"+ic.ExpressionType.Name)
-						ic.Scan(')')
-					} else {
-						ic.RaiseError()
-					}
-				
-				} else if ic.GetFlag(InMethod) {
-					ic.NextToken = token
-					ic.ScanExpression()	
-					if ic.ExpressionType == Undefined {
-						ic.RaiseError(token, " undefined!")
-					}
-				
-				} else {
-					ic.RaiseError()
 				}
+				
+				ic.NextToken = token
+				ic.ScanStatement()
 		}
 	}
 }

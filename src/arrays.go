@@ -109,7 +109,7 @@ func (ic *Compiler) Set(array, index, value string) {
 		ic.Assembly("IF ", collect)
 			ic.Assembly("PUSH ", collect)
 			ic.Assembly("HEAP")
-			ic.Assembly("RUN collect_m_", ic.GetVariable(array).Name)
+			ic.Assembly(ic.RunFunction("collect_m_"+ic.GetVariable(array).Name))
 			ic.Assembly("MUL ", collect, " ", collect, " -1")
 			ic.Assembly("PUSH ", collect)
 			ic.Assembly("HEAP")
@@ -176,7 +176,11 @@ func (ic *Compiler) ScanArray() string {
 		//This is not a numeric array?
 		if ic.ExpressionType != Number || result.List {
 			if !result.List {
-				result = ic.ExpressionType.MakeList()
+				if ic.ExpressionType == Text {
+					result = TextArray
+				} else {
+					result = ic.ExpressionType.MakeList()
+				}
 			}
 			
 			ic.PutList(result, id, value)

@@ -9,6 +9,8 @@ type Function struct {
 	Inline bool
 	Data string
 	
+	List bool //Does the method operate on a list?
+	
 	Method bool
 	
 	Variadic bool
@@ -54,6 +56,9 @@ func (ic *Compiler) RunFunction(name string) string {
 
 	f, ok := ic.DefinedFunctions[name]
 	if !ok {
+		if strings.Contains(name, "collect_m_") {
+			return "RUN "+name
+		}
 		ic.RaiseError(name, " does not exist!")
 	}
 	
@@ -158,6 +163,10 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 			}
 			
 			InheritMethods:
+			if ic.ExpressionType == TextArray {
+				ic.ExpressionType.Name = "textarray"
+			}
+			
 			if _, ok := ic.DefinedFunctions[name+"_m_"+ic.ExpressionType.Name]; !ok {
 				if ic.ExpressionType.Super != "" {
 					ic.ExpressionType = ic.DefinedTypes[ic.ExpressionType.Super]

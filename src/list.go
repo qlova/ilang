@@ -21,6 +21,11 @@ func (ic *Compiler) ScanListStatement() {
 	
 	//TODO CLEAN THIS UP!
 	switch token {
+		case "-":
+			ic.Scan('-')
+			ic.Assembly("PLACE ", name)
+			ic.Assembly("POP ", ic.Tmp("cut"))
+			
 		case "&", "+":
 		
 			if token == "+" {
@@ -29,7 +34,7 @@ func (ic *Compiler) ScanListStatement() {
 			value := ic.ScanExpression()
 			
 			if t == List && ic.ExpressionType.Push == "PUSH" {
-				ic.SetVariable(name, Array)
+				ic.UpdateVariable(name, Array)
 				ic.Assembly("PLACE ", name)
 				ic.Assembly("PUT ", value)
 				return

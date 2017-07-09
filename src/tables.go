@@ -8,7 +8,7 @@ func (ic *Compiler) ShuntTable(name string) string {
 	var index = ic.ScanExpression()
 	ic.Scan(']')
 	if ic.ExpressionType != Text {
-		ic.RaiseError("A Table must have a text index!")
+		ic.RaiseError("A Table must have a text index! Found ", ic.ExpressionType.Name)
 	}
 	var tableval = ic.Tmp("tableval")
 	

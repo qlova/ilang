@@ -16,9 +16,18 @@ func (ic *Compiler) ScanSet() string {
 			ic.Assembly("MUL %s %s %v", id, id, prime)
 		} else {
 			ic.SetItems[token] = Primes[ic.SetItemCount]
-			ic.SetItemCount++
-			
 			ic.Assembly("MUL %s %s %v", id, id, Primes[ic.SetItemCount])
+			
+			ic.SetItemCount++
+		}
+		
+		token = ic.Scan(0)
+		if token != "," {
+			if token == ">" {
+				break
+			} else {
+				ic.RaiseError("expecting >")
+			}
 		}
 	}
 	
