@@ -95,20 +95,22 @@ The Rosetta Code [page](http://rosettacode.org/wiki/Category:I) may be helpful.
 Flick me an email (splizard @ splizard dot com) if you have any questions =)
 
 ## Types
-There are 8 types in the i language.
+There are 13 types in the i language.
 ```
 number()
+rational()	\
 decimal()   .
-letter()	''
+letter()	' '
 array() 	[]
 text() 		""
+set()		<>
 
 pipe 		||
-type		<>
 function 	()
 
-thing() {}
-List() {..}
+Thing() 	{}
+List()  	..
+Table()		:
 Something() ?
 ```
 
@@ -121,6 +123,9 @@ Decimals are fixed-precision numbers.
 **letter**
 Letters correspond to a character in a piece of text, for example "a", "!" etc.
 
+**set**
+A set is an unordered collection of arbitary labels.
+
 **array**
 An array is a list of numbers.
 
@@ -129,9 +134,6 @@ Text is a string of letters, these can form words, sentences and the like.
 
 **pipe**
 A pipe is any object with an input and an output. These can be files, the internet etc.
-
-**type**
-A type is a representation of a type in the I language.
 
 **function**
 A function is a special form of pipe, one which you can call.

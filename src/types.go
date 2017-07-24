@@ -65,8 +65,9 @@ func (t Type) IsList() Type {
 	}
 }
 
+//TODO this will break something types.
 func (t Type) Empty() bool { 
-	return t.Detail != nil && len(t.Detail.Elements) == 0 && t != Something
+	return t.Detail != nil && len(t.Detail.Elements) == 0
 }
 
 type UserType struct {	
@@ -102,88 +103,36 @@ func NewType(name string, options ...string) Type {
 	return t
 }
 
+func GetType(name string) Type {
+	return string2type[name]
+}
+
 var Undefined = NewType("undefined")
 var Number = NewType("number", "PUSH", "PULL")
-var Decimal = NewType("decimal", "PUSH", "PULL")
-var Letter = NewType("letter", "PUSH", "PULL")
+
 var Text = NewType("text", "SHARE", "GRAB")
 var Array = NewType("array", "SHARE", "GRAB")
 var Matrix = NewType("matrix", "SHARE", "GRAB")
 
-var Set = NewType("set", "PUSH", "PULL")
-var Table = NewType("table", "PUSH", "PULL")
-
-var TextArray = Text
-
-var Itype = NewType("type", "PUSH", "PULL")
-var User = NewType("usertype", "SHARE", "GRAB")
-var List = NewType("list", "SHARE", "GRAB")
-var Pipe = NewType("pipe", "RELAY", "TAKE")
-var Func = NewType("function", "RELAY", "TAKE")
-var Something = NewUserType("Something")
-
 var Variadic = NewFlag()
-
-func init() {
-	TextArray.List = true
-}
 
 func (ic *Compiler) ScanSymbolicType() Type {
 	var result Type = Undefined
 	var symbol = ic.Scan(0)
+	
+	if symbol == "." && ic.Peek() == "." {
+		ic.Scan('.')
+		symbol = ".."
+	}
+	
+	if f, ok := Symbols[symbol]; ok {
+		return f(ic)
+	}
+	
 	switch symbol {
-		case "{":
-			result = User
-			t := ic.Scan(0)
-			if t == "." {	
-				result = List
-				ic.Scan('.')
-				ic.Scan('}')
-			} else if t != "}" {
-				ic.RaiseError()
-			}
-		case "[":
-			result = List
-			token := ic.Scan(0)
-			
-			if token != "]" {
-				ic.NextToken = token
-				result = ic.ScanSymbolicType()
-				ic.Scan(']')
-				result.List = true
-				if result == Text {
-					result = TextArray
-				}
-			}
-			/*if tok := ic.Scan(0); tok == "[" {
-				result = Matrix
-				ic.Scan(']')
-			} else {
-				ic.NextToken = tok
-			}*/
-		case "$":
-			result = ic.ScanSymbolicType()
-			result.Decimal = true
 		case `""`:
 			result = Text
-		case "' '":
-			result = Letter
-		case "|":
-			result = Pipe
-			ic.Scan('|')
-		case "(":
-			result = Func
-			ic.Scan(')')
-		case "<":
-			result = Set
-			ic.Scan('>')
-		case ".":
-			if tok := ic.Scan(0); tok == "." {
-				result = Variadic
-			} else {
-				ic.NextToken = tok
-				result = Decimal
-			}
+			
 		default:
 			result = Number
 			ic.NextToken = symbol
@@ -209,6 +158,55 @@ func (ic *Compiler) CallType(name string) string {
 		}
 		return array
 	}
+}
+
+func (list Type) GetComplexName() string {
+	if list.SubType == nil {
+		return list.Name
+	}
+	
+	if *list.SubType == list {
+		panic("SELF REFERENCING LIST!")
+	}
+
+	var strings []string
+	var t = list
+	for {
+		strings = append(strings, t.Name)
+		if t.SubType == nil || (t == Type{}) {
+			break
+		}
+		t = *t.SubType
+	}
+	var serialised string
+	for i:=len(strings)-1; i >= 0; i-- {
+		serialised += strings[i]
+	}
+	return serialised
+}	
+
+//Get a numeric value which represents the type.
+func (ic *Compiler) GetPointerTo(name string) string {
+	if ic.ExpressionType.Push == "SHARE" {
+		var pointer = ic.Tmp("pointer")
+		ic.Assembly("PUSH 0")
+		ic.Assembly("SHARE ", name)
+		ic.Assembly("HEAP")
+		ic.Assembly("PULL ", pointer)
+		return pointer
+	}
+	return name
+}
+
+func (ic *Compiler) Dereference(pointer string) string {
+	if ic.ExpressionType.Push == "SHARE" {
+		var value = ic.Tmp("deref")
+		ic.Assembly("PUSH ", pointer)
+		ic.Assembly("HEAP")
+		ic.Assembly("GRAB ", value)
+		return value
+	}
+	return pointer
 }
 
 //This scans a new type definition and creates the type.

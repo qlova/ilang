@@ -3,7 +3,9 @@ package main
 import (
 	"path"
 	"os"
-	"../"
+	"github.com/qlova/ilang/src"
+	_ "github.com/qlova/ilang/src/modules/all"
+	_ "github.com/qlova/ilang/src/types/all"
 )
 
 func ic(input, directory string) {

@@ -11,17 +11,10 @@ func NewFlag() Type {
 }
 
 var Protected = NewFlag()
-var Software = NewFlag()
+var New = NewFlag()
 var InFunction = NewFlag()
 var InMethod = NewFlag()
-var Issues = NewFlag()
-var Issue = NewFlag()
 var FirstCase = NewFlag()
-var Loop = NewFlag()
-var ForLoop = NewFlag()
-var New = NewFlag()
-var Delete = NewFlag()
-var Block = NewFlag()
 
 var Unused = NewFlag()
 var Used = NewFlag()
@@ -47,4 +40,9 @@ func (c *Compiler) GetScopedFlag(sort Type) bool {
 //Set the type of a variable, this is akin to creating or assigning a variable.
 func (c *Compiler) SetFlag(flag Type) {
 	c.Scope[len(c.Scope)-1][flag.Name] = flag
+}
+
+//Set the type of a variable, this is akin to creating or assigning a variable.
+func (c *Compiler) UnsetFlag(flag Type) {
+	delete(c.Scope[len(c.Scope)-1], flag.Name) 
 }

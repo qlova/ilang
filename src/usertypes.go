@@ -5,6 +5,7 @@ package ilang
 		usertype = newusertype
 		usertype.element = value
 */
+/*
 func (ic *Compiler) ScanUserStatement() {
 	//The name is the usertype we want to index.
 	var name = ic.Scan(0)
@@ -91,7 +92,7 @@ func (ic *Compiler) ScanUserStatement() {
 		ic.SetUserType(name, index, value)
 	}
 	
-	/*if _, ok := usertype.Detail.Table[index]; index != "" && ok {
+	if _, ok := usertype.Detail.Table[index]; index != "" && ok {
 	if maybelist := usertype.Detail.Elements[usertype.Detail.Table[index]]; 
 			(maybelist == List || maybelist.List) && (token == "+" || token == "-") {
 			
@@ -167,7 +168,7 @@ func (ic *Compiler) ScanUserStatement() {
 			ic.SetUserType(name, index, value)
 		}
 	}*/
-}
+//}
 
 func (ic *Compiler) IndexUserType(name, element string) string {
 	var t UserType
@@ -276,7 +277,7 @@ func (ic *Compiler) SetUserType(name, element, value string) {
 		ic.RaiseError(name+" does not have an element named "+element)
 	} else {
 	
-		if t.Elements[index] == User || ic.ExpressionType.Name == "matrix" || t.Elements[index] == List {
+		if (t.Elements[index].Name == "thing") || ic.ExpressionType.Name == "matrix" {
 			t.Elements[index] = ic.ExpressionType
 			
 		}

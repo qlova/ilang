@@ -1,32 +1,60 @@
-package ilang
+package something
 
-func (t Type) IsSomething() Type {
-	if t.Name == "Something" {
-		return t
-	} else {
-		return Undefined
-	}
+import "github.com/qlova/ilang/src"
+
+var Type = ilang.NewType("something", "SHARE", "GRAB")
+
+func init() {
+	ilang.RegisterStatement(Type, ScanStatement)
+	ilang.RegisterSymbol("?", ScanSymbol)
+	ilang.RegisterExpression(ScanExpression)
+	ilang.RegisterShunt(".", Shunt)
+	
+	ilang.RegisterFunction("something", ilang.Method(Type, true, "PUSH 1\nMAKE"))
 }
 
-/*
-	Scan something statement for example,
-		something = value
-*/
-func (ic *Compiler) ScanSomethingStatement() {
-	var name = ic.Scan(0)
+func ScanSymbol(ic *ilang.Compiler) ilang.Type {
+	return Type
+}
+
+func Shunt(ic *ilang.Compiler, name string) string {
+	if ic.ExpressionType == Type {
+		var cast = ic.Scan(ilang.Name)
+		return ic.Shunt(Index(ic, name, cast))
+	}
+	return ""
+}
+
+func ScanExpression(ic *ilang.Compiler) string {
+	var token = ic.LastToken
+	if token == "?" {
+		ic.ExpressionType = Type
+		var tmp = ic.Tmp("something")
+		ic.Assembly("ARRAY ", tmp)
+		ic.Assembly("PUT 0")
+		return tmp
+	}
+	return ""
+}
+
+func ScanStatement(ic *ilang.Compiler) {
+
+	var name = ic.Scan(ilang.Name)
 	ic.Scan('=') //TODO Maybe support other types of statements?
 	var value = ic.ScanExpression()
-	ic.AssignSomething(name, value)
+	
+	Assign(ic, name, value)
+	
 }
 
-func (ic *Compiler) IndexSomething(name string, cast string) string {
+func Index(ic *ilang.Compiler, name string, cast string) string {
 	switch cast {
 		case "number", "letter", "decimal":
 			var test = ic.Tmp("test")
 			ic.Assembly("PUSH 2")
 			ic.Assembly("PLACE ", name)
 			ic.Assembly("GET ", test)
-			ic.Assembly("SEQ %v %v %v", test, test, string2type[cast].Int)
+			ic.Assembly("SEQ %v %v %v", test, test, ilang.GetType(cast).Int)
 			ic.Assembly("IF ", test)
 			
 			var test2 = ic.Tmp("test")
@@ -40,21 +68,19 @@ func (ic *Compiler) IndexSomething(name string, cast string) string {
 			ic.Assembly("PUSH 0")
 			ic.Assembly("END")
 			ic.Assembly("PULL ", num)
-			switch cast {
-				case "number":
-					ic.ExpressionType = Number
-				case "letter":
-					ic.ExpressionType = Letter
-				case "decimal":
-					ic.ExpressionType = Decimal
+			
+			ic.ExpressionType = ilang.GetType(cast)
+			if ic.ExpressionType == ilang.Undefined {
+				ic.RaiseError("Cannot cast something to ", cast)
 			}
+			
 			return num
 		default:
 			var test = ic.Tmp("test")
 			ic.Assembly("PUSH 2")
 			ic.Assembly("PLACE ", name)
 			ic.Assembly("GET ", test)
-			ic.Assembly("SEQ %v %v %v", test, test, string2type[cast].Int)
+			ic.Assembly("SEQ %v %v %v", test, test, ilang.GetType(cast).Int)
 			ic.Assembly("IF ", test)
 			
 			var address = ic.Tmp("address")
@@ -72,24 +98,18 @@ func (ic *Compiler) IndexSomething(name string, cast string) string {
 			ic.Assembly("END")
 			
 			ic.Assembly("GRAB ", txt)
-			switch cast {
-				case "text":
-					ic.ExpressionType = Text
-				case "array":
-					ic.ExpressionType = Array
-				default:
-					var ok bool
-					ic.ExpressionType, ok = string2type[cast]
-					if ! ok {
-						ic.RaiseError("Cannot cast something to ", cast)
-					}
+			
+			ic.ExpressionType = ilang.GetType(cast)
+			if ic.ExpressionType == ilang.Undefined {
+				ic.RaiseError("Cannot cast something to ", cast)
 			}
+			
 			return txt
 	}
 	return ""
 }
 
-func (ic *Compiler) AssignSomething(name string, value string) {
+func Assign(ic *ilang.Compiler, name string, value string) {
 	var intf = ic.GetVariable(name).Interface
 	if intf != nil {
 		var originalname = ic.ExpressionType.Name
@@ -120,8 +140,9 @@ RETURN
 			}
 		}
 	}
-	switch ic.ExpressionType {
-		case Number, Letter, Decimal:
+	switch ic.ExpressionType.Push {
+	
+		case "PUSH":
 			var tmp = ic.Tmp("number")
 			ic.Assembly("ARRAY ", tmp)
 			ic.Assembly("PUT ", value)
@@ -131,10 +152,11 @@ RETURN
 				ic.Assembly("PUT ", byte(v))
 			}
 			ic.Assembly("SHARE ", name)
-			ic.Assembly("RUN collect_m_Something")
+			ic.Assembly("RUN collect_m_something")
 			ic.Assembly("PLACE ", tmp)
 			ic.Assembly("RENAME ", name)
-		case Text, Array, ic.ExpressionType.IsUser():
+			
+		case "SHARE":
 			var tmp = ic.Tmp("text")
 			ic.Assembly("ARRAY ", tmp)
 			ic.Assembly("SHARE ", value)
@@ -149,10 +171,11 @@ RETURN
 				ic.Assembly("PUT ", byte(v))
 			}
 			ic.Assembly("SHARE ", name)
-			ic.Assembly("RUN collect_m_Something")
+			ic.Assembly("RUN collect_m_something")
 			ic.Assembly("PLACE ", tmp)
 			ic.Assembly("RENAME ", name)
+			
 		default:
-		ic.RaiseError(ic.ExpressionType.Name, " is not a something")
+			ic.RaiseError(ic.ExpressionType.Name, " is not a something")
 	}
 }

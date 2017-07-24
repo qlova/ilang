@@ -19,7 +19,7 @@ method new(Monster) {
 }
 
 software {
-	var m = new Monster()
+	var m = new(Monster)
 	print(m.Name)
 	
 	print(m.HP)

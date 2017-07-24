@@ -33,9 +33,9 @@ method text(Complex) "" {
 
 software {
 
-	var n is Complex{3, 6}
+	var n = Complex{3, 6}
 	
-	var m is Complex
+	var m = Complex()
 	m.real = 2
 	m.imag = 1
 	

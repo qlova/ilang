@@ -17,13 +17,14 @@ type Interface struct {
 }
 
 func (i Interface) GetType() Type {
-	var s = Something
-	s.Interface = &i
-	return s
+	//var s = Something
+	//s.Interface = &i
+	//return s
+	return Type{}
 }
 
 func (ic *Compiler) CallInterfaceMethod(name string) string {
-	var intf = ic.ExpressionType.Interface
+	/*var intf = ic.ExpressionType.Interface
 	
 	if _, ok := ic.DefinedFunctions[name+"_m_"+intf.Name]; !ok {
 		ic.LoadFunction("text_m_Something")
@@ -69,11 +70,12 @@ RETURN
 		`)
 	}
 	
-	return "RUN "+name+"_m_"+intf.Name
+	return "RUN "+name+"_m_"+intf.Name*/
+	return "unimplemented"
 }
 
 func (ic *Compiler) ScanInterface() {
-	var name = ic.Scan(Name)
+	/*var name = ic.Scan(Name)
 	ic.Scan('{')
 	ic.Scan('\n')
 	
@@ -99,5 +101,5 @@ func (ic *Compiler) ScanInterface() {
 		}
 	}
 	
-	ic.DefinedInterfaces[name] = intf
+	ic.DefinedInterfaces[name] = intf*/
 }

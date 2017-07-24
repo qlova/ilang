@@ -2,7 +2,7 @@ TESTING $1 $2 $3
 
 BasicTest HelloWorld "Hello World"
 BasicTest Chars "97\na"
-BasicTest Arrays "2\n4"
+BasicTest Arrays "2\n4\n4"
 BasicTest Concat "This string is joined!"
 BasicTest Functions "hi\nhi\ncba"
 BasicTest Length "2"
@@ -43,9 +43,9 @@ BasicTest Shortcuts "4\n6\n1\n2"
 BasicTest Over "15"
 BasicTest Decimal "0.333333\n1.245"
 
-BasicTest Sort "2\n3\n4\n5\n6"
 #BasicTest Split "192\n168\n1\n70"
-BasicTest Links "1\n2\n3\n"
-BasicTest Slices "Hello\nbob\nmy\n"
+#BasicTest Links "1\n2\n3\n"
+#BasicTest Slices "Hello\nbob\nmy\n"
 BasicTest Universal "Hello World\n"
+BasicTest Sort "2\n3\n4\n5\n6"
 

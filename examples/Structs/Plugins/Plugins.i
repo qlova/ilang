@@ -13,6 +13,6 @@ method run(Moddable) {
 }
 
 software {
-	var m = new Moddable()
+	var m = new(Moddable)
 	run(m)
 }

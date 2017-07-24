@@ -74,11 +74,6 @@ func init() {
 	NewOperator(Number, "+", Number, "VAR %c\nADD %c %a %b", false)
 	NewOperator(Number, "-", Number, "VAR %c\nSUB %c %a %b", false)
 	
-	NewOperator(Decimal, "+", Decimal, "VAR %c\nADD %c %a %b", false)
-	NewOperator(Decimal, "-", Decimal, "VAR %c\nSUB %c %a %b", false)
-	NewOperator(Decimal, "/", Decimal, "VAR %t\nVAR %c\nMUL %t %a 1000000\nDIV %c %t %b", true)
-	NewOperator(Decimal, "*", Decimal, "VAR %c\nMUL %c %a %b\nDIV %c %c 1000000", true)
-	
 	NewOperator(Number, "++", Undefined, "ADD %a %a 1", false, Undefined)
 	NewOperator(Number, "--", Undefined, "SUB %a %a 1", false, Undefined)
 	
@@ -86,22 +81,6 @@ func init() {
 	NewOperator(Number, "-=", Number, "SUB %a %a %b", false, Undefined)
 	NewOperator(Number, "*=", Number, "MUL %a %a %b", false, Undefined)
 	NewOperator(Number, "/=", Number, "DIV %a %a %b", false, Undefined)
-	
-	NewOperator(Decimal, "+=", Decimal, "ADD %a %a %b", false, Undefined)
-	NewOperator(Decimal, "-=", Decimal, "SUB %a %a %b", false, Undefined)
-	NewOperator(Decimal, "*=", Decimal, "MUL %c %a %b\nDIV %c %c 1000000", false, Undefined)
-	NewOperator(Decimal, "/=", Decimal, "VAR %t\nMUL %t %a 1000000\nDIV %c %t %b", false, Undefined)
-	
-	//Set Operations.
-	NewOperator(Set, "=", Set, "VAR %c\nSEQ %c %a %b", true, Number)
-	NewOperator(Set, "+", Set, "VAR %c\nMUL %c %a %b", false)
-	NewOperator(Set, "-", Set, "VAR %c\nDIV %c %a %b", false)
-	NewOperator(Set, "+=", Set, "MUL %a %a %b", false, Undefined)
-	NewOperator(Set, "-=", Set, "DIV %a %a %b", false, Undefined)
-	NewOperator(Set, "<=", Set, "VAR %c\nMOD %c %b %a\nDIV %c %c 0", true, Number)
-	NewOperator(Set, ">", Set, "VAR %c\nMOD %c %b %a\n", true, Number)
-	NewOperator(Set, ">=", Set, "VAR %c\nMOD %c %b %a\nVAR %t\nSEQ %t %a %b\nADD%c %c %t", true, Number)
-	NewOperator(Set, "<", Set, "VAR %c\nMOD %c %b %a\nDIV %c %c 0\nVAR %t\nSNE %t %a %b\nMUL%c %c %t", true, Number)
 	
 	NewOperator(Number, "or", Number, "VAR %c\nADD %c %a %b", false)
 	
@@ -111,13 +90,8 @@ func init() {
 	NewOperator(Number, "×", Number, "VAR %c\nMUL %c %a %b", true)
 	
 	NewOperator(Number, "mod", Number, "VAR %c\nMOD %c %a %b", true)
-	NewOperator(Decimal, "mod", Decimal, "VAR %c\nMOD %c %a %b", true)
 	NewOperator(Number, "^",   Number, "VAR %c\nPOW %c %a %b", true)
 	
-	NewOperator(Decimal, "^", Number, "VAR %c\nPOW %c %a %b\nVAR %t\nPOW %t 100 %b\nMUL %t %t 1000000\nDIV %c %c %t", true, Decimal)
-	
-	NewOperator(Letter, "=", Letter, "VAR %c\nSEQ %c %a %b", true, Number)
-	NewOperator(Letter, "!=",Letter, "VAR %c\nSNE %c %a %b", true, Number)
 	
 	NewOperator(Number, "=", Number, "VAR %c\nSEQ %c %a %b", true)
 	NewOperator(Number, "!=",Number, "VAR %c\nSNE %c %a %b", true)
@@ -125,15 +99,6 @@ func init() {
 	NewOperator(Number, ">", Number, "VAR %c\nSGT %c %a %b", true)
 	NewOperator(Number, "<=",Number, "VAR %c\nSLE %c %a %b", true)
 	NewOperator(Number, ">=",Number, "VAR %c\nSGE %c %a %b", true)
-	
-	NewOperator(Decimal, "=", Decimal, "VAR %c\nSEQ %c %a %b", true, Number)
-	NewOperator(Decimal, "!=",Decimal, "VAR %c\nSNE %c %a %b", true, Number)
-	NewOperator(Decimal, "<", Decimal, "VAR %c\nSLT %c %a %b", true, Number)
-	NewOperator(Decimal, ">", Decimal, "VAR %c\nSGT %c %a %b", true, Number)
-	NewOperator(Decimal, "<=",Decimal, "VAR %c\nSLE %c %a %b", true, Number)
-	NewOperator(Decimal, ">=",Decimal, "VAR %c\nSGE %c %a %b", true, Number)
-	
-	NewOperator(Itype, "=", Itype, "VAR %c\nSEQ %c %a %b", true)
 	
 	NewOperator(Text, "+", Text, "ARRAY %c\nJOIN %c %a %b", false)
 	NewOperator(Array, "+", Array, "ARRAY %c\nJOIN %c %a %b", false)
@@ -145,7 +110,6 @@ func init() {
 	
 	NewOperator(Text, "--", Undefined, "PLACE %a\nPOP %t", false, Undefined)
 	
-	NewOperator(Text, "+=", Letter, "PLACE %a\nPUT %b", false, Undefined)
 	NewOperator(Text, "+=", Text, "JOIN %a %a %b", false, Undefined)
 	NewOperator(Array, "+=", Array, "JOIN %a %a %b", false, Undefined)
 	NewOperator(Array, "+=", Number, "PLACE %a\nPUT %b", false, Undefined)

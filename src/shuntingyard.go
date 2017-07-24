@@ -7,35 +7,31 @@ import (
 func (ic *Compiler) Shunt(name string) string {
 	var token = ic.Scan(0)
 	
+	if list, ok := Shunts[token]; ok {
+		for _, f := range list {
+			result := f(ic, name)
+			if result != "" {
+				return result
+			}
+		}
+	}
+	
 	switch token {
 		case ")", ",", "\n", "]", ";", "{", "}", "|":
 			ic.NextToken = token
 			return name
 		
 		case ".":
-			if ic.ExpressionType == Something {
-				var cast = ic.Scan(Name)
-				return ic.Shunt(ic.IndexSomething(name, cast))
-			}
-			
 			var index = ic.Scan(Name)
 			
-			
-			if _, ok  := ic.DefinedFunctions[index+"_m_"+ic.ExpressionType.Name]; ok {
-				var f = index+"_m_"+ic.ExpressionType.Name
-				ic.Assembly(ic.ExpressionType.Push," ", name)
-				ic.ExpressionType = InFunction
-				return ic.Shunt(f)
-			}
-			
 			if ic.ExpressionType.IsUser() == Undefined {
-				ic.RaiseError("Type '%v', cannot be indexed!", ic.ExpressionType.Name)
+				ic.RaiseError("Type '%s', cannot be indexed!", ic.ExpressionType.Name)
 			}
 			
 			return ic.Shunt(ic.IndexUserType(name, index))
 		
 		case ":":
-			if ic.ExpressionType.Push == "PUSH" {
+			/*if ic.ExpressionType.Push == "PUSH" {
 				ic.NextToken = token
 				return name
 			}
@@ -74,135 +70,28 @@ func (ic *Compiler) Shunt(name string) string {
 			
 			ic.ExpressionType = original
 			
-			return ic.Shunt(slice)
+			return ic.Shunt(slice)*/
 		
 		
 		case "(":
-			//Calling pipes.
-			if ic.ExpressionType == Pipe {
 			
-				token := ic.Scan(0)
-				if token == ")" {
-					//Read default from the pipe.
-					var r = ic.Tmp("read")
-					ic.Assembly("RELAY ", name)
-					ic.Assembly("PUSH 0")
-					ic.Assembly("IN")
-					ic.Assembly("GRAB ", r)
-					ic.ExpressionType = Text
-					return ic.Shunt(r)	
-				}
-				
-				ic.NextToken = token
-								
-				argument := ic.ScanExpression()
-				
-				switch ic.ExpressionType {
-					case Letter:
-						var r = ic.Tmp("reada")
-						ic.Assembly("RELAY ", name)
-						ic.Assembly("PUSH ", argument)
-						ic.Assembly("RUN reada_m_pipe")
-						ic.Assembly("GRAB ", r)
-						ic.LoadFunction("reada_m_pipe")
-						ic.ExpressionType = Text
-						ic.Scan(')')
-						return ic.Shunt(r)	
-					case Number:
-						var r = ic.Tmp("read")
-						ic.Assembly("RELAY ", name)
-						ic.Assembly("PUSH ", argument)
-						ic.Assembly("IN")
-						ic.Assembly("GRAB ", r)
-						ic.ExpressionType = Text
-						ic.Scan(')')
-						return ic.Shunt(r)
-					default:
-						ic.RaiseError("Cannot call a pipe with a ", ic.ExpressionType.Name, " argument in an expression!")
-				}
-
-			}
-		
-			if ic.ExpressionType != InFunction {
-				ic.RaiseError("Cannot call "+name+", not a function! ("+ic.ExpressionType.Name+")")
-			}
-			var r = ic.ScanFunctionCall(name)
-			ic.Scan(')')
-			
-			return ic.Shunt(r)
 			
 		case "[":
-			var list bool
-			var ListType Type
-			
-			
-			if ic.ExpressionType.Push != "SHARE" {
-			
-				
-				//Index table type.
-				if ic.ExpressionType == Table {
-					return ic.ShuntTable(name)
-				}
-			
-				ic.RaiseError("Cannot index "+name+", not an array! ("+ic.ExpressionType.Name+")")
-			}
-			if ic.ExpressionType.List {
-				list = true
-				ListType = ic.ExpressionType.ListType()
-			}	
-			
-			if ic.ExpressionType.Name == "matrix" {
-			
-				var result Type
-			
-				if ic.ExpressionType.Decimal {
-					result = Decimal
-				} else {
-					result = Number
-				}
-			
-				var x = ic.ScanExpression()
-				ic.Scan(']')
-				ic.Scan('[')
-				var y = ic.ScanExpression()
-				ic.Scan(']')
-				
-				ic.ExpressionType = result
-				
-				return ic.Shunt(ic.IndexMatrix(name, x, y))
+			if ic.ExpressionType != Text {
+				ic.RaiseError("Cannot index type ", ic.ExpressionType)
 			}
 			
-			var result Type
-			
-			if ic.ExpressionType == Text {
-				result = Letter
-			} else if ic.ExpressionType.Decimal {
-				result = Decimal
-			} else {
-				result = Number		
-			}
-			
-			var index = ic.ScanExpression()
+			index := ic.ScanExpression()
 			ic.Scan(']')
 			
-			ic.ExpressionType = result
-			
-			if !list {
-				return ic.Shunt(ic.Index(name, index))
-			} else {
-				var listdex = ic.Tmp("listdex")
-				var index = ic.Index(name, index)
-				ic.Assembly("IF ", index)
-					ic.Assembly("PUSH ", index)
-					ic.Assembly("HEAP")
-				ic.Assembly("ELSE")
-					ic.Assembly("ARRAY ", listdex)
-					ic.Assembly("SHARE ", listdex)
-				ic.Assembly("END")
-				ic.Assembly("GRAB ", listdex)
-				ic.ExpressionType = ListType
-				return ic.Shunt(listdex)
-			}
+			var value = ic.Tmp("value")
+			ic.Assembly("PLACE ", name)
+			ic.Assembly("PUSH ", index)
+			ic.Assembly("GET ", value)
+				
+			ic.ExpressionType = GetType("letter")		
+			return ic.Shunt(value)
+
 		
 		default:
 			

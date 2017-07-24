@@ -63,14 +63,13 @@ func Alias(f string, r Type) Function {
 
 func (ic *Compiler) Builtin() {
 	ic.DefinedFunctions["number"] = Method(Number, true, "PUSH 0")
-	ic.DefinedFunctions["set"] = Method(Set, true, "PUSH 1")
-	ic.DefinedFunctions["table"] = Method(Table, true, "PUSH 64\nMAKE\nPUSH 0\nHEAP\n")
 	ic.DefinedFunctions["array"] = Method(Array, true, "PUSH 0\nMAKE")
-	ic.DefinedFunctions["letter"] = Method(Letter, true, "PUSH 0")
 	ic.DefinedFunctions["binary"] = Method(Number, true, "PUSH 0")
 	ic.DefinedFunctions["binary"] = Method(Number, true, "PUSH 0")
 	
 	ic.DefinedFunctions["random"] = Method(Number, true, "PUSH 0")
+	
+	ic.DefinedFunctions["delete_m_text"] = Method(Text, true, "DELETE")
 	
 	ic.DefinedFunctions["load"] = Method(Text, true, "PUSH 0")
 	ic.DefinedFunctions["text"] = Method(Number, false, `
@@ -80,7 +79,7 @@ FUNCTION text
 RETURN
 `)
 	
-	ic.DefinedFunctions["random_m_decimal"] = Alias("random_m_number", Decimal)
+	//ic.DefinedFunctions["random_m_decimal"] = Alias("random_m_number", Decimal)
 
 	ic.DefinedFunctions["copy"] = Method(Undefined, true, "")
 	
@@ -88,22 +87,18 @@ RETURN
 	ic.DefinedFunctions["collect_m_text"] = BlankMethod(Number)
 	ic.DefinedFunctions["number_m_letter"] = BlankMethod(Number)
 	ic.DefinedFunctions["number_m_set"] = BlankMethod(Number)
-	ic.DefinedFunctions["letter_m_number"] = BlankMethod(Letter)
 	ic.DefinedFunctions["text_m_text"] = BlankMethod(Text)
-	ic.DefinedFunctions["text_m_array"] = BlankMethod(Text)
 	
 	ic.DefinedFunctions["load"] = Method(Undefined, true, "")
 	ic.DefinedFunctions["sort"] = Method(Undefined, true, "")
 	ic.DefinedFunctions["open"] = Method(Undefined, true, "")
 	ic.DefinedFunctions["trim"] = Method(Undefined, true, "")
 	
-	ic.DefinedFunctions["open_m_text"] = Method(Pipe, true, "OPEN")
 	ic.DefinedFunctions["execute"] = InlineFunction([]Type{Text}, "EXECUTE", nil)
 	ic.DefinedFunctions["delete"] = InlineFunction([]Type{Text}, "DELETE", nil)
 	ic.DefinedFunctions["rename"] = InlineFunction([]Type{Text, Text}, "MOVE", nil)
 	
 	ic.DefinedFunctions["read"] = Method(Text, true, "PUSH 0\nSTDIN")
-	ic.DefinedFunctions["read_m_pipe"] = InlineFunction(nil, "PUSH 0\nIN", []Type{Text})
 	
 	ic.DefinedFunctions["link"] = InlineFunction([]Type{Text, Number}, "LINK", nil)
 	ic.DefinedFunctions["connect"] = InlineFunction([]Type{Text}, "CONNECT", []Type{Number})
@@ -125,7 +120,7 @@ RETURN
 	ic.DefinedFunctions["output_m_pipe"] = InlineFunction([]Type{Text}, "OUT", nil)
 	
 	ic.DefinedFunctions["len"] = Method(Undefined, true, "")
-	ic.DefinedFunctions["len_m_array"] = InlineFunction([]Type{Array}, "LEN", nil)
+	ic.DefinedFunctions["len_m_list"] = InlineFunction([]Type{Array}, "LEN", nil)
 	ic.DefinedFunctions["len_m_text"] = InlineFunction([]Type{Text}, "LEN", nil)
 	ic.DefinedFunctions["len_m_number"] = Method(Array, true, "MAKE")
 	ic.DefinedFunctions["array_m_number"] = Method(Array, true, "MAKE")
@@ -189,7 +184,7 @@ FUNCTION open_m_letter
 RETURN
 `}
 	
-	ic.DefinedFunctions["read_m_letter"] = Function{Exists:true, Args:[]Type{Letter}, Returns:[]Type{Text}, Data: `
+	ic.DefinedFunctions["read_m_letter"] = Function{Exists:true, Returns:[]Type{Text}, Data: `
 FUNCTION read_m_letter
 	PULL delim
 	MUL delim delim -1
@@ -198,7 +193,7 @@ FUNCTION read_m_letter
 RETURN
 `}
 
-ic.DefinedFunctions["reada_m_pipe"] = Function{Exists:true, Args:[]Type{Letter}, Returns:[]Type{Text}, Data:`
+ic.DefinedFunctions["reada_m_pipe"] = Function{Exists:true, Returns:[]Type{Text}, Data:`
 FUNCTION reada_m_pipe
 	PULL delim
 	MUL delim delim -1
@@ -207,16 +202,8 @@ FUNCTION reada_m_pipe
 RETURN
 `}
 
-
-ic.DefinedFunctions["close"] = Function{Exists:true, Args:[]Type{Pipe}, Data: `
-FUNCTION close
-	TAKE file
-	CLOSE file
-RETURN
-`}
-
-ic.DefinedFunctions["text_m_Something"] = Function{Exists:true, Returns:[]Type{Text}, Data: `
-FUNCTION text_m_Something
+ic.DefinedFunctions["text_m_something"] = Function{Exists:true, Returns:[]Type{Text}, Data: `
+FUNCTION text_m_something
 	GRAB something
 	PUSH #something
 	PUSH 3
@@ -224,10 +211,6 @@ FUNCTION text_m_Something
 	SLICE
 RETURN
 `}
-
-	
-	
-	ic.DefinedFunctions["number_m_array"] = Alias("number_m_text", Text)
 	
 	ic.DefinedFunctions["i_base_string"] = Function{Exists:true, Data: `
 FUNCTION i_base_string
@@ -365,33 +348,8 @@ FUNCTION i_base_number
 	SHARE txt
 RETURN
 `}
-	ic.DefinedFunctions["copy_m_array"] = Function{Exists:true, Args:[]Type{Array}, Returns:[]Type{Array}, Data: `
-#Compiled with IC.
-FUNCTION copy_m_array
-	GRAB array
-	ARRAY c
-	
-	VAR i
-	LOOP
-		VAR i+shunt+1
-		SGE i+shunt+1 i #array
-		IF i+shunt+1
-			SHARE c
-			RETURN
-		END
-		PLACE array 
-			PUSH i 
-			GET i+shunt+3
-		VAR v
-		ADD v 0 i+shunt+3
-		PLACE c
-			PUT v
-		ADD i i 1
-	REPEAT
-RETURN
-`}
 
-	ic.DefinedFunctions["copy_m_text"] = Alias("copy_m_array", Text)
+	ic.DefinedFunctions["copy_m_text"] = Alias("copy_m_numberlist", Text)
 	
 	ic.DefinedFunctions["text_m_numbers"] = SimpleMethod(Text, `
 FUNCTION text_m_number
@@ -458,7 +416,7 @@ RETURN
 	
 	//ic.DefinedFunctions["text_m_letter"] = Alias("text_m_number", Text)
 
-	ic.DefinedFunctions["split_m_text"] = Function{Exists:true, Args:[]Type{Letter, Number}, Returns:[]Type{TextArray}, Data: `
+	/*ic.DefinedFunctions["split_m_text"] = Function{Exists:true, Args:[]Type{GetType("letter"), Number}, Returns:[]Type{Text.MakeList()}, Data: `
 FUNCTION split_m_text
 	PULL amount
 	PULL char
@@ -554,11 +512,11 @@ FUNCTION split_m_text
 	END
 	SHARE result
 RETURN
-	`}
+	`}*/
 	
 	ic.DefinedFunctions["strings.equal"] = Function{Exists:true, Args:[]Type{Text}, Returns:[]Type{Text}, Data: `
 
-FUNCTION collect_m_Something
+FUNCTION collect_m_something
 	GRAB something
 	PUSH 1
 	PLACE something
@@ -718,89 +676,8 @@ FUNCTION strings.equal
 RETURN
 `}
 
-ic.DefinedFunctions["reada_m_text"] = Function{Exists:true, Args:[]Type{Letter}, Returns:[]Type{Text}, Data:`
-FUNCTION reada_m_text
-	GRAB s
-	PULL n
-
-	ARRAY i+string+1
-	SHARE i+string+1
-	GRAB result
-	VAR i
-	ADD i 0 0
-	LOOP
-		VAR i+shunt+2
-		SLT i+shunt+2 i #s
-		IF i+shunt+2
-			ERROR 0
-		ELSE
-			BREAK
-		END
-		PLACE s
-		PUSH i
-		GET i+shunt+4
-		VAR i+shunt+5
-		SEQ i+shunt+5 i+shunt+4 n
-		IF i+shunt+5
-			VAR j
-			ADD j 0 1
-			LOOP
-				VAR i+shunt+6
-				SLT i+shunt+6 j #s
-				IF i+shunt+6
-					ERROR 0
-				ELSE
-					BREAK
-				END
-				VAR i+shunt+8
-				SUB i+shunt+8 j 1
-				VAR i+shunt+9
-				ADD i+shunt+9 j i
-				PLACE s
-				PUSH i+shunt+9
-				GET i+shunt+10
-				PLACE s
-				PUSH i+shunt+8
-				SET i+shunt+10
-				VAR i+shunt+11
-				ADD i+shunt+11 j 1
-				ADD j 0 i+shunt+11
-			REPEAT
-			ADD j 0 0
-			LOOP
-				VAR i+shunt+12
-				SLE i+shunt+12 j i
-				IF i+shunt+12
-					ERROR 0
-				ELSE
-					BREAK
-				END
-				PLACE s
-				POP z
-				MUL z z 0
-				VAR i+shunt+13
-				ADD i+shunt+13 j 1
-				ADD j 0 i+shunt+13
-			REPEAT
-			SHARE result
-			RETURN
-		END
-		PLACE s
-		PUSH i
-		GET i+shunt+14
-		PLACE result
-		PUT i+shunt+14
-		VAR i+shunt+15
-		ADD i+shunt+15 i 1
-		ADD i 0 i+shunt+15
-	REPEAT
-	ERROR 1
-	SHARE result
-RETURN
-`}
-
-ic.DefinedFunctions["sort_m_array"] = Function{Exists:true, Args:[]Type{Array}, Data:`
-FUNCTION sort_m_array
+ic.DefinedFunctions["sort_m_numberlist"] = Function{Exists:true, Args:[]Type{Array}, Data:`
+FUNCTION sort_m_numberlist
 	GRAB a
 	PUSH #a
 	MAKE
@@ -1103,69 +980,6 @@ FUNCTION gui
 	RELAY server
 RETURN
 `}
-	
-	ic.DefinedFunctions["print_m_array"] = Function{Exists:true, Args:[]Type{Array}, Data:`
-FUNCTION print_m_array
-	GRAB a
-	
-	IF 1
-	ARRAY i_delete4
-	VAR i_i2
-	VAR i_backup3
-	LOOP
-		VAR i_in1
-		ADD i_i2 0 i_backup3
-		SGE i_in1 i_i2 #a
-		IF i_in1
-			BREAK
-		END
-		PLACE a
-		PUSH i_i2
-		GET i
-		ADD i_backup3 i_i2 1
-	
-		PUSH i
-		PUSH 10
-		RUN i_base_number
-		GRAB i_result5
-		ARRAY i_string7
-		PUT 32
-		ARRAY i_operator6
-		JOIN i_operator6 i_result5 i_string7
-		SHARE i_operator6
-		STDOUT
-	REPEAT
-	
-		VAR ii_i8
-		VAR ii_backup9
-		LOOP
-			VAR ii_in7
-			ADD ii_i8 0 ii_backup9
-			SGE ii_in7 ii_i8 #i_delete4
-			IF ii_in7
-				BREAK
-			END
-			PLACE i_delete4
-			PUSH ii_i8
-			GET i_v
-			ADD ii_backup9 ii_i8 1
-	
-			VAR ii_operator11
-			SUB ii_operator11 #a 1
-			PLACE a
-			PUSH ii_operator11
-			GET ii_index12
-			PLACE a
-			PUSH i_v
-			SET ii_index12
-			PLACE a
-			POP n
-			ADD n 0 0
-		REPEAT
-							
-	END
-RETURN
-	`}
 
 	ic.DefinedFunctions["edit"] = Function{Exists:true, Args:[]Type{Text, Text}, Data:`
 FUNCTION edit
@@ -1673,251 +1487,6 @@ FUNCTION replace_m_text
 RETURN
 `}
 
-ic.DefinedFunctions["table_set"] = Function{Exists:true, Args:[]Type{Number, Text, Number}, Returns:[]Type{Number}, Data:`
-FUNCTION table_set
-	PULL value
-	GRAB key
-	PULL ref
-	PUSH ref
-	HEAP
-	GRAB t
-	SHARE key
-	PUSH 255
-	RUN i_hash
-	PULL i_operator1
-	
-	PUSH i_operator1
-	PULL hash
-	PLACE t
-	PUSH hash
-	GET i_index2
-	PUSH i_index2
-	PULL entry
-	PUSH 0
-	PULL tooheavy
-	VAR i_operator3
-	SUB i_operator3 0 1
-	PUSH i_operator3
-	PULL negativeone
-	LOOP
-		PLACE t
-		PUSH 0
-		GET i_index4
-		PUSH i_index4
-		PULL firstindex
-		IF firstindex
-			PUSH firstindex
-			HEAP
-			GRAB bucket
-			PLACE bucket
-			PUSH 1
-			GET i_index5
-			VAR i_operator6
-			ADD i_operator6 i_index5 1
-			PLACE bucket
-			PUSH 1
-			SET i_operator6
-			PLACE bucket
-			PUSH 1
-			GET i_index7
-			VAR i_operator10
-			DIV i_operator10 #t 4
-			VAR i_operator9
-			SUB i_operator9 #t i_operator10
-			VAR i_operator8
-			SGT i_operator8 i_index7 i_operator9
-			ADD tooheavy 0 i_operator8
-			BREAK
-		ELSE
-			ARRAY a
-			PUT negativeone
-			PUT 0
-			SHARE a
-			PUSH 0
-			HEAP
-			PULL pointer
-			PLACE t
-			PUSH 0
-			SET pointer
-		END
-	REPEAT
-	IF entry
-		PUSH entry
-		HEAP
-		GRAB bucket
-		PLACE bucket
-		PUT hash
-		PLACE bucket
-		PUT value
-	ELSE
-		ARRAY a
-		PUT hash
-		PUT value
-		SHARE a
-		PUSH 0
-		HEAP
-		PULL pointer
-		PLACE t
-		PUSH hash
-		SET pointer
-	END
-	IF tooheavy
-		VAR i_operator13
-		MUL i_operator13 #t 2
-		VAR i_operator14
-		SUB i_operator14 i_operator13 1
-		PUSH i_operator14
-		PULL newlength
-		PUSH newlength
-		MAKE
-		PUSH 0
-		HEAP
-		PULL newref
-		
-		IF 1
-		ARRAY i_delete18
-		VAR i_i16
-		VAR i_backup17
-		LOOP
-			VAR i_in15
-			ADD i_i16 0 i_backup17
-			SGE i_in15 i_i16 #t
-			IF i_in15
-				BREAK
-			END
-			PLACE t
-			PUSH i_i16
-			GET anentry
-			ADD i_backup17 i_i16 1
-		
-			IF anentry
-				PUSH anentry
-				HEAP
-				GRAB bucket
-				PUSH 0
-				PULL i
-				LOOP
-					PUSH newref
-					ARRAY i_array19
-					PLACE bucket
-					PUSH i
-					GET i_index20
-					PLACE i_array19
-					PUT i_index20
-					SHARE i_array19
-					
-					GRAB i_result21
-					SHARE i_result21
-					VAR i_operator22
-					ADD i_operator22 i 1
-					PLACE bucket
-					PUSH i_operator22
-					GET i_index23
-					PUSH i_index23
-					RUN table_set
-					PULL i_result24
-					ADD i i 2
-					VAR i_operator26
-					SGT i_operator26 i #bucket
-					IF i_operator26
-						BREAK
-					END
-				REPEAT
-			END
-		REPEAT
-		
-			VAR ii_i8
-			VAR ii_backup9
-			LOOP
-				VAR ii_in7
-				ADD ii_i8 0 ii_backup9
-				SGE ii_in7 ii_i8 #i_delete18
-				IF ii_in7
-					BREAK
-				END
-				PLACE i_delete18
-				PUSH ii_i8
-				GET i_v
-				ADD ii_backup9 ii_i8 1
-		
-				VAR ii_operator11
-				SUB ii_operator11 #t 1
-				PLACE t
-				PUSH ii_operator11
-				GET ii_index12
-				PLACE t
-				PUSH i_v
-				SET ii_index12
-				PLACE t
-				POP n
-				ADD n 0 0
-			REPEAT
-								
-		END
-		PUSH newref
-		RETURN
-	END
-	PUSH ref
-RETURN
-`}
-
-ic.DefinedFunctions["table_get"] = Function{Exists:true, Args:[]Type{Number, Text}, Returns:[]Type{Number}, Data:`
-FUNCTION table_get
-	GRAB key
-	PULL ref
-	PUSH ref
-	HEAP
-	GRAB t
-	SHARE key
-	PUSH 255
-	RUN i_hash
-	PULL i_operator27
-	
-	PUSH i_operator27
-	PULL hash
-	PLACE t
-	PUSH hash
-	GET i_index28
-	PUSH i_index28
-	PULL entry
-	IF entry
-		PUSH entry
-		HEAP
-		GRAB bucket
-		PUSH 0
-		PULL i
-		LOOP
-			PLACE bucket
-			PUSH i
-			GET i_index29
-			VAR i_operator30
-			SEQ i_operator30 i_index29 hash
-			IF i_operator30
-				VAR i_operator31
-				ADD i_operator31 i 1
-				PLACE bucket
-				PUSH i_operator31
-				GET i_index32
-				PUSH i_index32
-				RETURN
-			END
-			ADD i i 2
-			VAR i_operator34
-			SGT i_operator34 i #bucket
-			IF i_operator34
-				ADD ERROR 0 404
-				PUSH 0
-				RETURN
-			END
-		REPEAT
-	ELSE
-		ADD ERROR 0 404
-		PUSH 0
-		RETURN
-	END
-RETURN
-`}
-
 //TODO fix this function, it needs to ignore the distinction between upper and lowercase letters.
 ic.DefinedFunctions["strings.compare"] = Function{Exists:true, Args:[]Type{Text, Text}, Returns:[]Type{Number}, Data:`
 FUNCTION strings.compare
@@ -2014,7 +1583,7 @@ FUNCTION strings.compare
 RETURN
 `}
 
-ic.DefinedFunctions["sort_m_textarray"] = Function{Exists:true, List:true, Args:[]Type{TextArray}, Data:`
+/*ic.DefinedFunctions["sort_m_textarray"] = Function{Exists:true, List:true, Args:[]Type{Text.MakeList()}, Data:`
 FUNCTION sort_m_textarray
 	GRAB a
 	PUSH #a
@@ -2309,6 +1878,6 @@ FUNCTION sort_m_textarray
 		MUL k k 2
 	REPEAT
 RETURN
-`}
+`}*/
 
 }

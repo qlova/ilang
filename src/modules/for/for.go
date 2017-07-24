@@ -1,14 +1,81 @@
-package ilang
+package f
 
-func (ic *Compiler) ScanForLoop() {
+import "fmt"
+import "github.com/qlova/ilang/src"
+import "github.com/qlova/ilang/src/types/list"
+
+var ForLoop = ilang.NewFlag()
+var Delete = ilang.NewFlag()
+
+func init() {
+	ilang.RegisterToken([]string{"for"}, ScanFor)
+	ilang.RegisterListener(ForLoop, EndForLoop)
+	ilang.RegisterFunction("delete", ilang.Function{
+		Inline: true,
+		Assemble: func(ic *ilang.Compiler) string {
+			if !ic.GetFlag(ForLoop) {
+				ic.RaiseError("delete with zero arguments must be called from within a for loop!")
+			}
+			
+			//Delete things in a for loop.
+			return fmt.Sprint(	"PLACE ", ic.GetVariable("i_for_delete").Name, "\n",
+								"PUT ", ic.GetVariable("i_for_id").Name)
+		},	
+	})
+}
+
+func EndForLoop(ic *ilang.Compiler) {
+	if ic.LastToken != "end" {
+		ic.RaiseError("For Loops must end with a 'end' token, found '", ic.LastToken, "'")
+	}
+	ic.Assembly("REPEAT")
 	
-	var name = ic.Scan(Name)
+	if ic.GetScopedFlag(Delete) {
+		var array = ic.GetVariable("i_for_array").Name
+		var del = ic.GetVariable("i_for_delete").Name
+		
+		ic.Assembly(`
+	VAR ii_i8
+	VAR ii_backup9
+	LOOP
+		VAR ii_in7
+		ADD ii_i8 0 ii_backup9
+		SGE ii_in7 ii_i8 #%v
+		IF ii_in7
+			BREAK
+		END
+		PLACE %v
+		PUSH ii_i8
+		GET i_v
+		ADD ii_backup9 ii_i8 1
+
+		VAR ii_operator11
+		SUB ii_operator11 #%v 1
+		PLACE %v
+		PUSH ii_operator11
+		GET ii_index12
+		PLACE %v
+		PUSH i_v
+		SET ii_index12
+		PLACE %v
+		POP n
+		ADD n 0 0
+	REPEAT
+				`, del, del, array, array, array, array)
+		ic.LoseScope()
+	}
+	ic.Assembly("END")
+}
+
+func ScanFor(ic *ilang.Compiler) {
+	
+	var name = ic.Scan(ilang.Name)
 	
 	var name2 string
 	
 	if ic.Peek() == "," {
 		ic.Scan(',')
-		name2 = ic.Scan(Name)
+		name2 = ic.Scan(ilang.Name)
 	}
 
 	var OverList = false
@@ -70,7 +137,7 @@ func (ic *Compiler) ScanForLoop() {
 				)
 				ic.GainScope()
 				if name != "each" { 
-					ic.SetVariable(name, Number)
+					ic.SetVariable(name, ilang.Number)
 				}
 				ic.SetFlag(ForLoop)
 				return
@@ -81,8 +148,7 @@ func (ic *Compiler) ScanForLoop() {
 		case "in":
 			var array = ic.ScanExpression()
 			
-			if ic.ExpressionType == List {
-				//ic.RaiseError("Cannot loop over an empty list!")
+			if ic.ExpressionType == list.Type {
 				//We can ignore this loop.
 				for {
 					var token = ic.Scan(0)
@@ -112,7 +178,7 @@ func (ic *Compiler) ScanForLoop() {
 			}
 			
 			vo = v
-			if ic.ExpressionType.List {
+			if ic.ExpressionType.Name == list.Type.Name && ic.ExpressionType.SubType.Push == "SHARE" {
 				v += "_address"
 			}
 			
@@ -152,46 +218,42 @@ LOOP
 	GET %v
 	ADD %v %v 1
 `, del, i,backup, condition, i, backup,  condition, i, array, condition, array, i, v, backup, i)
-		if ic.ExpressionType == Array || ic.ExpressionType == Text {
+		if ic.ExpressionType == ilang.Array || ic.ExpressionType == ilang.Text {
 			//ic.Assembly("ADD %v %v %v", name, 0, i)
 		}
 	}
 
-			if ic.ExpressionType.List {
+			if ic.ExpressionType.Name == list.Type.Name && ic.ExpressionType.SubType.Push == "SHARE" {
 				ic.Assembly("PUSH ", v)
 				ic.Assembly("HEAP")
 				ic.Assembly("GRAB ", vo)
 			}
 			
 			ic.GainScope()
-			ic.SetVariable(i, Number)
+			ic.SetFlag(Delete)
+			ic.SetVariable("i_for_delete", ilang.Type{Name:del})
+			ic.SetVariable("i_for_id", ilang.Type{Name:i})
+			ic.SetVariable("i_for_array", ilang.Type{Name:array})
+			
+			ic.GainScope()
+			ic.SetVariable(i, ilang.Number)
 			
 			if !OverList {
-			if ic.ExpressionType.List {
-				list := ic.ExpressionType
-				if list.Push == "SHARE" && list.Name != "text" {
-					list.User = true
-				}
-				list.List = false
-				ic.SetVariable(vo, list)
-				ic.SetVariable(vo+".", Protected)
-			} else if ic.ExpressionType == Text {
-				ic.SetVariable(vo, Letter)
-			} else if ic.ExpressionType == Array {
-				ic.SetVariable(vo, Number)
-			} else if ic.ExpressionType.Decimal {
-				ic.SetVariable(vo, Decimal)
+			
+			
+			if ic.ExpressionType.Name == list.Type.Name  {
+				ic.SetVariable(vo, *ic.ExpressionType.SubType)
+				ic.SetVariable(vo+".", ilang.Protected)
+				
+				
+			} else if ic.ExpressionType == ilang.Text {
+				ic.SetVariable(vo, ilang.GetType("letter"))
 			} else {
 				ic.RaiseError("Cannot find values inside ", ic.ExpressionType)
 			}
 			}
-			ic.SetVariable("i_for_delete", Type{Name:del})
-			ic.SetVariable("i_for_id", Type{Name:i})
-			ic.SetVariable("i_for_array", Type{Name:array})
 			
 			ic.SetFlag(ForLoop)
-			ic.SetFlag(Delete)
 			return
 	}
-	
 }

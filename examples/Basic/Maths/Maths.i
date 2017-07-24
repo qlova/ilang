@@ -11,5 +11,7 @@ software {
 	
 	var c = [a*e, 32, a+b, 32, 98]
 	
-	print(c)
+	for value in c
+		write(value, " ")
+	end
 }

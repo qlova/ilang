@@ -26,7 +26,7 @@ method drive(SportsCar) {
 }
 
 software {
-    var car = new SportsCar()
+    var car = new(SportsCar)
     drive(car) //--> Should output "Vroom vroom! My top speed is: 200"
     stop(car)
     drive(car)

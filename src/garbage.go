@@ -1,5 +1,38 @@
 package ilang
 
+import "strings"
+
+func (ic *Compiler) CollectGarbage() {
+	//Erm garbage collection???
+	for name, variable := range ic.Scope[len(ic.Scope)-1] {
+		if strings.Contains(name, "_") {
+			var ok = false
+			if ic.LastDefinedType.Detail != nil {
+				_, ok = ic.LastDefinedType.Detail.Table[strings.Split(name, "_")[0]]
+			}
+			if variable == Unused && !(ic.GetFlag(InMethod) && ok ) {
+				ic.RaiseError("unused variable! ", strings.Split(name, "_")[0])
+			} 
+		}
+	
+		if ic.Scope[len(ic.Scope)-1][name+"."] != Protected { //Protected variables
+			if ic.GetFlag(InMethod) && name == ic.LastDefinedType.Name {
+				continue
+			}
+			
+			//Possible memory leak, TODO check up on this.
+			if _, ok := ic.DefinedTypes[name]; ic.GetFlag(InMethod) && ok {
+				continue
+			}
+			
+			if variable.IsUser() != Undefined && !variable.Empty() {
+				ic.Assembly("SHARE ", name)
+				ic.Assembly(ic.RunFunction("collect_m_"+variable.Name))
+			}
+		}
+	}
+}
+
 func (ic *Compiler) Collect(t Type) {
 	if t.IsUser() == Undefined || t.Empty() {
 		return

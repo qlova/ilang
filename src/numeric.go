@@ -25,25 +25,15 @@ func (ic *Compiler) ScanNumericStatement() {
 			if ic.ExpressionType != numeric {
 				ic.RaiseError("Cannot add %s to %s", ic.ExpressionType, numeric)
 			}
-			
-			//Something to do with methods.
-			if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
-				ic.SetUserType(ic.LastDefinedType.Name, name, value)	
-			} else {	
-				ic.Assembly("ADD %v %v %v", name, 0, value)
-			}
+				
+			ic.Assembly("ADD %v %v %v", name, 0, value)
 		default:
 			ic.ExpressionType = numeric
 			ic.NextToken = token
 			ic.Shunt(name)
 			if ic.ExpressionType != Undefined {
-				ic.RaiseError("blank expression!")
+				ic.RaiseError("blank expression! hmm?")
 			}
 			ic.ExpressionType = numeric
-			
-			//Something to do with methods.
-			if _, ok := ic.LastDefinedType.Detail.Table[name]; ic.GetFlag(InMethod) && ok {
-				ic.SetUserType(ic.LastDefinedType.Name, name, name)
-			}
 	}
 }
