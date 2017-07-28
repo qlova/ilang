@@ -20,6 +20,7 @@ func ScanSymbol(ic *ilang.Compiler) ilang.Type {
 
 func ScanExpression(ic *ilang.Compiler) string {
 	var token = ic.LastToken
+	
 	//Decimal numbers.
 	if strings.Contains(token, ".") {
 		parts := strings.Split(token, ".")
@@ -55,6 +56,6 @@ func init() {
 	ilang.NewOperator(Type, "*", Type, "VAR %c\nMUL %c %a %b\nDIV %c %c 1000000", true)
 	
 	ilang.RegisterFunction("decimal", ilang.Method(Type, true, "PUSH 0"))
-	
+	ilang.RegisterExpression(ScanExpression)
 }
 
