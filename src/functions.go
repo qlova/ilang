@@ -87,73 +87,28 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 		}
 	
 		ic.Assembly("SHARE ", id)
+		
 	} else if len(f.Args) > 0 {
-	
-		var defaultarguments bool
 		
 		for i := range f.Args {
-			if defaultarguments {
-				if f.Args[i] == Number {
-					ic.Assembly("PUSH 0")
-				} else {
-					ic.RaiseError("Not enough arguments!", " Expected ", len(f.Args), " but got ", i+1)
-				}
-				continue
-			}
 			arg := ic.ScanExpression()
 			
 			
 			if f.Args[i] != ic.ExpressionType {
-				
-				//Hacky varidic lists!
-				if i == len(f.Args)-1 && *f.Args[i].SubType == ic.ExpressionType {
-					var tmp = ic.Tmp("varaidic")
-					ic.Assembly("ARRAY ", tmp)
-					ic.Assembly("PUT ", ic.GetPointerTo(arg))
-					
-					for {
-						var token = ic.Scan(0)
-						if token != "," {
-							if token == ")" {
-								ic.NextToken = ")"
-								break
-							}
-							ic.RaiseError("Expecting , or )")
-						}
-						var value = ic.ScanExpression()
-						
-						if *f.Args[i].SubType != ic.ExpressionType {
-							ic.RaiseError("Type mismatch! Variadic arguments of '"+name+"()' expect ",
-								f.Args[i].SubType.Name,", got ",ic.ExpressionType.Name) 
-						}
-						
-						ic.Assembly("PLACE ", tmp)
-						ic.Assembly("PUT ", ic.GetPointerTo(value))
-					}
-					
-					ic.Assembly("SHARE %v", tmp)
-					
-					break
-					
-				}
-			
 				ic.RaiseError("Type mismatch! Argument ",i+1," of '"+name+"()' expects ",
 					f.Args[i].Name,", got ",ic.ExpressionType.Name) 
 			}
 			
 			ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
 			
-			token := ic.Scan(0)
-			if token != "," && token != ")" {
-				ic.RaiseError()
-			}
-			if token == ")" {
-				if i+1 != len(f.Args) {
-					defaultarguments = true
+			if i < len(f.Args)-1 {
+				token := ic.Scan(0)
+				if token != "," {
+					ic.RaiseError()
 				}
-				ic.NextToken = ")"
 			}
 		}
+		
 	} else {
 		
 		//Calls methods such as:
