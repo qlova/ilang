@@ -17,6 +17,7 @@ func FuncExpression(ic *ilang.Compiler) string {
 	if _, ok := ic.DefinedFunctions[token]; ok {
 		if ic.Peek() == "(" {
 			ic.ExpressionType = Flag
+			
 			return token
 		}
 	}
@@ -25,12 +26,12 @@ func FuncExpression(ic *ilang.Compiler) string {
 
 func ShuntFunctionCall(ic *ilang.Compiler, name string) string {
 	if ic.ExpressionType != Flag {
-		println(ic.ExpressionType.Name)
 		return ""
 	}
 	
 	var r = ic.ScanFunctionCall(name)
 	ic.Scan(')')
+	
 	return ic.Shunt(r)
 }
 
@@ -84,7 +85,7 @@ func ScanReturn(ic *ilang.Compiler) {
 	}
 	if len(ic.Scope) > 2 {
 		//TODO garbage collection.
-		//ic.CollectGarbage()
+		ic.CollectGarbage()
 		ic.Assembly("RETURN")
 	}
 }
