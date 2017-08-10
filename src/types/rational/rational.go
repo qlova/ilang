@@ -43,10 +43,16 @@ func init() {
 	ilang.NewOperator(Type, "-", Type, "SHARE %a\nSHARE %b\nRUN rational_minus_rational\nGRAB %c", false)
 	ilang.NewOperator(Type, "*", Type, "SHARE %a\nSHARE %b\nRUN rational_times_rational\nGRAB %c", false)
 	ilang.NewOperator(Type, "/", Type, "SHARE %a\nSHARE %b\nRUN rational_div_rational\nGRAB %c", false)
+	
+	ilang.NewOperator(Type, "+=", Type, "SHARE %a\nSHARE %b\nRUN rational_plus_rational\nGRAB %c\nPLACE %c\nRENAME %a", false, ilang.Undefined)
+	ilang.NewOperator(Type, "-=", Type, "SHARE %a\nSHARE %b\nRUN rational_minus_rational\nGRAB %c\nPLACE %c\nRENAME %a", false, ilang.Undefined)
+	ilang.NewOperator(Type, "*=", Type, "SHARE %a\nSHARE %b\nRUN rational_times_rational\nGRAB %c\nPLACE %c\nRENAME %a", false, ilang.Undefined)
+	ilang.NewOperator(Type, "/=", Type, "SHARE %a\nSHARE %b\nRUN rational_div_rational\nGRAB %c\nPLACE %c\nRENAME %a", false, ilang.Undefined)
+	
 	ilang.NewOperator(ilang.Number, "\\", ilang.Number, "ARRAY %c\nPUT %a\nPUT %b", false, Type)
 	
 	ilang.RegisterFunction("text_m_rational", ilang.Function{Exists:true, Returns:[]ilang.Type{ilang.Text}})
-	ilang.RegisterFunction("rational", ilang.Function{Exists:true, Args:[]ilang.Type{}, Data:`
+	ilang.RegisterFunction("rational", ilang.Function{Exists:true, Returns:[]ilang.Type{Type}, Args:[]ilang.Type{}, Data:`
 FUNCTION rational
 	PUSH 2
 	MAKE

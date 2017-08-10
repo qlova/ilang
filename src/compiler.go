@@ -394,6 +394,9 @@ func (ic *Compiler) Compile() {
 	for {	
 		token := ic.Scan(0)
 		if ic.Stop {
+			//Output the rest of the buffered assembly to the file.
+			ic.Assembly("\n")
+			
 			break
 		}
 		
