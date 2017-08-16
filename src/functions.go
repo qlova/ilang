@@ -94,7 +94,7 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 			arg := ic.ScanExpression()
 			
 			
-			if f.Args[i] != ic.ExpressionType {
+			if ! f.Args[i].Equals(ic.ExpressionType) {
 				ic.RaiseError("Type mismatch! Argument ",i+1," of '"+name+"()' expects ",
 					f.Args[i].Name,", got ",ic.ExpressionType.Name) 
 			}

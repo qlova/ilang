@@ -20,6 +20,19 @@ type Type struct {
 	SubType *Type
 }
 
+func (t Type) Equals(b Type) bool {
+	if t.Name != b.Name {
+		return false
+	}
+	if t.SubType != nil && b.SubType != nil {
+		return t.SubType.Equals(*b.SubType)
+	}
+	if t.SubType != nil || b.SubType != nil {
+		return false
+	}
+	return true
+}
+
 func (t Type) DefaultValue() string {
 	switch t.Push {
 		case "PUSH":
