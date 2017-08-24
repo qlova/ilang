@@ -61,6 +61,10 @@ func (ic *Compiler) expression() string {
 		ic.ExpressionType = t
 		ic.SetVariable(token+"_use", Used)
 		
+		if ic.Peek() == "." {
+			return ic.Shunt(token)
+		}
+		
 		return token
 	}
 	
