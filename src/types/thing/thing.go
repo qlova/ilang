@@ -13,7 +13,17 @@ func init() {
 }
 
 func ScanSymbol(ic *ilang.Compiler) ilang.Type {
-	ic.Scan('}')
+	var name = ic.Scan(0)
+	if name == "}" {
+		return Type
+	} else {
+		ic.Scan('}')
+		if t, ok := ic.DefinedTypes[name]; ok {
+			return t
+		} else {
+			ic.RaiseError(name, " is not a known usertype name!")
+		}
+	}
 	return Type
 }
 
