@@ -7,15 +7,15 @@ method text(Item) "" {
 }
 
 type Bank {
-	Items()
+	..{Item} items
 }
 
 method clear(Bank) {
-	items = Items()
+	items = []
 }
 
 software {
-	var list = Items()
+	var list = []
 	list += Item{22}
 	
 	var b = Bank()
