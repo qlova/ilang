@@ -11,7 +11,7 @@ func (ic *Compiler) Shunt(name string) string {
 		for _, f := range list {
 			result := f(ic, name)
 			if result != "" {
-				return result
+				return ic.Shunt(result)
 			}
 		}
 	}
