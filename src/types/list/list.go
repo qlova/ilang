@@ -22,7 +22,8 @@ func ScanStatement(ic *ilang.Compiler) {
 			value := ic.ScanExpression()
 			
 			if t.SubType == nil {
-				t.SubType = &ic.ExpressionType
+				t.SubType = new(ilang.Type)
+				*t.SubType = ic.ExpressionType
 				ic.UpdateVariable(name, t)
 			}
 			
