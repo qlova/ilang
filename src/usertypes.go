@@ -282,7 +282,7 @@ func (ic *Compiler) SetUserType(name, element, value string) {
 			
 		}
 	
-		if ic.ExpressionType != t.Elements[index] {
+		if !ic.ExpressionType.Equals(t.Elements[index]) {
 			ic.RaiseError("Type mismatch, cannot assign '",ic.ExpressionType.Name,"', to a element of type '",t.Elements[index].Name,"'")		
 		}
 
