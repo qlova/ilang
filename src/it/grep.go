@@ -9,6 +9,7 @@ import (
 
 var wg sync.WaitGroup
 var mainFile string
+var Game bool
 
 func grep(wg *sync.WaitGroup, path string) {
 	defer wg.Done()
@@ -50,6 +51,7 @@ func grep(wg *sync.WaitGroup, path string) {
 		}
 		if strings.Contains(scanner.Text(), "grate") {
 			mainFile = path
+			Game = true
 			return
 		}
 		if strings.Contains(scanner.Text(), "gui") {

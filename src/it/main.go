@@ -10,6 +10,7 @@ import "path"
 import "context"
 import "bufio"
 import "io/ioutil"
+import "net/http"
 
 func CheckForUpdate(uptodate time.Time) {
 	ctx := context.Background()
@@ -107,8 +108,13 @@ func main() {
 	
 	//Compile.
 	
+	programdir, _ := os.Getwd()
+	
 	os.Mkdir(path.Dir(mainFile)+"/.it", 0700)
 	ic(mainFile, path.Dir(mainFile)+"/.it")
+	os.Chdir(programdir)
+	
+	
 	
 	//Other languages.
 	if len(os.Args) > 2 {
@@ -142,11 +148,50 @@ rand = "0.3"
 				uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
 		}
 		
+		if os.Args[2] == "js" && Game {
+			
+			http.HandleFunc("/", func (w http.ResponseWriter, r *http.Request) {
+				fmt.Fprintf(w, `
+<html>
+	<head>
+	<style>
+		body {
+			margin: 0;
+		}
+	</style>
+	</head>
+	<body>
+		<script src="stack.js"></script>
+		<script src="game.js"></script>
+	</body>
+</html>
+`)
+			})
+			http.HandleFunc("/stack.js", func (w http.ResponseWriter, r *http.Request) {
+				 http.ServeFile(w, r, "./stack.js")
+			})
+			http.HandleFunc("/game.js", func (w http.ResponseWriter, r *http.Request) {
+				 http.ServeFile(w, r, path.Base(mainFile[:len(mainFile)-2]+".js"))
+			})
+			
+			fmt.Println("Go to http://localhost:9090 to play your game!")
+			
+			go func() {
+				err := http.ListenAndServe(":9090", nil) // set listen port
+				if err != nil {
+					fmt.Println("ListenAndServe: ", err)
+				}
+			}()
+			fmt.Println("\nPress 'Enter' to stop...")
+			reader := bufio.NewReader(os.Stdin)
+			reader.ReadString('\n')
+		}
+		
 		
 	} else {
 		os.Chdir(".it")
 		uct("go", path.Base(mainFile[:len(mainFile)-2]+".u"))
-		compile := exec.Command(goc, "build", "-o",  "../"+path.Base(mainFile[:len(mainFile)-2])+ext)
+		compile := exec.Command(goc, "build", "-tags", "example", "-o",  "../"+path.Base(mainFile[:len(mainFile)-2])+ext)
 		compile.Stdout = os.Stdout
 		compile.Stderr = os.Stderr
 		verify(compile.Run())
