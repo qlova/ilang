@@ -3,6 +3,7 @@ package imp
 import "github.com/qlova/ilang/src"
 import "os"
 import "text/scanner"
+import "os/user"
 
 func init() {
 	ilang.RegisterToken([]string{"import"}, ScanImport)
@@ -19,12 +20,24 @@ func ScanImport(ic *ilang.Compiler) {
 	file, err := os.Open(pkg+".i")
 	if err != nil {
 		if file, err = os.Open(pkg+"/"+pkg+".i"); err != nil {
+			
+			//Search through parent folders?
 			dir, _ := os.Getwd()
 			if ic.FileDepth > 0 {
 				ic.FileDepth--
 				os.Chdir(ic.Dirs[len(ic.Dirs)-1])
 				ic.Dirs = ic.Dirs[:len(ic.Dirs)-1]
 				goto retry
+			}
+			
+			//Search in ~/.ilang.
+			if ic.FileDepth == 0 {
+				usr, err := user.Current()
+				if err == nil {
+					os.Chdir(usr.HomeDir+"/.ilang/imports/")
+					ic.Dirs = append(ic.Dirs, usr.HomeDir+"/.ilang/imports/")
+					goto retry
+				}
 			}
 			
 			ic.RaiseError("Cannot import "+pkg+", does not exist!", dir)
