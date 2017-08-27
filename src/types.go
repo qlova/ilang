@@ -23,7 +23,7 @@ type Type struct {
 func (t Type) Equals(b Type) bool {
 
 	if t.Name == "list" {
-		if t.Name == "list" {
+		if b.Name == "list" {
 			if t.SubType == nil || b.SubType == nil {
 				return true
 			}
