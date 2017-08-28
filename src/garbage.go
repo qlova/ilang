@@ -33,6 +33,14 @@ func (ic *Compiler) CollectGarbage() {
 	}
 }
 
+func (t Type) Free(pointer string) string {
+	if t.IsUser() == Undefined || t.Empty() {
+		return ""
+	}
+	
+	return "PUSH "+pointer+"\nHEAP\nRUN collect_m_"+t.Name
+}
+
 func (ic *Compiler) Collect(t Type) {
 	if t.IsUser() == Undefined || t.Empty() {
 		return
