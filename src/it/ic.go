@@ -1,7 +1,7 @@
 package main
 
 import (
-	"path"
+	path "path/filepath"
 	"os"
 	"github.com/qlova/ilang/src"
 	_ "github.com/qlova/ilang/src/modules/all"
