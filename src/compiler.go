@@ -86,6 +86,9 @@ type Compiler struct {
 	//Set variables. (Sets.i)
 	SetItemCount int
 	SetItems map[string]int
+	
+	//Optimisation
+	LastLine string
 }
 
 //Return a string for a variable which will not clash with any other variables.
@@ -116,9 +119,27 @@ func (ic *Compiler) Library(asm ...interface{}) {
 
 //Assembly passed to this function will be output to the file.
 func (ic *Compiler) Assembly(asm ...interface{}) {
-	fmt.Fprintln(ic.Output, ic.asm(asm...))
+	var raw = ic.asm(asm...)
+	ic.optimise(raw)
 }
 
+func (ic *Compiler) optimise(asm string) {
+	var lines = strings.Split(asm, "\n")
+	for _, line := range lines {
+		//line = strings.TrimSpace(line)
+		
+		var a, b = strings.TrimSpace(line), strings.TrimSpace(ic.LastLine)
+		
+		if strings.Contains(a, "_") &&  strings.Contains(b, "_") && len(a) > 4 && len(b) > 4 && a[:4] == "PUSH" && b[:4] == "PULL" && a[4:] == b[4:] {
+			ic.LastLine = "#opt"
+		} else {
+			if ic.LastLine != "#opt" {
+				fmt.Fprintln(ic.Output, ic.LastLine)
+			}
+			ic.LastLine = line	
+		}
+	}
+}
 
 //This function increases the scope of the compiler for example when it reaches an if statement block.
 func (c *Compiler) GainScope() {
