@@ -38,7 +38,9 @@ func (t Type) Free(pointer string) string {
 		return ""
 	}
 	
-	return "PUSH "+pointer+"\nHEAP\nRUN collect_m_"+t.Name
+	return "IF "+pointer+"\nPUSH "+pointer+
+	"\nHEAP\nRUN collect_m_"+t.Name+
+	"\nMUL "+pointer+" -1 "+pointer+"\nPUSH "+pointer+"\nHEAP\nEND"
 }
 
 func (ic *Compiler) Collect(t Type) {
@@ -58,16 +60,24 @@ func (ic *Compiler) Collect(t Type) {
 			var tmp = ic.Tmp("gc")
 			ic.Library("PUSH ", i)
 			ic.Library("GET ", tmp)
+			
 			ic.Library("IF ", tmp)
 			ic.GainScope()
-			if element.IsUser() != Undefined {
-				ic.Library("PUSH ", tmp)
-				ic.Library("HEAP")
-				ic.Library(ic.RunFunction("collect_m_"+element.Name))
-			}
 			ic.Library("MUL %v %v -1", tmp, tmp)
 			ic.Library("PUSH ", tmp)
 			ic.Library("HEAP")
+			ic.Library("MUL %v %v -1", tmp, tmp)
+			if element.IsUser() != Undefined {
+				ic.Library("PUSH ", tmp)
+				ic.Library("HEAP")
+				
+				var member = ic.Tmp("member")
+				ic.Library("GRAB ", member)
+				ic.Library("IF #", member)
+					ic.Library("SHARE ", member)
+					ic.Library(ic.RunFunction("collect_m_"+element.Name))
+				ic.Library("END")
+			}
 			ic.LoseScope()
 			ic.Library("END")
 		}

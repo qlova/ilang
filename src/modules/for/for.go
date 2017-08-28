@@ -51,13 +51,7 @@ func EndForLoop(ic *ilang.Compiler) {
 		PLACE `+array+`
 		PUSH i_index
 		GET i_pointer
-		IF i_pointer
-			`+collect+`
-		
-			MUL i_pointer -1 i_pointer
-			PUSH i_pointer
-			HEAP
-		END
+		`+collect+`
 		
 		PLACE `+array+`		
 		PUSH -1

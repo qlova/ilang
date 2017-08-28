@@ -256,6 +256,7 @@ func (ic *Compiler) ScanType() {
 	}
 	
 	t := NewUserType(name)
+	ic.DefinedTypes[name] = t
 	
 	switch ic.Scan(0) {
 		case "{":

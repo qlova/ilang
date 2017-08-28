@@ -294,7 +294,14 @@ func (ic *Compiler) SetUserType(name, element, value string) {
 			
 			case "SHARE", "RELAY":
 				
-				//TODO garbage collect
+				//Garbage collect first.
+				var pointer = ic.Tmp("pointer")
+				ic.Assembly("PLACE ", name)
+				ic.Assembly("PUSH ", index)
+				ic.Assembly("GET ", pointer)
+				ic.ExpressionType = t.Elements[index]
+				ic.Assembly(ic.ExpressionType.Free(pointer))
+				
 				var tmp = ic.Tmp("index")
 				ic.Assembly(t.Elements[index].Push, " ", value)
 				ic.Assembly("PUSH 0")
