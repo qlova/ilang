@@ -32,6 +32,7 @@ func ScanImport(ic *ilang.Compiler) {
 			
 			//Search in ~/.ilang.
 			if ic.FileDepth == 0 {
+				ic.FileDepth--
 				usr, err := user.Current()
 				if err == nil {
 					os.Chdir(usr.HomeDir+"/.ilang/imports/")
