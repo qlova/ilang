@@ -13,8 +13,13 @@ func ScanStatement(ic *ilang.Compiler) {
 	switch token {
 		case "-":
 			ic.Scan('-')
+			var pointer = ic.Tmp("cut")
 			ic.Assembly("PLACE ", name)
-			ic.Assembly("POP ", ic.Tmp("cut"))
+			ic.Assembly("POP ", pointer)
+			ic.Assembly(t.SubType.Free(pointer))
+			ic.Assembly("MUL %s -1 %s ", pointer,  pointer)
+			ic.Assembly("PUSH ", pointer)
+			ic.Assembly("HEAP")
 			
 		case "+":
 			ic.Scan('=')
@@ -33,6 +38,7 @@ func ScanStatement(ic *ilang.Compiler) {
 			
 			ic.Assembly("PLACE ", name)
 			ic.Assembly("PUT ", ic.GetPointerTo(value))
+			ic.SetVariable(value+".", ilang.Protected)
 		
 			
 		case "[":

@@ -1,18 +1,14 @@
 package main
 
 import "fmt"
-import "github.com/google/go-github/github"
 import "os"
-import "time"
 import "os/exec"
-import "github.com/kardianos/osext"
-import "path"
-import "context"
+import path "path/filepath"
 import "bufio"
 import "io/ioutil"
 import "net/http"
 
-func CheckForUpdate(uptodate time.Time) {
+/*func CheckForUpdate(uptodate time.Time) {
 	ctx := context.Background()
 
 	client := github.NewClient(nil)
@@ -36,7 +32,7 @@ func CheckForUpdate(uptodate time.Time) {
 	update.Start()
 	
 	return
-}
+}*/
 
 func verify(err error) {
 	if err != nil {
@@ -65,32 +61,28 @@ func cargo(mode string) {
 func main() {
 	
 	
-	//Check if we should update IT and I.
-	fpath, err := osext.Executable()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	info, err := os.Stat(fpath)
-	if err != nil {
-		 fmt.Println(err)
-		return
-	}
+	var TargetLanguage string
 	
 	//Make sure everything we need, is available.
 	//Will also download missing components.
+	fmt.Print("Checking System... ")
 	SystemChecks()
-	
-	//If the executable hasn't been updated in an hour, check for an update.
-	//(This will be scaled back before public use TODO)
-	if time.Now().Sub(info.ModTime()) > time.Hour*24 {
-		//CheckForUpdate(info.ModTime())
-	}
-	
+	fmt.Println("ok!")
 	
 	//Command.
 	if len(os.Args) > 1 {
 		os.Chdir(os.Args[1])
+		
+		var ext string
+		//Set TargetLanguage to be the extension of the directory.
+		if os.Args[1][len(os.Args[1])-1] == '/' {
+			ext = path.Ext(os.Args[1][:len(os.Args[1])-1])
+		} else {
+			ext = path.Ext(os.Args[1])
+		}
+		if ext != "" && len(ext) > 1 {
+			TargetLanguage = ext[1:]
+		}
 	}
 	
 	files, _ := ioutil.ReadDir("./")
@@ -100,11 +92,15 @@ func main() {
 				go grep(&wg, f.Name())
 			}
     }
+    
+    fmt.Print("Finding a file... ")
+    
 	wg.Wait()
 	if mainFile == "" {
 		fmt.Println("Could not find a 'software' block!")
 		os.Exit(1)
 	}
+	fmt.Println("Found!")
 	
 	//Compile.
 	
@@ -114,23 +110,29 @@ func main() {
 	ic(mainFile, path.Dir(mainFile)+"/.it")
 	os.Chdir(programdir)
 	
-	
-	
 	//Other languages.
 	if len(os.Args) > 2 {
 		
+		TargetLanguage = os.Args[2]
 		
+	} else if TargetLanguage == "" {
 		
-		switch os.Args[2] {
-			case "rs": //Rust needs to be handled differently.
-				os.Chdir(".it")
-				uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
-				os.Mkdir("src", 0755)
-				verify(os.Rename(path.Base(mainFile[:len(mainFile)-2]+".rs"), "src/main.rs"))
-				verify(os.Rename("stack.rs","src/stack.rs"))
-				f, err := os.Create("Cargo.toml")
-				verify(err)
-				f.Write([]byte(`[package]
+		TargetLanguage = "go"	
+		
+	}
+	
+	fmt.Print("Transpilling for ", TargetLanguage, "... ")
+		
+	switch TargetLanguage {
+		case "rs": //Rust needs to be handled differently.
+			os.Chdir(".it")
+			uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
+			os.Mkdir("src", 0755)
+			verify(os.Rename(path.Base(mainFile[:len(mainFile)-2]+".rs"), "src/main.rs"))
+			verify(os.Rename("stack.rs","src/stack.rs"))
+			f, err := os.Create("Cargo.toml")
+			verify(err)
+			f.Write([]byte(`[package]
 name = "`+path.Base(mainFile[:len(mainFile)-2])+`"
 version = "0.1.0"
 
@@ -138,59 +140,61 @@ version = "0.1.0"
 num = "0.1"
 rand = "0.3"
 `))
-				f.Close()
-				
-				cargo("build")
-				
-				
-			default:
-				os.Chdir(".it")
-				uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
-		}
-		
-		if os.Args[2] == "js" && Game {
+			f.Close()
 			
-			http.HandleFunc("/", func (w http.ResponseWriter, r *http.Request) {
-				fmt.Fprintf(w, `
+			cargo("build")
+			
+			
+		default:
+			os.Chdir(".it")
+			uct(TargetLanguage, path.Base(mainFile[:len(mainFile)-2]+".u"))
+	}
+	
+	fmt.Println("Done!")
+	
+	if TargetLanguage == "js" && Game {
+		
+		http.HandleFunc("/", func (w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `
 <html>
-	<head>
-	<style>
-		body {
-			margin: 0;
-		}
-	</style>
-	</head>
-	<body>
-		<script src="stack.js"></script>
-		<script src="game.js"></script>
-	</body>
+<head>
+<style>
+	body {
+		margin: 0;
+	}
+</style>
+</head>
+<body>
+	<script src="stack.js"></script>
+	<script src="game.js"></script>
+</body>
 </html>
 `)
-			})
-			http.HandleFunc("/stack.js", func (w http.ResponseWriter, r *http.Request) {
-				 http.ServeFile(w, r, "./stack.js")
-			})
-			http.HandleFunc("/game.js", func (w http.ResponseWriter, r *http.Request) {
-				 http.ServeFile(w, r, path.Base(mainFile[:len(mainFile)-2]+".js"))
-			})
-			
-			fmt.Println("Go to http://localhost:9090 to play your game!")
-			
-			go func() {
-				err := http.ListenAndServe(":9090", nil) // set listen port
-				if err != nil {
-					fmt.Println("ListenAndServe: ", err)
-				}
-			}()
-			fmt.Println("\nPress 'Enter' to stop...")
-			reader := bufio.NewReader(os.Stdin)
-			reader.ReadString('\n')
-		}
+		})
+		http.HandleFunc("/stack.js", func (w http.ResponseWriter, r *http.Request) {
+			 http.ServeFile(w, r, "./stack.js")
+		})
+		http.HandleFunc("/game.js", func (w http.ResponseWriter, r *http.Request) {
+			 http.ServeFile(w, r, path.Base(mainFile[:len(mainFile)-2]+".js"))
+		})
+		http.HandleFunc("/data/", func (w http.ResponseWriter, r *http.Request) {
+			 http.ServeFile(w, r, "../data/pic.jpg")
+		})
 		
+		fmt.Println("Go to http://localhost:9090 to play your game!")
 		
-	} else {
-		os.Chdir(".it")
-		uct("go", path.Base(mainFile[:len(mainFile)-2]+".u"))
+		go func() {
+			err := http.ListenAndServe(":9090", nil) // set listen port
+			if err != nil {
+				fmt.Println("ListenAndServe: ", err)
+			}
+		}()
+		fmt.Println("\nPress 'Enter' to stop...")
+		reader := bufio.NewReader(os.Stdin)
+		reader.ReadString('\n')
+	}
+	
+	if TargetLanguage == "go" {
 		compile := exec.Command(goc, "build", "-tags", "example", "-o",  "../"+path.Base(mainFile[:len(mainFile)-2])+ext)
 		compile.Stdout = os.Stdout
 		compile.Stderr = os.Stderr
@@ -210,3 +214,4 @@ rand = "0.3"
 		reader.ReadString('\n')
 	}
 }
+	

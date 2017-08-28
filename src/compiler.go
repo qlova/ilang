@@ -89,6 +89,7 @@ type Compiler struct {
 	
 	//Optimisation
 	LastLine string
+	ProgramDir string
 }
 
 //Return a string for a variable which will not clash with any other variables.
@@ -228,7 +229,9 @@ func (c *Compiler) Scan(verify rune) string {
 			//var currentfile = c.Scanner.Filename
 			c.Scanner = c.Scanners[len(c.Scanners)-1]
 			c.Scanners = c.Scanners[:len(c.Scanners)-1]
-			
+			if c.Scanner.Filename == "" {
+				os.Chdir(c.ProgramDir)
+			}
 			
 			return c.Scan(verify)
 		} else {
@@ -411,6 +414,8 @@ func (ic *Compiler) Compile() {
 	ic.Assembly(".import ilang")
 	
 	ic.Header = true
+	
+	ic.ProgramDir, _ = os.Getwd()
 	
 	for {	
 		token := ic.Scan(0)

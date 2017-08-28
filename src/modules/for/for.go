@@ -34,34 +34,48 @@ func EndForLoop(ic *ilang.Compiler) {
 		var array = ic.GetVariable("i_for_array").Name
 		var del = ic.GetVariable("i_for_delete").Name
 		
+		var collect = ic.GetVariable(array).SubType.Free("i_pointer")
+		
 		ic.Assembly(`
-	VAR ii_i8
-	VAR ii_backup9
+	VAR i_i
 	LOOP
-		VAR ii_in7
-		ADD ii_i8 0 ii_backup9
-		SGE ii_in7 ii_i8 #%v
-		IF ii_in7
+		IF #`+array+`
+		ELSE
 			BREAK
 		END
-		PLACE %v
-		PUSH ii_i8
-		GET i_v
-		ADD ii_backup9 ii_i8 1
+	
+		PLACE `+del+`
+		PUSH i_i
+		GET i_index
+		
+		PLACE `+array+`
+		PUSH i_index
+		GET i_pointer
+		IF i_pointer
+			`+collect+`
+		
+			MUL i_pointer -1 i_pointer
+			PUSH i_pointer
+			HEAP
+		END
+		
+		PLACE `+array+`		
+		PUSH -1
+		GET i_swapdex
+		
+		PUSH i_index
+		SET i_swapdex
 
-		VAR ii_operator11
-		SUB ii_operator11 #%v 1
-		PLACE %v
-		PUSH ii_operator11
-		GET ii_index12
-		PLACE %v
-		PUSH i_v
-		SET ii_index12
-		PLACE %v
-		POP n
-		ADD n 0 0
+		POP end
+		ADD end 0 0
+		
+		ADD i_i i_i 1
+		SGE i_swapdex i_i #`+del+`
+		IF i_swapdex
+			BREAK
+		END
 	REPEAT
-				`, del, del, array, array, array, array)
+				`)
 		ic.LoseScope()
 	}
 	ic.Assembly("END")

@@ -170,6 +170,12 @@ func (ic *Compiler) TypeExists(name string) bool {
 }
 
 func (ic *Compiler) CallType(name string) string {
+	if name == "text" {
+		var array = ic.Tmp("user")
+		ic.Assembly("ARRAY ", array)
+		return array
+	}
+	
 	if ic.DefinedTypes[name].Empty() {
 		return ""
 	} else {
@@ -223,8 +229,15 @@ func (ic *Compiler) GetPointerTo(name string) string {
 func (ic *Compiler) Dereference(pointer string) string {
 	if ic.ExpressionType.Push == "SHARE" {
 		var value = ic.Tmp("deref")
+		ic.Assembly("IF ", pointer)
 		ic.Assembly("PUSH ", pointer)
 		ic.Assembly("HEAP")
+		ic.Assembly("ELSE ")
+		
+		var tmp = ic.CallType(ic.ExpressionType.Name)
+		ic.Assembly("SHARE ", tmp)
+		
+		ic.Assembly("END")
 		ic.Assembly("GRAB ", value)
 		return value
 	}
