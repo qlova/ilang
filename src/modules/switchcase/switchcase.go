@@ -13,8 +13,8 @@ func init() {
 var Switch = ilang.NewFlag()
 var Default = ilang.NewFlag()
 
-func SwitchEnd(ic *ilang.Compiler) {	
-	for i:=0; i < (ic.GetVariable("flag_nesting").Int+1)-ilang.Undefined.Int; i++ {
+func SwitchEnd(ic *ilang.Compiler) {
+	for i:=0; i < (ic.GetVariable("flag_nesting").Int); i++ {
 		ic.Assembly("END")
 	}
 	ic.Assembly("END")
@@ -32,6 +32,7 @@ func ScanSwitch(ic *ilang.Compiler) {
 	ic.GainScope()
 	
 	ic.SetFlag(ilang.Type{Name: "flag_switch", Push: expression})
+	ic.SetFlag(ilang.Type{Name: "flag_nesting", Int: 0})
 	
 	//Find first case.
 	for {
