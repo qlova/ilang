@@ -86,6 +86,15 @@ func ScanStatement(ic *ilang.Compiler) {
 		}
 	}
 	
+	if f, ok  := ic.DefinedFunctions[index+"_m_"+usertype.GetComplexName()]; ok && len(f.Args) > 0 {
+		var f = index+"_m_"+usertype.GetComplexName()
+		ic.Assembly(usertype.Push," ", name)
+		
+		ic.ScanFunctionCall(f)
+		ic.Scan(')')
+		return
+	}
+	
 	//Figure out the value which needs to be assigned.
 	if token == "=" {
 		value = ic.ScanExpression()
