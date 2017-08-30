@@ -178,7 +178,7 @@ rand = "0.3"
 			 http.ServeFile(w, r, path.Base(mainFile[:len(mainFile)-2]+".js"))
 		})
 		http.HandleFunc("/data/", func (w http.ResponseWriter, r *http.Request) {
-			 http.ServeFile(w, r, "../data/pic.jpg")
+			 http.ServeFile(w, r, ".."+r.URL.Path)
 		})
 		
 		fmt.Println("Go to http://localhost:9090 to play your game!")

@@ -39,6 +39,11 @@ func EndForLoop(ic *ilang.Compiler) {
 		ic.Assembly(`
 	VAR i_i
 	LOOP
+		SGE i_swapdex i_i #`+del+`
+		IF i_swapdex
+			BREAK
+		END
+	
 		IF #`+array+`
 		ELSE
 			BREAK
@@ -64,10 +69,6 @@ func EndForLoop(ic *ilang.Compiler) {
 		ADD end 0 0
 		
 		ADD i_i i_i 1
-		SGE i_swapdex i_i #`+del+`
-		IF i_swapdex
-			BREAK
-		END
 	REPEAT
 				`)
 		ic.LoseScope()
