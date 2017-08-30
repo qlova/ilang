@@ -20,7 +20,7 @@ func init() {
 	ilang.NewOperator(Type, "<=", Type, "VAR %c\nMOD %c %b %a\nDIV %c %c 0", true, ilang.Number)
 	ilang.NewOperator(Type, ">", Type, "VAR %c\nMOD %c %b %a\n", true, ilang.Number)
 	ilang.NewOperator(Type, ">=", Type, "VAR %c\nMOD %c %b %a\nVAR %t\nSEQ %t %a %b\nADD%c %c %t", true, ilang.Number)
-	ilang.NewOperator(Type, "<", Type, "VAR %c\nMOD %c %b %a\nDIV %c %c 0\nVAR %t\nSNE %t %a %b\nMUL%c %c %t", true, ilang.Number)
+	ilang.NewOperator(Type, "<", Type, "VAR %c\nMOD %c %b %a\nDIV %c %c 0\nVAR %t\nSNE %t %a %b\nMUL %c %c %t", true, ilang.Number)
 }
 
 func ScanSymbol(ic *ilang.Compiler) ilang.Type {
