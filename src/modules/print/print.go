@@ -35,6 +35,7 @@ func List(ic *ilang.Compiler, name string) {
 
 func ScanPrint(ic *ilang.Compiler) {
 	ic.Scan('(')
+	ic.DisableOwnership = true
 	arg := ic.ScanExpression()
 	if !ic.ExpressionType.Empty() {
 		ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
@@ -69,4 +70,5 @@ func ScanPrint(ic *ilang.Compiler) {
 	
 	ic.Assembly("SHARE i_newline")
 	ic.Assembly("STDOUT")
+	ic.DisableOwnership = false
 }

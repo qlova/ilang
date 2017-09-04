@@ -27,6 +27,12 @@ func (ic *Compiler) Shunt(name string) string {
 			if ic.ExpressionType.IsUser() == Undefined {
 				ic.RaiseError("Type '%s', cannot be indexed!", ic.ExpressionType.Name)
 			}
+
+			if ic.Peek() != "." && !ic.DisableOwnership {
+				ic.TakingExpression = true
+			} else {
+				ic.TakingExpression = false
+			}
 			
 			return ic.Shunt(ic.IndexUserType(name, index))
 		
@@ -72,9 +78,7 @@ func (ic *Compiler) Shunt(name string) string {
 			
 			return ic.Shunt(slice)*/
 		
-		
-		case "(":
-			
+
 			
 		case "[":
 			if ic.ExpressionType != Text {

@@ -68,6 +68,8 @@ type Compiler struct {
 	
 	//This is the expressiontype variable, it stores the type of the last scanned expression.
 	ExpressionType Type
+	DisableOwnership bool
+	TakingExpression bool
 	
 	//A counter for tmp variables so names do not clash.
 	Unique int
