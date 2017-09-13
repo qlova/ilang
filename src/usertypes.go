@@ -299,6 +299,7 @@ func (ic *Compiler) SetUserType(name, element, value string) {
 				ic.Assembly("PLACE ", name)
 				ic.Assembly("PUSH ", index)
 				ic.Assembly("GET ", pointer)
+				ic.Assembly("ADD ", pointer, " ", pointer, " 0")
 				ic.ExpressionType = t.Elements[index]
 				ic.Assembly(ic.ExpressionType.Free(pointer))
 				

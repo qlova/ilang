@@ -221,6 +221,15 @@ func (ic *Compiler) GetPointerTo(name string) string {
 		ic.Assembly("SHARE ", name)
 		ic.Assembly("HEAP")
 		ic.Assembly("PULL ", pointer)
+		ic.Assembly("ADD ",pointer," 0 ", pointer)
+		return pointer
+	}
+	if ic.ExpressionType.Push == "RELAY" {
+		var pointer = ic.Tmp("pointer")
+		ic.Assembly("PUSH 0")
+		ic.Assembly("RELAY ", name)
+		ic.Assembly("HEAPIT")
+		ic.Assembly("PULL ", pointer)
 		return pointer
 	}
 	return name
@@ -239,6 +248,22 @@ func (ic *Compiler) Dereference(pointer string) string {
 		
 		ic.Assembly("END")
 		ic.Assembly("GRAB ", value)
+		return value
+	}
+	
+	if ic.ExpressionType.Push == "RELAY" {
+		var value = ic.Tmp("deref")
+		ic.Assembly("IF ", pointer)
+		ic.Assembly("PUSH ", pointer)
+		ic.Assembly("HEAPIT")
+		ic.Assembly("ELSE ")
+
+		var tmp = ic.Tmp("empty")
+		ic.Assembly("ARRAY ", tmp)
+		ic.Assembly("OPEN ", tmp)
+		
+		ic.Assembly("END")
+		ic.Assembly("TAKE ", value)
 		return value
 	}
 	return pointer
