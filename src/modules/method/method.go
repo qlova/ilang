@@ -155,7 +155,7 @@ func ScanMethod(ic *ilang.Compiler) {
 			ic.SetVariable(MethodType.Name+"_use", ilang.Used)
 			ic.SetVariable(MethodType.Name+".", ilang.Protected)
 		
-		} else if len(MethodType.Detail.Elements) > 0 {	
+		} else if  MethodType.Detail != nil && len(MethodType.Detail.Elements) > 0 {	
 			ic.Assembly("%v %v", MethodType.Pop, MethodType.Name)
 			ic.SetVariable(MethodType.Name, MethodType)
 			ic.SetVariable(MethodType.Name+"_use", ilang.Used)
