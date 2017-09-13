@@ -64,7 +64,10 @@ func init() {
 		//Allow table values to be indexed in a method.
 		if ic.GetFlag(Flag) && ic.LastDefinedType.Detail != nil {
 			if _, ok := ic.LastDefinedType.Detail.Table[name]; ok {
+				ic.DisableOwnership = true
 				var value = ic.IndexUserType(ic.LastDefinedType.Name, name)
+				ic.DisableOwnership = false
+				
 				ic.AssembleVar(name, value)
 				ic.SetVariable(name+"_use", ilang.Used)
 				return ic.ExpressionType

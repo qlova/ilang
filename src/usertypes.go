@@ -211,6 +211,12 @@ func (ic *Compiler) IndexUserType(name, element string) string {
 				ic.Assembly("GET ", tmp)	//Get the value of the array at the index on the stack.
 				ic.Assembly("IF ",tmp)		//If there is a valid address, (greater than zero)
 				ic.GainScope()
+
+				//Take ownership if the type is not an array or text.
+				if t.Elements[index].Name != "text" && t.Elements[index].Name != "array" && ic.TakingExpression && !ic.DisableOwnership {
+					ic.Assembly("PUSH ", index) //Push the index onto the stack.
+					ic.Assembly("SET 0")		//Set the value in the array to be zero, we have taken ownership.
+				}
 				
 				//Retrieve the array.
 				ic.Assembly("PUSH ", tmp)

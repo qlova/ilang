@@ -58,6 +58,10 @@ func (ic *Compiler) expression() string {
 	
 	if t := ic.GetVariable(token); t != Undefined {
 	
+		if ic.TakingExpression && ic.GetVariable(token+".") == Protected && ic.Peek() != "." {
+			ic.RaiseError("Cannot transfer ownership of protected variable ", token)
+		}
+		
 		ic.ExpressionType = t
 		ic.SetVariable(token+"_use", Used)
 		

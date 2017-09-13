@@ -128,7 +128,9 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 			read(Type) read(AnotherType)
 		*/
 		if f.Method && ic.Peek() != ")" {
-			arg := ic.ScanExpression()
+			ic.DisableOwnership = true
+				arg := ic.ScanExpression()
+			ic.DisableOwnership = false
 			
 			//Hardcoded LEN optimisation.
 			if name == "len" && ic.ExpressionType.Push == "SHARE" {

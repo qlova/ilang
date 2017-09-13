@@ -38,9 +38,10 @@ func EndForLoop(ic *ilang.Compiler) {
 		
 		ic.Assembly(`
 	VAR i_i
+	VAR i_test
 	LOOP
-		SGE i_swapdex i_i #`+del+`
-		IF i_swapdex
+		SGE i_test i_i #`+del+`
+		IF i_test
 			BREAK
 		END
 	
