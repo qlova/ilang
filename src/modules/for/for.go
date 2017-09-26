@@ -12,6 +12,7 @@ func init() {
 	ilang.RegisterListener(ForLoop, EndForLoop)
 	ilang.RegisterFunction("delete", ilang.Function{
 		Inline: true,
+		Method: true,
 		Assemble: func(ic *ilang.Compiler) string {
 			if !ic.GetFlag(ForLoop) {
 				ic.RaiseError("delete with zero arguments must be called from within a for loop!")

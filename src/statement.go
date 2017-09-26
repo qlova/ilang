@@ -1,10 +1,44 @@
 package ilang
 
+/*
+	Scans a numeric statement such as:
+		number = 3
+		variable += 4
+		letter = 'a'
+*/
+func (ic *Compiler) ScanTextStatement() {
+	var name = ic.Scan(0)
+	
+	if name == "error" {
+		name = "ERROR"
+	}
+	
+	var token = ic.Scan(0)
+	
+	switch token {
+		case "=":
+			value := ic.ScanExpression()
+			if ic.ExpressionType != Text {
+				ic.RaiseError("Only text values can assigned to ",name,".")
+			}
+				
+			ic.Assembly("SHARE %v\nRENAME %v", value, name)
+		default:
+			ic.ExpressionType = Text
+			ic.NextToken = token
+			ic.Shunt(name)
+			if ic.ExpressionType != Undefined {
+				ic.RaiseError("blank expression! hmm?")
+			}
+			ic.ExpressionType = Text
+	}
+}
+
 func (ic *Compiler) ScanStatement() {
 	var token = ic.Scan(0)
 	
 	if t := ic.GetVariable(token); t != Undefined {
-	
+		
 		ic.NextNextNextToken = ic.NextNextToken
 		ic.NextNextToken = ic.NextToken
 		ic.NextToken = token
@@ -25,6 +59,9 @@ func (ic *Compiler) ScanStatement() {
 		
 		switch t {				
 			case Number: 	ic.ScanNumericStatement()
+			
+			case Text:
+				ic.ScanTextStatement() 
 				
 			//This may become depreciated.
 			case t.IsMatrix(): 					ic.ScanMatrixStatement()
@@ -41,6 +78,7 @@ func (ic *Compiler) ScanStatement() {
 		ic.Scan(')')
 		return
 	}
+	
 	ic.NextToken = token
 	ic.ScanExpression()	
 	if ic.ExpressionType == Undefined {
