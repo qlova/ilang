@@ -1,8 +1,7 @@
 
 function handler(||client) {
-	//var ip = info@client("ip")
-	print("Connection")
-	output("new")
+	var ip = client.ip
+	print("Connection from ", ip)
 	loop {
 !		var message = client()
 		issues {

@@ -91,6 +91,25 @@ RETURN
 		}
 		return ""
 	})
+	
+	ilang.RegisterShunt(".", func(ic *ilang.Compiler, name string) string {
+		if ic.ExpressionType == Type {
+			info := ic.Scan(0)
+			
+			ic.Assembly("RELAY ", name)
+			ic.Assembly("SHARE ", ic.ParseString("\""+info+"\""))
+			
+			
+			ic.Assembly("STAT")
+			result := ic.Tmp(info)
+			ic.Assembly("GRAB ", result)
+			
+			ic.ExpressionType = ilang.Text
+			
+			return result
+		}
+		return ""
+	})
 }
 
 func ScanPipeSymbol(ic *ilang.Compiler) ilang.Type {
