@@ -5,11 +5,36 @@ import "github.com/qlova/ilang/src/types/letter"
 
 var Type = ilang.NewType("pipe", "RELAY", "TAKE")
 
+func ScanExpression(ic *ilang.Compiler) string {
+	var token = ic.LastToken
+	//Types.
+	if token == "|" {
+		ic.Scan('|')
+		var name = ic.Tmp("pipe")
+		ic.Assembly("PIPE ", name)
+		
+		ic.ExpressionType = Type
+		
+		return name
+	}
+	return ""
+}
+
 func init() {
 	ilang.RegisterStatement(Type, ScanPipeStatement)
 	ilang.RegisterSymbol("|", ScanPipeSymbol)
+	ilang.RegisterExpression(ScanExpression)
 	
 	ilang.RegisterFunction("open_m_text", ilang.Method(Type, true, "OPEN"))
+	ilang.RegisterFunction("open_m_number", ilang.Function{Exists:true, Returns:[]ilang.Type{Type}, Data: `
+FUNCTION open_m_number
+	PULL value
+	ARRAY tmp
+	PUT value
+	SHARE tmp
+	OPEN
+RETURN
+	`})
 	ilang.RegisterFunction("read_m_pipe", ilang.InlineFunction(nil, "PUSH 0\nIN", []ilang.Type{ilang.Text}))
 	
 	ilang.RegisterFunction("close", ilang.Function{Exists:true, Args:[]ilang.Type{Type}, Data: `
