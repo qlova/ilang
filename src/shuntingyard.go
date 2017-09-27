@@ -34,6 +34,10 @@ func (ic *Compiler) Shunt(name string) string {
 				ic.TakingExpression = false
 			}
 			
+			defer func() {
+				ic.TakingExpression = false
+			}()
+			
 			return ic.Shunt(ic.IndexUserType(name, index))
 		
 		case ":":
