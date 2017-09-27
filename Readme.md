@@ -147,10 +147,14 @@ Something is the only builtin struture type, it can hold any value and needs to 
 
 ## DOWNLOAD AND INSTALL
 
-There are no official releases yet as the language is in a alpha state but you can grab the source and start hacking!  
-Hacking instructions: (Linux and Mac)
-	
+There is an alpha release for windows, it must be used from the command line.
+You can find it at https://bitbucket.org/Splizard/ilang-release/downloads/it.exe
+
+Otherwise here are the hacking instructions: (Linux and Mac)
+
 		go get -u github.com/qlova/ilang/src/it
+		echo "The binary is now located in:"
+		echo "$GOPATH/bin/it.exe"
 
 Please be aware that many features are missing or incomplete in i!
 		
