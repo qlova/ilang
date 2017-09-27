@@ -14,4 +14,5 @@ software {
 	for value in c
 		write(value, " ")
 	end
+	write("\n")
 }
