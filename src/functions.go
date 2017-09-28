@@ -74,6 +74,10 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 			
 			if ! f.Args[i].Equals(ic.ExpressionType) {
 			
+				if ic.ExpressionType == Undefined {
+					ic.RaiseError(ic.LastToken, " is undefined!")
+				}
+			
 				//Hacky varidic lists!
  				if i == len(f.Args)-1 && *f.Args[i].SubType == ic.ExpressionType {
  					var tmp = ic.Tmp("varaidic")

@@ -37,6 +37,11 @@ func ScanPrint(ic *ilang.Compiler) {
 	ic.Scan('(')
 	ic.DisableOwnership = true
 	arg := ic.ScanExpression()
+	
+	if (ic.ExpressionType == ilang.Undefined) {
+		ic.RaiseError(ic.LastToken, " is undefined!")
+	}	
+	
 	if !ic.ExpressionType.Empty() {
 		ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
 	}
