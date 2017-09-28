@@ -79,6 +79,18 @@ func init() {
 	ilang.RegisterShunt(".", ShuntMethodCall)
 }
 
+func Sync(ic *ilang.Compiler, variables ...string) {
+	if ic.GetFlag(Flag) && ic.LastDefinedType.Detail != nil {
+	
+		for _, variable := range variables {
+	
+			if _, ok := ic.LastDefinedType.Detail.Table[variable]; ok {
+				ic.SetUserType(ic.LastDefinedType.Name, variable, variable)
+			}
+		}
+	}
+}
+
 func ShuntMethodCall(ic *ilang.Compiler, name string) string {
 	var index = ic.Scan(ilang.Name)
 	

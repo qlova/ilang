@@ -1,6 +1,7 @@
 package swap
 
 import "github.com/qlova/ilang/src"
+import "github.com/qlova/ilang/src/modules/method"
 
 func init() {
 	ilang.RegisterToken([]string{
@@ -62,5 +63,9 @@ func ScanSwap(ic *ilang.Compiler) {
 			
 			ic.Assembly("RELAY ", tmp)
 			ic.Assembly("RELOAD ", b)
+		default:
+			ic.RaiseError("Cannot swap variables ",a, " and ", b, "... Unswappable types!")
 	}
+	
+	method.Sync(ic, a, b)
 }
