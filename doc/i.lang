@@ -247,7 +247,7 @@
     </context>
 
     <context id="builtin-function" style-ref="builtin-function">
-      <keyword>append</keyword>
+      <keyword>swap</keyword>
       <keyword>cap</keyword>
       <keyword>close</keyword>
       <keyword>complex</keyword>
