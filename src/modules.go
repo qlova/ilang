@@ -11,6 +11,7 @@ var Symbols = make(map[string]func(*Compiler) Type)
 var Defaults = make([]func(*Compiler) bool, 0, 4)
 var Variables = make([]func(*Compiler, string) Type, 0, 4)
 var Shunts = make(map[string][]func(*Compiler, string) string)
+var Constructors = make([]func(*Compiler, Type), 0, 4)
 
 func RegisterToken(tokens []string, f func(*Compiler)) {
 	for _, name := range tokens {
@@ -34,12 +35,17 @@ func RegisterFunction(name string, f Function) {
 	Functions[name] = f
 }
 
+
 func RegisterSymbol(name string, f func(*Compiler) Type) {
 	Symbols[name] = f
 }
 
 func RegisterVariable(f func(*Compiler, string) Type) {
 	Variables = append(Variables, f)
+}
+
+func RegisterConstructor(f func(*Compiler, Type)) {
+	Constructors = append(Constructors, f)
 }
 
 func RegisterExpression(f func(*Compiler) string) {

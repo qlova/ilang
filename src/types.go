@@ -15,9 +15,9 @@ type Type struct {
 	
 	Decimal bool
 	
-	Detail *UserType
+	Detail *UserType //This contains usertype information.
 	Interface *Interface
-	SubType *Type
+	SubType *Type //Subtype for recursive types such as lists.
 }
 
 func (t Type) Equals(b Type) bool {

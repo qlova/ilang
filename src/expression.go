@@ -78,6 +78,34 @@ func (ic *Compiler) expression() string {
 		//This is a constructor. eg. var bug = Bug(); where Bug is a type.
 		if ic.Peek() == "(" || ic.NextToken == "(" {
 			ic.Scan('(')
+			if ic.Peek() != ")" {
+				//Special Constructors? I am not sure if this is how they should be implemented.
+				arg := ic.ScanExpression()
+				ic.Scan(')')
+				
+				//Run module constructor hooks.
+				for _, f := range Constructors {
+					f(ic, ic.DefinedTypes[token])
+				}
+				
+				if f, ok := ic.DefinedFunctions[ic.DefinedTypes[token].Name+"_m_"+ic.ExpressionType.GetComplexName()]; ok {
+					ic.Assembly(ic.ExpressionType.Push," ", arg)
+					ic.Assembly("RUN ", ic.DefinedTypes[token].Name+"_m_"+ic.ExpressionType.GetComplexName())
+					
+					if len(f.Returns) > 0 {
+						var returntype = f.Returns[0]
+						var tmp = ic.Tmp("construct")
+					
+						ic.Assembly(returntype.Pop, " ", tmp)
+						ic.ExpressionType = returntype
+						return tmp
+					} else {
+						ic.RaiseError("Blank constructor!")
+					}
+				} else {
+					ic.RaiseError("Undefined constructor!")
+				}
+			}
 			ic.Scan(')')
 			
 			return ic.CallType(token)
