@@ -39,6 +39,8 @@ function runit {
 		;;
 		js) cd ./.it && nodejs $1.js <<< $(echo -e "$2") && cd .. 
 		;;
+		sh) cd ./.it && bash $1.sh <<< $(echo -e "$2") && cd .. 
+		;;
 	esac
 }
 

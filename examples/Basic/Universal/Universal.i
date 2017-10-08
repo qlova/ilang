@@ -8,4 +8,5 @@ software {
 	.lua		print("Hello World")
 	.javascript	console.log("Hello World")
 	.rust		println!("Hello World")
+	.bash		echo "Hello World"
 }
