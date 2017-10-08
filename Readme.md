@@ -157,4 +157,19 @@ Otherwise here are the hacking instructions: (Linux and Mac)
 		echo "$GOPATH/bin/it.exe"
 
 Please be aware that many features are missing or incomplete in i!
-		
+
+## Compilation
+
+In order to compile code writtin in I, place it in an isolated directory and run:
+
+		cd /path/to/directory/
+		it build
+
+By default, the code is compiled into the Go programming language. (You will need Go installed to complete this process)
+Otherwise you can target other langauges by providing their extension as an argument eg.
+
+		it build py
+		it built java
+		it build js
+
+A full set of supported languages can be found [here](http://github.com/qlova/uct)
