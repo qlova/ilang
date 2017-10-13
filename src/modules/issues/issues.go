@@ -19,6 +19,10 @@ var Issue = ilang.NewFlag()
 
 func IssueEnd(ic *ilang.Compiler) {	
 	ic.UnsetFlag(Issues)
+	for i:=0; i < (ic.GetVariable("flag_nesting").Int); i++ {
+		ic.Assembly("END")
+	}
+	ic.Assembly("END")
 	ic.LoseScope()
 	ic.Assembly("END")	
 }
@@ -53,6 +57,7 @@ func ScanIssues(ic *ilang.Compiler) {
 		ic.Assembly("VAR ", condition)
 		ic.Assembly("SEQ %v %v %v", condition, expression, "issue")
 		ic.Assembly("IF ",condition)
+		ic.SetFlag(ilang.Type{Name: "flag_nesting", Int: 0})
 		ic.GainScope()
 		ic.SetFlag(Issue)
 	}
@@ -66,13 +71,9 @@ func ScanIssue(ic *ilang.Compiler) {
 	var expression = ic.ScanExpression()
 	var condition = ic.Tmp("issue")
 	
-	nesting, ok := ic.Scope[len(ic.Scope)-2]["flag_nesting"]
-	if !ok {
-		nesting.Int = 0
-	}
-	ic.SetVariable("flag_nesting", ilang.Type{Int:nesting.Int+1})
-	
 	ic.UnsetFlag(Issue)
+	
+	ic.UpdateVariable("flag_nesting", ilang.Type{Int: ic.GetVariable("flag_nesting").Int+1 })
 	
 	ic.LoseScope()
 	
