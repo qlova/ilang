@@ -3,6 +3,8 @@ package ilang
 import "strings"
 
 type Function struct {
+	Name string
+
 	Exists bool
 	Loaded bool
 	Import string

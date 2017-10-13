@@ -83,6 +83,21 @@ func ScanReturn(ic *ilang.Compiler) {
 		ic.Assembly("%v %v", ic.ExpressionType.Push, r)
 		
 	}
+	
+	//Infer return type for this function, because I is clever and concise.
+	if len(ic.CurrentFunction.Returns) == 0 {
+		if ic.Peek() != "\n" {
+			r := ic.ScanExpression()
+	
+			ic.CurrentFunction.Returns = append(ic.CurrentFunction.Returns, ic.ExpressionType)
+		
+			ic.DefinedFunctions[ic.CurrentFunction.Name] = ic.CurrentFunction
+		
+			ic.Assembly("%v %v", ic.ExpressionType.Push, r)
+		}
+	}
+	
+	
 	if len(ic.Scope) > 2 {
 		//TODO garbage collection.
 		ic.CollectGarbage()
@@ -92,6 +107,7 @@ func ScanReturn(ic *ilang.Compiler) {
 
 func CreateFromArguments(name string, ic *ilang.Compiler) {
 	var function ilang.Function
+	function.Name = name
 	
 	//We need to reverse the POP's because of stack pain.
 	if ic.Peek() != ")" {
