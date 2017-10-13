@@ -15,6 +15,7 @@ type Type struct {
 	
 	Decimal bool
 	
+	Plugin *Plugin
 	Detail *UserType //This contains usertype information.
 	Interface *Interface
 	SubType *Type //Subtype for recursive types such as lists.

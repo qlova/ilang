@@ -14,6 +14,12 @@ var Switch = ilang.NewFlag()
 var Default = ilang.NewFlag()
 
 func SwitchEnd(ic *ilang.Compiler) {
+
+	//We are in a typeloop.
+	if ic.GetVariable("flag_type")  != ilang.Undefined{
+		return
+	}
+
 	for i:=0; i < (ic.GetVariable("flag_nesting").Int); i++ {
 		ic.Assembly("END")
 	}
@@ -23,6 +29,18 @@ func SwitchEnd(ic *ilang.Compiler) {
 }
 
 func ScanSwitch(ic *ilang.Compiler) {
+
+	//We are in a typeloop.
+	if ic.GetVariable("flag_type") != ilang.Undefined {
+		var check = ic.Scan(0)
+		if check == "type" {	
+			SwitchType(ic)
+		} else {
+			ic.NextToken = check
+		}
+		return
+	}
+
 	var expression = ic.ScanExpression()
 	if ic.ExpressionType != ilang.Number {
 		ic.RaiseError("switch statements must have numeric conditions!")
@@ -72,6 +90,12 @@ func ScanCase(ic *ilang.Compiler) {
 	
 	if ic.GetScopedFlag(Default) {
 		ic.RaiseError("default must be at the end of the switch statement!")
+	}
+	
+	//We are in a typeloop.
+	if ic.GetVariable("flag_type")  != ilang.Undefined {
+		CaseType(ic)
+		return
 	}
 
 	var expression = ic.ScanExpression()

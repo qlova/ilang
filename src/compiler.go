@@ -92,6 +92,8 @@ type Compiler struct {
 	//Optimisation
 	LastLine string
 	ProgramDir string
+	
+	Aliases map[string]string
 }
 
 //Return a string for a variable which will not clash with any other variables.
@@ -171,6 +173,12 @@ func (c *Compiler) Peek() string {
 */
 //When an EOF is reached, Scan will stop the Compiler.
 func (c *Compiler) Scan(verify rune) string {
+	var r = c.scan(verify)
+	if a, ok := c.Aliases[r]; ok {
+		return a
+	}
+	return r
+}
 
 	if c.NextToken != "" {
 		var text = c.NextToken

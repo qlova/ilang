@@ -31,11 +31,18 @@ func EndForLoop(ic *ilang.Compiler) {
 	}
 	ic.Assembly("REPEAT")
 	
+	if ic.GetScopedFlag(TypeLoop) {
+		EndTypeLoop(ic)
+	}
+	
 	if ic.GetScopedFlag(Delete) {
 		var array = ic.GetVariable("i_for_array").Name
 		var del = ic.GetVariable("i_for_delete").Name
 		
-		var collect = ic.GetVariable(array).SubType.Free("i_pointer")
+		var collect = ""
+		if ic.GetVariable(array).SubType != nil {
+			collect = ic.GetVariable(array).SubType.Free("i_pointer")
+		}
 		
 		ic.Assembly(`
 	VAR i_i
@@ -157,6 +164,13 @@ func ScanFor(ic *ilang.Compiler) {
 			OverList = true
 			fallthrough
 		case "in":
+			var peek = ic.Scan(0)
+			if t, ok := ic.DefinedTypes[peek]; ok {
+				ScanTypeLoop(ic, t, name, name2)
+				return
+			} else {
+				ic.NextToken = peek
+			}
 			var array = ic.ScanExpression()
 			
 			if ic.ExpressionType == list.Type {
@@ -170,7 +184,7 @@ func ScanFor(ic *ilang.Compiler) {
 			}
 			
 			if ic.ExpressionType.Push != "SHARE" {
-				ic.RaiseError("Cannot iterate over '", ic.ExpressionType.Name, "'")
+				ic.RaiseError("Cannot iterate over "+array+" (", ic.ExpressionType.Name, ")")
 			}
 			
 			var condition = ic.Tmp("in") 
