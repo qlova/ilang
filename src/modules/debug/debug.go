@@ -17,6 +17,9 @@ func ScanDebug(ic *ilang.Compiler) {
 
 			fmt.Println("[DEBUG] Expression")
 			fmt.Println("\tType: ", ic.ExpressionType.Name)
+			if ic.ExpressionType.SubType != nil {
+				fmt.Println("\tSubtype: ", ic.ExpressionType.SubType.Name)
+			}
 		
 		case "variable":
 			name := ic.Scan(ilang.Name)
@@ -27,7 +30,30 @@ func ScanDebug(ic *ilang.Compiler) {
 			if variable.SubType != nil {
 				fmt.Println("\tSubtype: ", variable.SubType.Name)
 			}
-		
+		case "function":
+			name := ic.Scan(ilang.Name)
+			function, ok := ic.DefinedFunctions[name]
+				
+			fmt.Println("[DEBUG] Function ", name)
+			if !ok {
+				fmt.Println("Does not exist!")
+			} else {
+				fmt.Println("\tArguments: ", len(function.Args))
+				fmt.Println("\tReturns: ", len(function.Returns))
+			}
+		case "type":
+			name := ic.Scan(ilang.Name)
+			t, ok := ic.DefinedTypes[name]
+			
+			if !ok {
+				fmt.Println("Does not exist!")
+			}
+			
+			fmt.Println("[DEBUG] Type ", name)
+			for subt, index := range t.Detail.Table {
+				fmt.Println("\t"+subt, ic.LastDefinedType.Detail.Elements[index])
+			}
+			
 		default:
 			ic.RaiseError("Unknown debug mode '", mode, "'")
 	}
