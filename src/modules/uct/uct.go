@@ -35,7 +35,10 @@ func ScanAssembly(ic *ilang.Compiler) {
 	//Do some magic so that we can use variables in inline assembly.
 	//Keep track of braces so we can have blocks of code.
 	var braces = 0
+	var first = true
+	var second = false
 	for {
+		var last = ""
 		var token = ic.Scan(0)
 		if strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") {
 			ic.GetVariable(token)
@@ -69,8 +72,15 @@ func ScanAssembly(ic *ilang.Compiler) {
 		} else {
 			if asm == "" {
 				asm = token
-			} else {
+				
+			} else if strings.ContainsAny(token, "+-/*().=[]<>{}:;!@#$%^&*") {
+				asm += token
+			} else if first || (token[0] == '"') || (strings.ContainsAny(last, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") &&
+				 strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")) {
 				asm += " "+token
+				
+			} else {
+				asm += token
 			}
 		}
 	
@@ -86,5 +96,14 @@ func ScanAssembly(ic *ilang.Compiler) {
 				braces++
 			}
 		}
+		
+		if first {
+			first = false
+			second = true
+		} else if second {
+			second = false
+		}
+		
+		last = token
 	}
 }
