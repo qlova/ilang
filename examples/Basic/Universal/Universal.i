@@ -9,4 +9,6 @@ software {
 	.javascript	console.log("Hello World")
 	.rust		println!("Hello World")
 	.bash		echo "Hello World"
+	.csharp		System.Console.WriteLine("Hello World");
+	.arduino	Serial.println("Hello World");
 }

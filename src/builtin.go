@@ -1455,6 +1455,7 @@ FUNCTION replace_m_text
 		END
 	REPEAT
 	
+	IF 1
 		VAR ii_i8
 		VAR ii_backup9
 		LOOP
@@ -1481,7 +1482,7 @@ FUNCTION replace_m_text
 			POP n
 			ADD n 0 0
 		REPEAT
-							
+	END			
 	END
 	SHARE result
 RETURN

@@ -29,7 +29,7 @@ function runit {
 			cd ./.it && javac $1.java && java $1 <<< $(echo -e "$2")
 		;;
 		cs) 
-			mcs -nowarn:414 /r:mscorlib.dll /r:System.Numerics.dll $1.cs && mono $1.exe <<< $(echo -e "$2")
+			cd ./.it && mcs -nowarn:414 /r:mscorlib.dll /r:System.Numerics.dll $1.cs stack.cs > /dev/null && mono $1.exe <<< $(echo -e "$2")
 		;;
 		rb)
 			cd ./.it && ruby $1.rb <<< $(echo -e "$2")

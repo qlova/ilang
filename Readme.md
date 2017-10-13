@@ -169,7 +169,7 @@ By default, the code is compiled into the Go programming language. (You will nee
 Otherwise you can target other langauges by providing their extension as an argument eg.
 
 		it build py
-		it built java
+		it build java
 		it build js
 
 A full set of supported languages can be found [here](http://github.com/qlova/uct)
