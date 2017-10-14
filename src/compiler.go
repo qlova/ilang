@@ -20,6 +20,7 @@ type Scope map[string]Type
 
 type Compiler struct {
 	Scope []Scope //This holds the current scope, it contains flags and variables.
+	SwapScope []Scope
 	
 	Output io.Writer //This is where the Compiler will output to.
 	Lib io.Writer	//This is a Lib file which the compiler will write builtin functions to.
@@ -94,6 +95,12 @@ type Compiler struct {
 	ProgramDir string
 	
 	Aliases map[string]string
+}
+
+func (ic *Compiler) SwapOutput() {
+	ic.Assembly("\n")
+	ic.Output, ic.Lib = ic.Lib, ic.Output
+	ic.Scope, ic.SwapScope = ic.SwapScope, ic.Scope
 }
 
 //Return a string for a variable which will not clash with any other variables.
@@ -180,6 +187,7 @@ func (c *Compiler) Scan(verify rune) string {
 	return r
 }
 
+func (c *Compiler) scan(verify rune) string {
 	if c.NextToken != "" {
 		var text = c.NextToken
 		if verify > 0  && rune(text[0]) != verify {
@@ -427,75 +435,82 @@ func (ic *Compiler) Compile() {
 	
 	ic.ProgramDir, _ = os.Getwd()
 	
-	for {	
-		token := ic.Scan(0)
-		if ic.Stop {
-			//Output the rest of the buffered assembly to the file.
-			ic.Assembly("\n")
-			
-			break
-		}
+	ic.SwapScope = append(ic.SwapScope, ic.Scope[0])
+	
+	for ic.ScanAndCompile() {
 		
-		//It might be nice to have a Compiler.Register(token, ScanFunc)
-		if f, ok := Tokens[token]; ok {
-			f(ic)
-			continue
-		}
-		
-		//These are all the tokens in ilang.
-		switch token {
-			case "\n", ";":
-			
-			case "plugin":
-				ic.ScanPlugin()
-			
-			case "@":
-				ic.Language = ic.Scan(Name)
-				if ic.Language == "ch" {
-					ic.Language = "zh-CN"
-				}
-				ic.Translation = true
-			
-			case "interface":
-				ic.ScanInterface()
-			
-			case "type":
-				ic.Header = false
-				ic.ScanType()
-			
-			case "gui":
-				ic.Header = false
-				ic.ScanGui()
-			
-			case "fork":
-				name := ic.Scan(Name)
-				ic.Scan('(')
-				ic.Fork = true
-				ic.ScanFunctionCall(name)
-				ic.Scan(')')
-
-			case "end":
-				ic.LoseScope()
-				
-			case "}":					
-				ic.LoseScope()
-				
-				
-			default:
-
-				var skip bool
-				for _, f := range Defaults {
-					if f(ic) {
-						skip = true
-						break
-					}
-				}
-				if skip {
-					continue
-				}
-				
-				ic.NextToken = token
-				ic.ScanStatement()
-		}
 	}
+}
+
+func (ic *Compiler) ScanAndCompile() bool {
+	token := ic.Scan(0)
+	if ic.Stop {
+		//Output the rest of the buffered assembly to the file.
+		ic.Assembly("\n")
+		
+		return false
+	}
+	
+	//It might be nice to have a Compiler.Register(token, ScanFunc)
+	if f, ok := Tokens[token]; ok {
+		f(ic)
+		return true
+	}
+	
+	//These are all the tokens in ilang.
+	switch token {
+		case "\n", ";":
+		
+		case "plugin":
+			ic.ScanPlugin()
+		
+		case "@":
+			ic.Language = ic.Scan(Name)
+			if ic.Language == "ch" {
+				ic.Language = "zh-CN"
+			}
+			ic.Translation = true
+		
+		case "interface":
+			ic.ScanInterface()
+		
+		case "type":
+			ic.Header = false
+			ic.ScanType()
+		
+		case "gui":
+			ic.Header = false
+			ic.ScanGui()
+		
+		case "fork":
+			name := ic.Scan(Name)
+			ic.Scan('(')
+			ic.Fork = true
+			ic.ScanFunctionCall(name)
+			ic.Scan(')')
+
+		case "end":
+			ic.LoseScope()
+			
+		case "}":					
+			ic.LoseScope()
+			
+			
+		default:
+
+			var skip bool
+			for _, f := range Defaults {
+				if f(ic) {
+					skip = true
+					break
+				}
+			}
+			if skip {
+				return true
+			}
+			
+			ic.NextToken = token
+			ic.ScanStatement()
+	}
+	return true
 }

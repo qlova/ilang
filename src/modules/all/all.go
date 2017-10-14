@@ -18,6 +18,7 @@ import (
 	_ "github.com/qlova/ilang/src/modules/method"
 	_ "github.com/qlova/ilang/src/modules/swap"
 	_ "github.com/qlova/ilang/src/modules/save"
+	_ "github.com/qlova/ilang/src/modules/generic"
 	
 	_ "github.com/qlova/ilang/src/modules/debug"
 )
