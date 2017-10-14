@@ -171,7 +171,7 @@ func (ic *Compiler) TypeExists(name string) bool {
 }
 
 func (ic *Compiler) CallType(name string) string {
-	if name == "text" {
+	if name == "text" || name == "list" {
 		var array = ic.Tmp("user")
 		ic.Assembly("ARRAY ", array)
 		return array
