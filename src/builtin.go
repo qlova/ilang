@@ -94,7 +94,7 @@ RETURN
 	ic.DefinedFunctions["open"] = Method(Undefined, true, "")
 	ic.DefinedFunctions["trim"] = Method(Undefined, true, "")
 	
-	ic.DefinedFunctions["execute"] = InlineFunction([]Type{Text}, "EXECUTE", nil)
+	ic.DefinedFunctions["execute"] = InlineFunction([]Type{Text}, "EXECUTE", []Type{Text})
 	ic.DefinedFunctions["delete"] = InlineFunction([]Type{Text}, "DELETE", nil)
 	ic.DefinedFunctions["rename"] = InlineFunction([]Type{Text, Text}, "MOVE", nil)
 	
