@@ -65,6 +65,7 @@ func EndForLoop(ic *ilang.Compiler) {
 		PLACE `+array+`
 		PUSH i_index
 		GET i_pointer
+		ADD i_pointer i_pointer 0
 		`+collect+`
 		
 		PLACE `+array+`		
