@@ -30,6 +30,24 @@ func (t Type) Equals(b Type) bool {
 			}
 		}
 	}
+	
+	if t.Name == "function" {
+		if b.Name == "function" {
+			if t.Detail != nil && b.Detail != nil {
+				if len(t.Detail.Elements) != len(b.Detail.Elements) {
+					return false
+				}
+				
+				for i := range t.Detail.Elements {
+					if !t.Detail.Elements[i].Equals(b.Detail.Elements[i]) {
+						return false
+					}
+				}
+				
+				return true
+			}
+		}
+	}
 
 	if t.Name != b.Name {
 		return false
@@ -191,6 +209,18 @@ func (ic *Compiler) CallType(name string) string {
 
 func (list Type) GetComplexName() string {
 	if list.SubType == nil {
+		if list.Name == "function" && list.Detail != nil && len(list.Detail.Elements) > 0 {
+			var suffix string = "("
+			for i := range list.Detail.Elements {
+				suffix += list.Detail.Elements[i].GetComplexName()
+				if i < len(list.Detail.Elements) -1 {
+					suffix += ","
+				}
+			}
+			suffix += ")"
+			return "function"+suffix
+		}
+	
 		return list.Name
 	}
 	

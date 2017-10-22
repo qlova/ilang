@@ -19,24 +19,42 @@ func FuncExpression(ic *ilang.Compiler) string {
 	//Scan anonymous function.
 	if token == "function" {
 		ic.Scan('(')
-		ic.Scan(')')
-		ic.Scan('{')
 		
-		var f ilang.Function
 		var name = ic.Tmp("anonymous")
 		
-		ic.SwapOutput()
-		ic.Assembly("FUNCTION ", name)
+		ic.DisableOutput = true
+		//ic.Assembly("FUNCTION ", name)
 		ic.GainScope()
+		
+		CreateFromArguments(name, ic)
+		
+		var copythisscope = ic.Scope[len(ic.Scope)-1]
+		
+		//Plugin Time!
+		var plugin ilang.Plugin
+		plugin.Line = ic.Scanner.Pos().Line
 
-		f.Name = name	
-		f.Exists = true
+		var braces = 0
+		for {
+			var token = ic.Scan(0)
+			if token == "}"  {
+		 		if braces == 0 {
+		 			plugin.Tokens = append(plugin.Tokens, token)
+					break
+				} else {
+					braces--
+				}
+			}
+			if token == "{" {
+				braces++
+			}
+			plugin.Tokens = append(plugin.Tokens, token)
+		}
 
-		ic.DefinedFunctions[name] = f
-
-		ic.CurrentFunction = f
-
-		ic.SetFlag(Flag)
+		plugin.File = ic.Scanner.Pos().Filename
+		
+		//Mock scan to load any needed requirements.
+		ic.Insertion = append(ic.Insertion, plugin)
 		
 		for {	
 			ic.ScanAndCompile()
@@ -44,12 +62,38 @@ func FuncExpression(ic *ilang.Compiler) string {
 				break
 			}
 		}
+		
+		ic.DisableOutput = false
+		
+		ic.SwapOutput()
+		//Do it again properly.
+		ic.Assembly("FUNCTION ", name)
+		ic.GainScope()
+		ic.Assembly(ic.DefinedFunctions[name].UnpackArguments)
+		
+		ic.Scope[len(ic.Scope)-1] = copythisscope
+		
+		ic.Insertion = append(ic.Insertion, plugin)
+		
+		for {	
+			ic.ScanAndCompile()
+			if !ic.GetFlag(Flag) {
+				break
+			}
+		}
+		
 		ic.SwapOutput()
 		
 		var tmp = ic.Tmp("scope")
 		ic.Assembly("SCOPE ", name)
 		ic.Assembly("TAKE ", tmp)
-		ic.ExpressionType = function.Type
+		
+		
+		var t = function.Type
+		t.Detail = new(ilang.UserType)
+		t.Detail.Elements = ic.DefinedFunctions[name].Args
+		
+		ic.ExpressionType = t
 		return tmp
 	}
 		
@@ -179,6 +223,7 @@ func CreateFromArguments(name string, ic *ilang.Compiler) {
 		}
 		for i := len(toReverse)-1; i>=0; i-- {
 			ic.Assembly(toReverse[i])
+			function.UnpackArguments += toReverse[i]+"\n"
 		}
 	} else {
 		ic.Scan(')')

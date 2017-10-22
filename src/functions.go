@@ -21,6 +21,8 @@ type Function struct {
 	
 	Returns []Type
 	Args []Type
+	
+	UnpackArguments string
 }
 
 func (ic *Compiler) RunFunction(name string) string {
@@ -113,7 +115,7 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
  				}
 			
 				ic.RaiseError("Type mismatch! Argument ",i+1," of '"+name+"()' expects ",
-					f.Args[i].Name,", got ",ic.ExpressionType.Name) 
+					f.Args[i].GetComplexName(),", got ",ic.ExpressionType.GetComplexName()) 
 			}
 			
 			ic.Assembly("%v %v", ic.ExpressionType.Push, arg)

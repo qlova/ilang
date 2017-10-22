@@ -5,14 +5,51 @@ import "github.com/qlova/ilang/src"
 var Type = ilang.NewType("function", "RELAY", "TAKE")
 
 func init() {
-	ilang.RegisterStatement(Type, ScanFuncStatement)
+	ilang.RegisterDefault(ScanFuncStatement)
 	ilang.RegisterSymbol("(", ScanFuncSymbol)
 	ilang.RegisterExpression(FuncExpression)
 }
 
 func ScanFuncSymbol(ic *ilang.Compiler) ilang.Type {
-	ic.Scan(')')
-	return Type
+	var t = Type
+	
+	var token = ic.Scan(0)
+	if token != ")" {
+		ic.NextToken = token
+		t.Detail = new(ilang.UserType)
+		
+		var arg = ic.ScanSymbolicType()
+		if arg == ilang.Undefined {
+			ic.RaiseError()
+		}
+		if arg == ilang.Number {
+			ic.Scan(0)
+		}
+		t.Detail.Elements = append(t.Detail.Elements, arg)
+		
+		for {
+			var token = ic.Scan(0)
+			if token == "," {
+				
+				var arg = ic.ScanSymbolicType()
+				if arg == ilang.Undefined {
+					ic.RaiseError()
+				}
+				if arg == ilang.Number {
+					ic.Scan(0)
+				}
+				t.Detail.Elements = append(t.Detail.Elements, arg)
+				
+			} else if token == ")" {
+				break
+			} else {
+				ic.RaiseError("Expecting , or )")
+			}
+		}
+		
+	}
+
+	return t
 }
 
 func FuncExpression(ic *ilang.Compiler) string {
@@ -39,14 +76,34 @@ func FuncExpression(ic *ilang.Compiler) string {
 		function()
 		function = newfunction
 */
-func ScanFuncStatement(ic *ilang.Compiler) {
+func ScanFuncStatement(ic *ilang.Compiler) bool {
 
 	//TODO make names containing an underscore illegal.
-	var name = ic.Scan(ilang.Name)
+	var name = ic.LastToken
+	
+	if ic.GetVariable(name).Name != "function" {
+		return false
+	}
+	
+	var t = ic.GetVariable(name)
+	
 	var token = ic.Scan(0)
 	
 	switch token {
 		case "(":
+			if t.Detail != nil && len(t.Detail.Elements) >  0 {
+				for i := 0; i < len(t.Detail.Elements); i++ {
+					var expr = ic.ScanExpression()
+					if ic.ExpressionType != t.Detail.Elements[i] {
+						ic.RaiseError("Type mismatch! argument ", i+1, " of ", name, " expects ", 
+						t.Detail.Elements[i].GetComplexName(), ", instead got ", ic.ExpressionType.GetComplexName())
+					}
+					ic.Assembly(ic.ExpressionType.Push, " ", expr)
+					if i < len(t.Detail.Elements)-1 {
+						ic.Scan(',')
+					}
+				}
+			}
 			ic.Scan(')')
 			ic.Assembly("EXE ", name)
 		case "=":
@@ -64,4 +121,5 @@ func ScanFuncStatement(ic *ilang.Compiler) {
 				ic.RaiseError("blank expression!")
 			}
 	}
+	return true
 }
