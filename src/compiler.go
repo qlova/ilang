@@ -216,6 +216,7 @@ func (c *Compiler) scan(verify rune) string {
 			c.I = 0
 			c.Insertion = nil
 			c.Lines = 0
+			return "\n"
 		}
 		
 		if c.P != len(c.Insertion) {
@@ -259,7 +260,7 @@ func (c *Compiler) scan(verify rune) string {
 			}
 			
 			return c.Scan(verify)
-		} else {
+		} else if !c.Stop {
 			
 			//Final cleanup and tasks.
 			for _, t := range c.DefinedTypes {
