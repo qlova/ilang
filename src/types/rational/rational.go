@@ -51,8 +51,37 @@ func init() {
 	
 	ilang.NewOperator(ilang.Number, "\\", ilang.Number, "ARRAY %c\nPUT %a\nPUT %b", false, Type)
 	
+	ilang.RegisterFunction("number_m_rational", ilang.Function{Exists:true, 
+		Returns:[]ilang.Type{ilang.Number}, 
+		Args:[]ilang.Type{Type}, 
+		Data:`
+FUNCTION number_m_rational
+	GRAB r
+	PLACE r
+	PUSH 0
+	GET a
+	PUSH 1
+	GET b
+	DIV a a b
+	PUSH a
+RETURN
+	`})
+	
+	ilang.RegisterFunction("rational_m_number", ilang.Function{Exists:true, 
+		Returns:[]ilang.Type{Type}, 
+		Args:[]ilang.Type{ilang.Number}, 
+		Data:`
+FUNCTION rational_m_number
+	PULL numerator
+	ARRAY r
+	PUT numerator
+	PUT 1
+	SHARE r
+RETURN
+	`})
+	
 	ilang.RegisterFunction("text_m_rational", ilang.Function{Exists:true, Returns:[]ilang.Type{ilang.Text}})
-	ilang.RegisterFunction("rational", ilang.Function{Exists:true, Returns:[]ilang.Type{Type}, Args:[]ilang.Type{}, Data:`
+	ilang.RegisterFunction("rational", ilang.Function{Exists:true, Method: true, Returns:[]ilang.Type{Type}, Args:[]ilang.Type{}, Data:`
 FUNCTION rational
 	PUSH 2
 	MAKE
@@ -155,6 +184,8 @@ FUNCTION rational_plus_rational
 	PLACE b
 	PUSH 1
 	GET i_index19
+	VAR i_operator18
+	MUL i_operator18 i_index17 i_index19
 	PLACE b
 	PUSH 0
 	GET i_index21
@@ -164,12 +195,10 @@ FUNCTION rational_plus_rational
 	VAR i_operator22
 	MUL i_operator22 i_index21 i_index23
 	VAR i_operator20
-	ADD i_operator20 i_index19 i_operator22
-	VAR i_operator18
-	MUL i_operator18 i_index17 i_operator20
+	ADD i_operator20 i_operator18 i_operator22
 	PLACE c
 	PUSH 0
-	SET i_operator18
+	SET i_operator20
 	PLACE a
 	PUSH 1
 	GET i_index24
@@ -190,8 +219,6 @@ FUNCTION rational_plus_rational
 	GET i_index28
 	PUSH i_index28
 	RUN i_gcd
-	PULL i_result29
-	PUSH i_result29
 	PULL g
 	PLACE c
 	PUSH 0
@@ -227,6 +254,8 @@ FUNCTION rational_minus_rational
 	PLACE b
 	PUSH 1
 	GET i_index36
+	VAR i_operator35
+	MUL i_operator35 i_index34 i_index36
 	PLACE b
 	PUSH 0
 	GET i_index38
@@ -236,12 +265,10 @@ FUNCTION rational_minus_rational
 	VAR i_operator39
 	MUL i_operator39 i_index38 i_index40
 	VAR i_operator37
-	SUB i_operator37 i_index36 i_operator39
-	VAR i_operator35
-	MUL i_operator35 i_index34 i_operator37
+	SUB i_operator37 i_operator35 i_operator39
 	PLACE c
 	PUSH 0
-	SET i_operator35
+	SET i_operator37
 	PLACE a
 	PUSH 1
 	GET i_index41
@@ -262,8 +289,6 @@ FUNCTION rational_minus_rational
 	GET i_index45
 	PUSH i_index45
 	RUN i_gcd
-	PULL i_result46
-	PUSH i_result46
 	PULL g
 	PLACE c
 	PUSH 0
