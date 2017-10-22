@@ -1,6 +1,7 @@
 package function
 
 import "github.com/qlova/ilang/src"
+import "github.com/qlova/ilang/src/types/function"
 
 var Flag = ilang.NewFlag()
 
@@ -13,7 +14,45 @@ func init() {
 }
 
 func FuncExpression(ic *ilang.Compiler) string {
-	var token = ic.LastToken	
+	var token = ic.LastToken
+	
+	//Scan anonymous function.
+	if token == "function" {
+		ic.Scan('(')
+		ic.Scan(')')
+		ic.Scan('{')
+		
+		var f ilang.Function
+		var name = ic.Tmp("anonymous")
+		
+		ic.SwapOutput()
+		ic.Assembly("FUNCTION ", name)
+		ic.GainScope()
+
+		f.Name = name	
+		f.Exists = true
+
+		ic.DefinedFunctions[name] = f
+
+		ic.CurrentFunction = f
+
+		ic.SetFlag(Flag)
+		
+		for {	
+			ic.ScanAndCompile()
+			if !ic.GetFlag(Flag) {
+				break
+			}
+		}
+		ic.SwapOutput()
+		
+		var tmp = ic.Tmp("scope")
+		ic.Assembly("SCOPE ", name)
+		ic.Assembly("TAKE ", tmp)
+		ic.ExpressionType = function.Type
+		return tmp
+	}
+		
 	if _, ok := ic.DefinedFunctions[token]; ok {
 		if ic.Peek() == "(" {
 			ic.ExpressionType = Flag
@@ -126,7 +165,7 @@ func CreateFromArguments(name string, ic *ilang.Compiler) {
 		
 			ic.SetVariable(name, ArgumentType)
 			ic.SetVariable(name+"_use", ilang.Used)
-		
+
 			toReverse = append(toReverse, ArgumentType.Pop+" "+name)
 		
 			token := ic.Scan(0)

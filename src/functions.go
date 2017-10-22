@@ -81,7 +81,7 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 				}
 			
 				//Hacky varidic lists!
- 				if i == len(f.Args)-1 && *f.Args[i].SubType == ic.ExpressionType {
+ 				if i == len(f.Args)-1 && f.Args[i].SubType != nil && *f.Args[i].SubType == ic.ExpressionType {
  					var tmp = ic.Tmp("varaidic")
  					ic.Assembly("ARRAY ", tmp)
  					ic.Assembly("PUT ", ic.GetPointerTo(arg))
