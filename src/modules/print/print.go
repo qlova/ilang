@@ -57,7 +57,7 @@ func ScanPrint(ic *ilang.Compiler) {
 		token := ic.Scan(0)
 		if token != "," {
 			if token != ")" {
-				ic.RaiseError()
+				ic.RaiseError("Unexpected ", token)
 			}
 			break
 		}

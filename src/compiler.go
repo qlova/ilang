@@ -95,6 +95,8 @@ type Compiler struct {
 	ProgramDir string
 	
 	Aliases map[string]string
+	
+	DisableOutput bool
 }
 
 func (ic *Compiler) SwapOutput() {
@@ -131,8 +133,10 @@ func (ic *Compiler) Library(asm ...interface{}) {
 
 //Assembly passed to this function will be output to the file.
 func (ic *Compiler) Assembly(asm ...interface{}) {
-	var raw = ic.asm(asm...)
-	ic.optimise(raw)
+	if !ic.DisableOutput {
+		var raw = ic.asm(asm...)
+		ic.optimise(raw)
+	}
 }
 
 func (ic *Compiler) optimise(asm string) {
@@ -181,6 +185,9 @@ func (c *Compiler) Peek() string {
 //When an EOF is reached, Scan will stop the Compiler.
 func (c *Compiler) Scan(verify rune) string {
 	var r = c.scan(verify)
+	for r == "\n" {
+		r = c.scan(verify)
+	}
 	if a, ok := c.Aliases[r]; ok {
 		return a
 	}
@@ -364,7 +371,7 @@ func (ic *Compiler) LoseScope() {
 }
 
 func (c *Compiler) TokenText() string {
-	if len(c.Insertion) > 0 {
+	if len(c.Insertion) > 0 && c.P < len(c.Insertion) {
 		return c.Insertion[c.P].Tokens[c.I-1]
 	}
 	return c.Scanner.TokenText()
@@ -372,7 +379,7 @@ func (c *Compiler) TokenText() string {
 
 func (c *Compiler) RaiseError(message ...interface{}) {
 	pos := fmt.Sprint(c.Scanner.Pos())
-	if len(c.Insertion) > 0 {
+	if len(c.Insertion) > 0 && c.P < len(c.Insertion) {
 		pos = fmt.Sprintf("%v:%v:%v", c.Insertion[c.P].File, c.Insertion[c.P].Line+c.Lines, c.I) 
 	}
 
@@ -413,6 +420,7 @@ func NewCompiler(input io.Reader) Compiler {
 		LastDefinedType: Undefined,
 		Plugins: make(map[string][]Plugin),
 		SetItems: make(map[string]int),
+		Aliases: make(map[string]string),
 	}
 	
 	c.Builtin()
