@@ -160,7 +160,7 @@ Please be aware that many features are missing or incomplete in i!
 
 ## Compilation
 
-In order to compile code writtin in I, place it in an isolated directory and run:
+In order to compile code written in i, place it in an isolated directory and run:
 
 		cd /path/to/directory/
 		it build
