@@ -200,8 +200,12 @@
       <keyword>exit</keyword>
       <keyword>error</keyword>
       
+      
       <keyword>software</keyword>
       <keyword>function</keyword>
+      <keyword>generic</keyword>
+      <keyword>pattern</keyword>
+      <keyword>boolean</keyword>
       <keyword>method</keyword>
       <keyword>repeat</keyword>
       <keyword>loop</keyword>
