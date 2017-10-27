@@ -20,6 +20,7 @@ import (
 	_ "github.com/qlova/ilang/src/modules/save"
 	_ "github.com/qlova/ilang/src/modules/generic"
 	_ "github.com/qlova/ilang/src/modules/pattern"
+	_ "github.com/qlova/ilang/src/modules/boolean"
 	
 	_ "github.com/qlova/ilang/src/modules/debug"
 )
