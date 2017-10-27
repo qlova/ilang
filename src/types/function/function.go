@@ -55,7 +55,7 @@ func ScanFuncSymbol(ic *ilang.Compiler) ilang.Type {
 func FuncExpression(ic *ilang.Compiler) string {
 	token := ic.LastToken
 	
-	if _, ok := ic.DefinedFunctions[token]; ok {
+	if _, ok := ic.DefinedFunctions[token]; ok && !ic.TypeExists(token) {
 	
 		//TODO don't peek.	
 		if ic.Peek() != "(" {
