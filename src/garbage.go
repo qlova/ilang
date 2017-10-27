@@ -5,7 +5,7 @@ import "strings"
 func (ic *Compiler) CollectGarbage() {
 	//Erm garbage collection???
 	for name, variable := range ic.Scope[len(ic.Scope)-1] {
-		if strings.Contains(name, "_") {
+		if strings.Contains(name, "_used") {
 			var ok = false
 			if ic.LastDefinedType.Detail != nil {
 				_, ok = ic.LastDefinedType.Detail.Table[strings.Split(name, "_")[0]]
@@ -63,7 +63,6 @@ func (ic *Compiler) Collect(t Type) {
 			
 			ic.Library("IF ", tmp)
 			ic.GainScope()
-			ic.Library("MUL %v %v -1", tmp, tmp)
 			ic.Library("PUSH ", tmp)
 			ic.Library("HEAP")
 			ic.Library("MUL %v %v -1", tmp, tmp)
