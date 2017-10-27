@@ -185,9 +185,6 @@ func (c *Compiler) Peek() string {
 //When an EOF is reached, Scan will stop the Compiler.
 func (c *Compiler) Scan(verify rune) string {
 	var r = c.scan(verify)
-	for r == "\n" {
-		r = c.scan(verify)
-	}
 	if a, ok := c.Aliases[r]; ok {
 		return a
 	}

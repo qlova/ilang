@@ -122,6 +122,8 @@ func init() {
 			var r = ic.Tmp("generic_result")
 			ic.Assembly(ic.ExpressionType.Pop, " ", r)
 			
+			ic.Scan(0)
+			
 			return r
 		}
 		return ""
