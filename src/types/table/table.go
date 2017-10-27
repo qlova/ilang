@@ -3,7 +3,7 @@ package table
 import "github.com/qlova/ilang/src"
 import "strconv"
 
-var Type = ilang.NewType("table", "SHARE", "GRAB")
+var Type = ilang.NewType("table", "PUSH", "PULL")
 
 func ScanStatement(ic *ilang.Compiler) {
 	var table = ic.Scan(0)
