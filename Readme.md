@@ -79,7 +79,7 @@ So you can hopefully see some of the philosophy of i.
 
 ## Features
 
-* Big integars.
+* Big integers.
 * Clean.
 * Simple.
 * Statically typed.
