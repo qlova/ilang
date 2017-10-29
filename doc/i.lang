@@ -238,10 +238,17 @@
     <context id="types" style-ref="type">
       <keyword>number</keyword>
       <keyword>text</keyword>
+      <keyword>rational</keyword>
+      <keyword>decimal</keyword>
+      <keyword>list</keyword>
+      <keyword>table</keyword>
+      <keyword>boolean</keyword>
+      <keyword>set</keyword>
+      <keyword>thing</keyword>
       
       <keyword>pipe</keyword>
       <keyword>array</keyword>
-      <keyword>Something</keyword>
+      <keyword>something</keyword>
       <keyword>letter</keyword>
     </context>
 
