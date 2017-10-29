@@ -6,7 +6,7 @@ import "os/exec"
 import path "path/filepath"
 import "bufio"
 import "io/ioutil"
-import "net/http"
+import "runtime"
 
 /*func CheckForUpdate(uptodate time.Time) {
 	ctx := context.Background()
@@ -154,44 +154,12 @@ rand = "0.3"
 	
 	if TargetLanguage == "js" && Game {
 		
-		http.HandleFunc("/", func (w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, `
-<html>
-<head>
-<style>
-	body {
-		margin: 0;
+		
 	}
-</style>
-</head>
-<body>
-	<script src="stack.js"></script>
-	<script src="game.js"></script>
-</body>
-</html>
-`)
-		})
-		http.HandleFunc("/stack.js", func (w http.ResponseWriter, r *http.Request) {
-			 http.ServeFile(w, r, "./stack.js")
-		})
-		http.HandleFunc("/game.js", func (w http.ResponseWriter, r *http.Request) {
-			 http.ServeFile(w, r, path.Base(mainFile[:len(mainFile)-2]+".js"))
-		})
-		http.HandleFunc("/data/", func (w http.ResponseWriter, r *http.Request) {
-			 http.ServeFile(w, r, ".."+r.URL.Path)
-		})
-		
-		fmt.Println("Go to http://localhost:9090 to play your game!")
-		
-		go func() {
-			err := http.ListenAndServe(":9090", nil) // set listen port
-			if err != nil {
-				fmt.Println("ListenAndServe: ", err)
-			}
-		}()
-		fmt.Println("\nPress 'Enter' to stop...")
-		reader := bufio.NewReader(os.Stdin)
-		reader.ReadString('\n')
+	
+	if target, ok := Targets[TargetLanguage]; ok {
+		target.Compile(mainFile)
+		target.Run(mainFile)	
 	}
 	
 	if TargetLanguage == "go" {
@@ -209,9 +177,11 @@ rand = "0.3"
 			run.Run()
 		//}
 		
-		fmt.Println("\n[SOFTWARE EXIT]\nPress 'Enter' to close...")
-		reader := bufio.NewReader(os.Stdin)
-		reader.ReadString('\n')
+		if runtime.GOOS == "windows" {
+			fmt.Println("\n[SOFTWARE EXIT]\nPress 'Enter' to close...")
+			reader := bufio.NewReader(os.Stdin)
+			reader.ReadString('\n')
+		}
 	}
 }
 	
