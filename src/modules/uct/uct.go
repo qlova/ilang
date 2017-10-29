@@ -40,6 +40,11 @@ func ScanAssembly(ic *ilang.Compiler) {
 	var last = ""
 	for {
 		var token = ic.Scan(0)
+		if token == "\\" && ic.Peek() == "t" {
+			ic.Scan(0)
+			asm += "\t"
+			continue
+		}
 		if strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") {
 			ic.GetVariable(token)
 			if cmd == "grab" {
@@ -74,8 +79,8 @@ func ScanAssembly(ic *ilang.Compiler) {
 				asm = token
 				
 			}  else if first || (token[0] == '"') || 
-				(strings.ContainsAny(last, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") &&
-				 strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")) {
+				(strings.ContainsAny(last, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_") &&
+				 strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")) {
 				asm += " "+token
 				
 			}else if strings.ContainsAny(token, "+-/*().=[]<>{}:;!@#$%^&*") {
