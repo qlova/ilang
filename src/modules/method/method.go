@@ -12,6 +12,18 @@ func init() {
 	
 	ilang.RegisterDefault(func(ic *ilang.Compiler) bool {
 		token := ic.LastToken
+		
+		if ic.TypeExists(token) {
+			if ic.DefinedTypes[token].Empty() && ic.Peek() == "." {
+				ic.Scan('.')
+				ic.ExpressionType = function.Flag
+				var name = ic.Scan(ilang.Name)
+				ic.Shunt(name+"_m_"+token)
+				ic.Scan('(') //BUG I don't know why this has to be here.
+				return true
+			}
+		}
+		
 		if ic.GetFlag(Flag) {
 			if _, ok := ic.LastDefinedType.Detail.Table[token]; ok {
 				ic.NextToken = ic.LastDefinedType.Name
@@ -21,11 +33,22 @@ func init() {
 				return true
 			}
 		}
+		
 		return false
 	})
 	
 	ilang.RegisterExpression(func(ic *ilang.Compiler) string {
 		token := ic.LastToken
+		
+		if ic.TypeExists(token) {
+			if ic.DefinedTypes[token].Empty() && ic.Peek() == "." {
+				ic.Scan('.')
+				ic.ExpressionType = function.Flag
+				var name = ic.Scan(ilang.Name)
+				return name+"_m_"+token
+			}
+		}
+		
 		if ic.GetFlag(Flag) {
 			if ic.TypeExists(token) && ic.LastDefinedType.Super == token {
 	 			ic.ExpressionType = ic.DefinedTypes[ic.LastDefinedType.Super]
@@ -45,15 +68,6 @@ func init() {
 				ic.ExpressionType = function.Flag
 				
 				return ic.Shunt(f)
-			}
-		}
-		
-		if ic.TypeExists(token) {
-			if ic.DefinedTypes[token].Empty() && ic.Peek() == "." {
-				ic.Scan('.')
-				ic.ExpressionType = function.Flag
-				var name = ic.Scan(ilang.Name)
-				return name+"_m_"+token
 			}
 		}
 		
