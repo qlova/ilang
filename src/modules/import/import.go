@@ -4,22 +4,32 @@ import "github.com/qlova/ilang/src"
 import "os"
 import "text/scanner"
 import "os/user"
+import "path/filepath"
 
 func init() {
 	ilang.RegisterToken([]string{"import"}, ScanImport)
 }
 
+const Debug = false
+
 //Messy.
 func ScanImport(ic *ilang.Compiler) {
 	pkg := ic.Scan(ilang.Name)
-	ic.Scan('\n')
+	for ic.Scan(0) == "." {
+		pkg += "/"+ic.Scan(0)
+	}
+	
+	 dir, _ := os.Getwd()
+	 if Debug {
+		println("importing, ", pkg, " in ", dir)
+	}
 	
 	var filename = ""
 	
 	retry:
 	file, err := os.Open(pkg+".i")
 	if err != nil {
-		if file, err = os.Open(pkg+"/"+pkg+".i"); err != nil {
+		if file, err = os.Open(pkg+"/"+filepath.Base(pkg)+".i"); err != nil {
 			
 			//Search through parent folders?
 			dir, _ := os.Getwd()
@@ -49,7 +59,16 @@ func ScanImport(ic *ilang.Compiler) {
 			 
 			ic.Dirs = append(ic.Dirs, dir)
 			 
-			os.Chdir("./"+pkg)
+			err := os.Chdir("./"+pkg)
+			if err != nil {
+				ic.RaiseError(err)
+			}
+			
+			 dir, _ = os.Getwd()
+			 if Debug {
+			 	println("moved to ", dir)
+			 }
+			
 			ic.FileDepth++
 		}
 	} else {
