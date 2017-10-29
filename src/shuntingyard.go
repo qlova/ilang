@@ -16,6 +16,21 @@ func (ic *Compiler) Shunt(name string) string {
 		}
 	}
 	
+	if token != "." && token[0] == '.' {
+		ic.NextToken = token[1:]
+		
+		if list, ok := Shunts["."]; ok {
+			for _, f := range list {
+				result := f(ic, name)
+				if result != "" {
+					return ic.Shunt(result)
+				}
+			}
+		}
+		println("oi", name, ic.ExpressionType.Name)
+		ic.NextToken = ""
+	}
+	
 	switch token {
 		case ")", ",", "\n", "]", ";", "{", "}", "|":
 			ic.NextToken = token
@@ -134,6 +149,18 @@ func (ic *Compiler) Shunt(name string) string {
 					operator, ok = GetOperator(token, A, B)
 					ic.ExpressionType = operator.ExpressionType
 				}
+				
+				if !ok {
+					for _, f := range SpecialOperators {
+						o := f(token, A, B)
+						if o != nil {
+							operator = *o
+							ok = true
+							ic.ExpressionType = operator.ExpressionType
+							break
+						}
+					}
+				}
 
 				if ok {
 				
@@ -141,6 +168,7 @@ func (ic *Compiler) Shunt(name string) string {
 					asm = strings.Replace(asm, "%a", name, -1)
 					asm = strings.Replace(asm, "%b", next, -1)
 					asm = strings.Replace(asm, "%c", id, -1)
+					asm = strings.Replace(asm, "$Super", A.Super, -1)
 					
 					if strings.Contains(asm, "%t") {
 						asm = strings.Replace(asm, "%t", ic.Tmp("tmp"), -1)
@@ -156,6 +184,7 @@ func (ic *Compiler) Shunt(name string) string {
 					return id
 				
 				} else {
+				
 					ic.RaiseError("Invalid Operator Matchup! ", A.Name , token, B.Name, "(types do not support the opperator)")
 				}
 		}

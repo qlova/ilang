@@ -13,6 +13,9 @@ var Variables = make([]func(*Compiler, string) Type, 0, 4)
 var Shunts = make(map[string][]func(*Compiler, string) string)
 var Constructors = make([]func(*Compiler, Type), 0, 4)
 
+var SpecialOperators = make([]func(string, Type, Type) *Operator, 0, 4)
+
+//Register a statement token.
 func RegisterToken(tokens []string, f func(*Compiler)) {
 	for _, name := range tokens {
 		Tokens[name] = f
@@ -48,6 +51,11 @@ func RegisterConstructor(f func(*Compiler, Type)) {
 	Constructors = append(Constructors, f)
 }
 
+func RegisterSpecialOperator(f func(string, Type, Type) *Operator) {
+	SpecialOperators = append(SpecialOperators, f)
+}
+
+//Register a new type of expression, return an empty string if you don't recognise anything.
 func RegisterExpression(f func(*Compiler) string) {
 	Expressions = append(Expressions, f)
 }
