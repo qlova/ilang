@@ -1,5 +1,4 @@
 all:
-	cd ./src/ic && go build -o ../../ic
 	cd ./src/it && go build -o ../../it
 
 install:
