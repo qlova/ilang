@@ -2,11 +2,13 @@ package main
 
 import "fmt"
 import "os"
-import "os/exec"
 import path "path/filepath"
-import "bufio"
 import "io/ioutil"
-import "runtime"
+import "github.com/qlova/ilang/src/it/targets"
+
+type Gamer interface {
+	SetGame()
+}
 
 /*func CheckForUpdate(uptodate time.Time) {
 	ctx := context.Background()
@@ -41,33 +43,22 @@ func verify(err error) {
 	}
 }
 
-func cargo(mode string) {
-	
-	dir := os.Getenv("HOME")+"/.cargo/target"
-	os.Mkdir(dir, 0700)
-	
-	env := os.Environ()
-	env = append(env, fmt.Sprintf("CARGO_TARGET_DIR="+dir))
-
-	compile := exec.Command("cargo", mode)
-	compile.Stdout = os.Stdout
-	compile.Stderr = os.Stderr
-	compile.Env = env
-	verify(compile.Run())
-	
-	verify(os.Rename(dir+"/debug/"+path.Base(mainFile[:len(mainFile)-2]), "./"+path.Base(mainFile[:len(mainFile)-2])))
-}
-
 func main() {
 	
 	
 	var TargetLanguage string
+	var Mode string
+	
+	if len(os.Args) == 1 {
+		fmt.Println("Usage: it run/build/export ext")
+		return
+	} 
 	
 	//Make sure everything we need, is available.
 	//Will also download missing components.
-	fmt.Print("Checking System... ")
+	//fmt.Print("Checking System... ")
 	SystemChecks()
-	fmt.Println("ok!")
+	//fmt.Println("ok!")
 	
 	//Command.
 	if len(os.Args) > 1 {
@@ -93,14 +84,14 @@ func main() {
 			}
     }
     
-    fmt.Print("Finding a file... ")
+    //fmt.Print("Finding a file... ")
     
 	wg.Wait()
 	if mainFile == "" {
 		fmt.Println("Could not find a 'software' block!")
 		os.Exit(1)
 	}
-	fmt.Println("Found!")
+	//fmt.Println("Found!")
 	
 	//Compile.
 	
@@ -113,6 +104,7 @@ func main() {
 	//Other languages.
 	if len(os.Args) > 2 {
 		
+		Mode = os.Args[1]
 		TargetLanguage = os.Args[2]
 		
 	} else if TargetLanguage == "" {
@@ -121,67 +113,33 @@ func main() {
 		
 	}
 	
-	fmt.Print("Transpilling for ", TargetLanguage, "... ")
+	//fmt.Print("Transpilling for ", TargetLanguage, "... "
+	os.Chdir(".it")
+	uct(TargetLanguage, path.Base(mainFile[:len(mainFile)-2]+".u"))
+	
+	if target, ok := targets.Targets[TargetLanguage]; ok {
+		targets.Game = Game
+	
+		verify(target.Compile(mainFile))
 		
-	switch TargetLanguage {
-		case "rs": //Rust needs to be handled differently.
-			os.Chdir(".it")
-			uct(os.Args[2], path.Base(mainFile[:len(mainFile)-2]+".u"))
-			os.Mkdir("src", 0755)
-			verify(os.Rename(path.Base(mainFile[:len(mainFile)-2]+".rs"), "src/main.rs"))
-			verify(os.Rename("stack.rs","src/stack.rs"))
-			f, err := os.Create("Cargo.toml")
-			verify(err)
-			f.Write([]byte(`[package]
-name = "`+path.Base(mainFile[:len(mainFile)-2])+`"
-version = "0.1.0"
-
-[dependencies]
-num = "0.1"
-rand = "0.3"
-`))
-			f.Close()
-			
-			cargo("build")
-			
-			
-		default:
-			os.Chdir(".it")
-			uct(TargetLanguage, path.Base(mainFile[:len(mainFile)-2]+".u"))
+		switch Mode {
+			case "run":
+				verify(target.Run(mainFile))
+			case "export":
+				verify(target.Export(mainFile))
+			case "build":
+				return
+			default:
+				fmt.Println("Unidentified command: ", Mode)
+				return
+		}	
+		//Cleanup.
+		verify(os.Chdir("../"))
+		verify(os.RemoveAll(".it"))
+		return
+	} else if !ok {
+		fmt.Println(TargetLanguage+" files are not a supported target!")
 	}
 	
-	fmt.Println("Done!")
-	
-	if TargetLanguage == "js" && Game {
-		
-		
-	}
-	
-	if target, ok := Targets[TargetLanguage]; ok {
-		target.Compile(mainFile)
-		target.Run(mainFile)	
-	}
-	
-	if TargetLanguage == "go" {
-		compile := exec.Command(goc, "build", "-tags", "example", "-o",  "../"+path.Base(mainFile[:len(mainFile)-2])+ext)
-		compile.Stdout = os.Stdout
-		compile.Stderr = os.Stderr
-		verify(compile.Run())
-	
-		os.Chdir("../")
-		//if os.Args[1] == "run" {
-			run := exec.Command("./"+path.Base(mainFile[:len(mainFile)-2]))
-			run.Stdout = os.Stdout
-			run.Stderr = os.Stderr
-			run.Stdin = os.Stdin
-			run.Run()
-		//}
-		
-		if runtime.GOOS == "windows" {
-			fmt.Println("\n[SOFTWARE EXIT]\nPress 'Enter' to close...")
-			reader := bufio.NewReader(os.Stdin)
-			reader.ReadString('\n')
-		}
-	}
 }
 	

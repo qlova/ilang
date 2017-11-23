@@ -3,10 +3,10 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-if [ "$2" = "" ]; then
-	LANGUAGE=py
+if [[ -z "$2" ]]; then
+	export LANGUAGE=py
 else
-	LANGUAGE=$2
+	export LANGUAGE=$2
 fi
 
 function runit {
@@ -45,7 +45,7 @@ function runit {
 }
 
 function BasicTest {
-	cd ./$1/ && it . $LANGUAGE
+	cd ./$1/ && it build $LANGUAGE
 	if [ "$?" -eq "1" ]; then
 		echo -e "$1 \e[31mFAILED!\e[0m to compile D:"
 		exit 1
@@ -65,7 +65,7 @@ function BasicTest {
 }
 
 function TESTING {
-	if [ "$2" != "" ]; then
+	if [ ! -z "$2" ]; then
 		for l in rb py go java lua rb js bash cs; do
 			LANGUAGE=$l
 			echo $l
@@ -79,7 +79,7 @@ export -f TESTING
 export -f BasicTest
 export -f runit
 
-if [ "$1" != "" ]; then
+if [[ ! -z "$1" ]]; then
 	cd ./$1 && ./test.sh $2 $3 $4
 else
 	cd Structs && ./test.sh && cd ../Basic && ./test.sh
