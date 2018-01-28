@@ -120,7 +120,7 @@ func GenerateTypeFor(ic *ilang.Compiler, precision int) ilang.Type {
 
 	ilang.NewOperator(Copy, "+", Copy, "VAR %c\nADD %c %a %b", false)
 	ilang.NewOperator(Copy, "-", Copy, "VAR %c\nSUB %c %a %b", false)
-	ilang.NewOperator(Copy, "/", Copy, "VAR %t\nVAR %c\nMUL %t %a "+Copy.Super+"nDIV %c %t %b", true)
+	ilang.NewOperator(Copy, "/", Copy, "VAR %t\nVAR %c\nMUL %t %a "+Copy.Super+"\nDIV %c %t %b", true)
 	ilang.NewOperator(Copy, "*", Copy, "VAR %c\nMUL %c %a %b\nDIV %c %c "+Copy.Super+"", true)
 	
 	//We want Normal numbers to work with decimal numbers.
