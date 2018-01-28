@@ -23,6 +23,14 @@ func ScanStatement(ic *ilang.Compiler) bool {
 }
 
 func ScanSymbol(ic *ilang.Compiler) ilang.Type {
+	if len(ic.LastToken) > 0 {
+		var precision, err = strconv.Atoi(ic.LastToken[1:])
+		if err != nil {
+			ic.RaiseError("Decimals can only have numeric precisions!")
+		}
+
+		return GenerateTypeFor(ic, precision)
+	} 
 	return Type
 }
 
