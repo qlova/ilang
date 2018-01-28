@@ -51,7 +51,7 @@ func ScanAssembly(ic *ilang.Compiler) {
 				ic.SetVariable(token, ilang.Array)
 				ic.SetVariable(token+"_use", ilang.Used)
 			}
-			if cmd == "pull" {
+			if cmd == "pull" || cmd == "pop" || cmd == "get" {
 				ic.SetVariable(token, ilang.Number)
 				ic.SetVariable(token+"_use", ilang.Used)
 			}
