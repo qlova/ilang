@@ -165,6 +165,10 @@ func (ic *Compiler) ScanSymbolicType() Type {
 		ic.Scan('.')
 		symbol = ".."
 	}
+
+	if ( len(symbol) > 0 && symbol[0] == '.') {
+		symbol = "."
+	}
 	
 	if f, ok := Symbols[symbol]; ok {
 		return f(ic)
