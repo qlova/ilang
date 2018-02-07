@@ -90,6 +90,8 @@ So you can hopefully see some of the philosophy of i.
 
 ## Documentation
 
+There is now a reddit page! http://reddit.com/r/ilang
+
 Documentation is minimal but take a look at the [Wiki](https://github.com/Qlova/ilang/wiki).
 The Rosetta Code [page](http://rosettacode.org/wiki/Category:I) may be helpful. 
 Flick me an email (splizard @ splizard dot com) if you have any questions =)
