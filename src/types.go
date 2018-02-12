@@ -166,7 +166,7 @@ func (ic *Compiler) ScanSymbolicType() Type {
 		symbol = ".."
 	}
 
-	if ( len(symbol) > 0 && symbol[0] == '.') {
+	if ( symbol != ".." && len(symbol) > 0 && symbol[0] == '.') {
 		symbol = "."
 	}
 	

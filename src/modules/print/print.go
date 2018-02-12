@@ -20,14 +20,19 @@ func init() {
 	}, ScanPrint)
 }
 
+//TODO change to use plugins instead of hacky scanner method.
 func List(ic *ilang.Compiler, name string) {
 	ic.Scanners = append(ic.Scanners, ic.Scanner)
 	
 	ic.Scanner = &scanner.Scanner{}
 	ic.Scanner.Init(strings.NewReader(`
-		for value in `+name+`
-			print(value)
+		for id, value in `+name+`
+			write(value)
+			if id < len(`+name+`)-1
+				write(',')
+			end
 		end
+		write('\n')
 	`))
 	ic.Scanner.Position.Filename = "print.go"
 	ic.Scanner.Whitespace= 1<<'\t' | 1<<'\r' | 1<<' '
@@ -46,7 +51,8 @@ func ScanPrint(ic *ilang.Compiler) {
 		ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
 	}
 	
-	if ic.ExpressionType.Name == list.Type.Name {
+	if ic.ExpressionType.Name == list.Type.Name || ic.ExpressionType == ilang.Array {
+		ic.SetVariable(arg, ic.ExpressionType)
 		List(ic, arg)
 	} else {
 		method.Call(ic, "text", ic.ExpressionType)
