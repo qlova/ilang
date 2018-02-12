@@ -7,6 +7,7 @@ var Type = ilang.NewType("table", "PUSH", "PULL")
 
 func ScanStatement(ic *ilang.Compiler) {
 	var table = ic.Scan(0)
+    var t  = ic.GetVariable(table)
 	
 	ic.Scan('[')
 	var index = ic.ScanExpression()
@@ -16,22 +17,32 @@ func ScanStatement(ic *ilang.Compiler) {
 	ic.Scan(']')
 	ic.Scan('=')
 	var value = ic.ScanExpression()
-	if ic.ExpressionType != ilang.Number {
-		ic.RaiseError("Table can only take numbers.")
-	}
+	
+    if t.SubType == nil {
+        t.SubType = new(ilang.Type)
+        *t.SubType = ic.ExpressionType
+        ic.UpdateVariable(table, t)
+    }
+    
+    if ic.ExpressionType != *t.SubType {
+        ic.RaiseError("Cannot add value of type '",ic.ExpressionType.Name,"' to a table of '",t.SubType.Name,"'")
+    }
 	
 	var tmp = ic.Tmp("newtableref")
 	
 	ic.Assembly("PUSH %s", table)
 	ic.Assembly("SHARE %s", index)
-	ic.Assembly("PUSH %s", value)
+	ic.Assembly("PUSH %s", ic.GetPointerTo(value))
 	ic.Assembly(ic.RunFunction("table_set"))
 	ic.Assembly("PULL %s", tmp)
 	ic.Assembly("ADD %s %s %v", table, tmp, 0)
 }
 
 func ScanSymbol(ic *ilang.Compiler) ilang.Type {
-	return Type
+	var TableType = Type
+	TableType.SubType = new(ilang.Type)
+	*TableType.SubType = ic.ScanSymbolicType()
+	return TableType
 }
 
 func ScanExpression(ic *ilang.Compiler) string {
@@ -49,12 +60,15 @@ func ScanExpression(ic *ilang.Compiler) string {
 }
 
 func Shunt(ic *ilang.Compiler, name string) string {
-	if ic.ExpressionType == Type {
+	if ic.ExpressionType.Name == "table" {
+        var table = ic.ExpressionType
+        
 		var index = ic.ScanExpression()
 		ic.Scan(']')
 		if ic.ExpressionType != ilang.Text {
 			ic.RaiseError("A Table must have a text index! Found ", ic.ExpressionType.Name)
 		}
+		
 		var tableval = ic.Tmp("tableval")
 	
 		ic.Assembly("SHARE %s", index)
@@ -62,9 +76,9 @@ func Shunt(ic *ilang.Compiler, name string) string {
 		ic.Assembly(ic.RunFunction("table_get"))
 		ic.Assembly("PULL %s", tableval)
 	
-		ic.ExpressionType = ilang.Number
+		ic.ExpressionType = *table.SubType
 	
-		return ic.Shunt(tableval)
+		return ic.Shunt(ic.Dereference(tableval))
 	}
 	return ""
 }

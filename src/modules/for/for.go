@@ -184,12 +184,6 @@ func ScanFor(ic *ilang.Compiler) {
 				}
 			}
 			
-			if ic.ExpressionType.Push != "SHARE" {
-				ic.RaiseError("Cannot iterate over "+array+" (", ic.ExpressionType.Name, ")")
-			}
-			
-			var condition = ic.Tmp("in") 
-
 			var i, v, vo string
 			if name2 != "" {
 				i = name
@@ -201,12 +195,24 @@ func ScanFor(ic *ilang.Compiler) {
 			
 			if OverList {
 				i = name
+				v = ic.Tmp("v")
 			}
 			
 			vo = v
 			if ic.ExpressionType.Name == list.Type.Name && ic.ExpressionType.SubType.Push == "SHARE" {
 				v += "_address"
 			}
+			
+			if ic.ExpressionType.Push != "SHARE" {
+                if ic.ExpressionType.Name == "table" {
+                        ScanForTable(ic, array, i, v)
+                        return
+                }
+                
+				ic.RaiseError("Cannot iterate over "+array+" (", ic.ExpressionType.Name, ")")
+			}
+			
+			var condition = ic.Tmp("in") 
 			
 			backup := ic.Tmp("backup")
 			del := ic.Tmp("delete")
@@ -274,6 +280,8 @@ LOOP
 				
 			} else if ic.ExpressionType == ilang.Text {
 				ic.SetVariable(vo, ilang.GetType("letter"))
+			} else if ic.ExpressionType == ilang.Array {
+				ic.SetVariable(vo, ilang.GetType("number"))
 			} else {
 				ic.RaiseError("Cannot find values inside ", ic.ExpressionType)
 			}

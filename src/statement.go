@@ -51,6 +51,10 @@ func (ic *Compiler) ScanStatement() {
 			//A bit of a hack..
 			t = string2type["list"]
 		}
+		if t.Name == "table" {
+			//A bit of a hack..
+			t = string2type["table"]
+		}
 		
 		if f, ok := Statements[t]; ok {
 			f(ic)
