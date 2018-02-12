@@ -87,7 +87,6 @@ func GenerateSaveMethodFor(t ilang.Type) string {
 
 func ScanSave(ic *ilang.Compiler) string {
 	var token = ic.LastToken
-	println(token)
 	if token == "save" {	
 		ic.Scan('(')
 		ic.DisableOwnership = true
