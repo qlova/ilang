@@ -114,6 +114,7 @@ RETURN
 	ic.DefinedFunctions["number_m_text"] = Method(Number, true, "PUSH 10\nRUN i_base_string", "i_base_string")
 	
 	ic.DefinedFunctions["inbox"] = InlineFunction(nil, "INBOX", []Type{Text})
+    ic.DefinedFunctions["ready"] = InlineFunction(nil, "READYBOX", []Type{Number})
 	ic.DefinedFunctions["outbox"] = InlineFunction([]Type{Text}, "OUTBOX", nil)
 	
 	ic.DefinedFunctions["output"] = InlineFunction([]Type{Text}, "STDOUT", nil)
