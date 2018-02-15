@@ -24,18 +24,23 @@ func ScanStatement(ic *ilang.Compiler) {
         ic.UpdateVariable(table, t)
     }
     
-    if ic.ExpressionType != *t.SubType {
-        ic.RaiseError("Cannot add value of type '",ic.ExpressionType.Name,"' to a table of '",t.SubType.Name,"'")
+    if !ic.ExpressionType.Equals(*t.SubType) {
+        ic.RaiseError("Cannot add value of type '",ic.ExpressionType.GetComplexName(),"' to a table of '",t.SubType.GetComplexName(),"'")
     }
 	
 	var tmp = ic.Tmp("newtableref")
 	
-	ic.Assembly("PUSH %s", table)
-	ic.Assembly("SHARE %s", index)
-	ic.Assembly("PUSH %s", ic.GetPointerTo(value))
-	ic.Assembly(ic.RunFunction("table_set"))
-	ic.Assembly("PULL %s", tmp)
-	ic.Assembly("ADD %s %s %v", table, tmp, 0)
+	ic.Assembly("IF ", table)
+		ic.Assembly("PUSH %s", table)
+		ic.Assembly("SHARE %s", index)
+		ic.Assembly("PUSH %s", ic.GetPointerTo(value))
+		ic.Assembly(ic.RunFunction("table_set"))
+		ic.Assembly("PULL %s", tmp)
+		ic.Assembly("ADD %s %s %v", table, tmp, 0)
+	ic.Assembly("ELSE")
+		ic.Assembly("ADD ERROR 1 0")
+	ic.Assembly("END")
+	
 }
 
 func ScanSymbol(ic *ilang.Compiler) ilang.Type {
@@ -70,10 +75,16 @@ func Shunt(ic *ilang.Compiler, name string) string {
 		}
 		
 		var tableval = ic.Tmp("tableval")
-	
-		ic.Assembly("SHARE %s", index)
-		ic.Assembly("PUSH %s", name)
-		ic.Assembly(ic.RunFunction("table_get"))
+		
+		ic.Assembly("IF ", name)
+			ic.Assembly("SHARE %s", index)
+			ic.Assembly("PUSH %s", name)
+			ic.Assembly(ic.RunFunction("table_get"))
+		ic.Assembly("ELSE")
+			ic.Assembly("ADD ERROR 1 0")
+			ic.Assembly("PUSH 0")
+		ic.Assembly("END")
+		
 		ic.Assembly("PULL %s", tableval)
 	
 		ic.ExpressionType = *table.SubType
