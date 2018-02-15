@@ -50,9 +50,15 @@ func main() {
 	var Mode string
 	
 	if len(os.Args) == 1 {
-		fmt.Println("Usage: it run/build/export ext")
+		fmt.Println("Usage: it run/build/export/help ext")
 		return
 	} 
+	
+	if os.Args[1] == "help" {
+		os.Args = os.Args[1:]
+		help()
+		return
+	}
 	
 	//Make sure everything we need, is available.
 	//Will also download missing components.
