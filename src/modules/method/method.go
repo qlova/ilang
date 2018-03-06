@@ -45,7 +45,7 @@ func init() {
 				ic.Scan('.')
 				ic.ExpressionType = function.Flag
 				var name = ic.Scan(ilang.Name)
-				return name+"_m_"+token
+				return ic.Shunt(name+"_m_"+ic.DefinedTypes[token].GetComplexName())
 			}
 		}
 		
@@ -223,7 +223,7 @@ func ScanMethod(ic *ilang.Compiler) {
 		
 		
 		name = ic.Scan(ilang.Name)
-		name += "_m_"+t.Name
+		name += "_m_"+t.GetComplexName()
 		
 		ic.Assembly("FUNCTION ", name)
 		ic.GainScope()

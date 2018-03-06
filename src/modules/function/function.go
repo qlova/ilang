@@ -158,9 +158,9 @@ func ScanReturn(ic *ilang.Compiler) {
 			ic.CurrentFunction.Returns[0] = ic.ExpressionType
 		}*/
 		
-		if ic.ExpressionType != ic.CurrentFunction.Returns[0] {
-			ic.RaiseError("Cannot return '",ic.ExpressionType.Name,
-				"', expecting ",ic.CurrentFunction.Returns[0].Name)
+		if !ic.ExpressionType.Equals(ic.CurrentFunction.Returns[0]) {
+			ic.RaiseError("Cannot return '",ic.ExpressionType.GetComplexName(),
+				"', expecting ",ic.CurrentFunction.Returns[0].GetComplexName())
 		}
 		
 		ic.Assembly("%v %v", ic.ExpressionType.Push, r)
