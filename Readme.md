@@ -126,16 +126,22 @@ Please be aware that many features are missing or incomplete in i!
 
 ## Compilation
 
-In order to compile code written in i, place it in an isolated directory and run:
+In order to compile run code written in i, place it in an isolated directory and run:
 
 		cd /path/to/directory/
-		it build
+		it run
 
 By default, the code is compiled into the Go programming language. (You will need Go installed to complete this process)
 Otherwise you can target other langauges by providing their extension as an argument eg.
 
-		it build py
-		it build java
-		it build js
+		it run py
+		it run java
+		it run js
+		
+You can export a distributable binary of the code by using the export command.
+
+		it export py
+		it export java
+		it export js
 
 A full set of supported languages can be found [here](http://github.com/qlova/uct)

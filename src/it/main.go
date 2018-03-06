@@ -115,6 +115,9 @@ func main() {
 		
 	} else if TargetLanguage == "" {
 		
+		if len(os.Args) > 1 {
+			Mode = os.Args[1]
+		}
 		TargetLanguage = "go"	
 		
 	}
