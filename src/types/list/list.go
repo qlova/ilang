@@ -22,18 +22,30 @@ func ScanStatement(ic *ilang.Compiler) {
 			ic.Assembly("HEAP")
 			
 		case "+":
-			ic.Scan('=')
-			
-			value := ic.ScanExpression()
-			
-			if t.SubType == nil {
-				t.SubType = new(ilang.Type)
-				*t.SubType = ic.ExpressionType
-				ic.UpdateVariable(name, t)
-			}
-			
-			if ic.ExpressionType != *t.SubType {
-				ic.RaiseError("Cannot add value of type '",ic.ExpressionType.Name,"' to a list of '",t.SubType.Name,"'")
+				var value string
+			if ic.Peek() == "+" {
+					//List++ 
+					//We append to the list the zero value of it's SubType.
+					ic.Scan('+')
+					
+					value = ic.CallType(t.SubType.Name)
+					ic.ExpressionType = *t.SubType
+			} else if ic.Peek() == "=" {
+				ic.Scan('=')
+				
+				value = ic.ScanExpression()
+				
+				if t.SubType == nil {
+					t.SubType = new(ilang.Type)
+					*t.SubType = ic.ExpressionType
+					ic.UpdateVariable(name, t)
+				}
+				
+				if ic.ExpressionType != *t.SubType {
+					ic.RaiseError("Cannot add value of type '",ic.ExpressionType.Name,"' to a list of '",t.SubType.Name,"'")
+				}
+			} else {
+					ic.RaiseError("Expecting ++ or += got +", ic.Peek())
 			}
 			
 			ic.Assembly("PLACE ", name)
@@ -53,6 +65,18 @@ func ScanStatement(ic *ilang.Compiler) {
 				ic.Assembly("PUSH ", index)
 				ic.Assembly("PLACE ", name)
 				ic.Assembly("SET ", ic.GetPointerTo(value))
+			
+			} else if token == "[" {
+				
+				var pointer = ic.Tmp("pointer")
+				ic.Assembly("PUSH ", index)
+				ic.Assembly("PLACE ", name)
+				ic.Assembly("GET ", pointer)
+				
+				ic.NextToken = ic.Dereference(pointer)
+				ic.SetVariable(ic.NextToken, *t.SubType)
+				ic.NextNextToken = token
+				ic.ShuntStatement(*t.SubType)
 				
 			} else {
 				var pointer = ic.Tmp("pointer")
@@ -135,7 +159,7 @@ func ScanExpression(ic *ilang.Compiler) string {
 }
 
 func Shunt(ic *ilang.Compiler, name string) string {
-	if ic.ExpressionType.Name == "list" {
+	if ic.ExpressionType.Name == "list" || (ic.ExpressionType.Class != nil && ic.ExpressionType.Class.Name == "list") {
 		var list = ic.ExpressionType
 	
 		index := ic.ScanExpression()
