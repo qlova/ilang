@@ -105,34 +105,32 @@ func init() {
 FUNCTION table_set
 	PULL value
 	GRAB key
+	
 	PULL ref
 	PUSH ref
 	HEAP
 	GRAB t
+	
 	SHARE key
 	PUSH 255
 	RUN i_hash
-	PULL i_operator1
-	
-	PUSH i_operator1
 	PULL hash
+
 	PLACE t
 	PUSH hash
-	GET i_index2
-	PUSH i_index2
-	PULL entry
+	GET entry
+	
 	PUSH 0
 	PULL tooheavy
-	VAR i_operator3
-	SUB i_operator3 0 1
-	PUSH i_operator3
+
+	PUSH -1
 	PULL negativeone
 	LOOP
 		PLACE t
 		PUSH 0
-		GET i_index4
-		PUSH i_index4
-		PULL firstindex
+		GET firstindex
+		
+		#First index stores information on how heavy the table is.
 		IF firstindex
 			PUSH firstindex
 			HEAP
@@ -173,10 +171,38 @@ FUNCTION table_set
 		PUSH entry
 		HEAP
 		GRAB bucket
-		PLACE bucket
-		PUT hash
-		PLACE bucket
-		PUT value
+		
+		#Need to check if we are already in the bucket!
+		PUSH 0
+		PULL i
+		LOOP
+			PLACE bucket
+			PUSH i
+			GET i_index29
+			VAR i_operator30
+			SEQ i_operator30 i_index29 hash
+			IF i_operator30
+				VAR i_operator31
+				ADD i_operator31 i 1
+				PLACE bucket
+				PUSH i_operator31
+				SET value
+				BREAK
+			END
+			ADD i i 2
+			VAR i_operator34
+			SGT i_operator34 i #bucket
+			IF i_operator34
+			
+				#Add it to the end!
+				PLACE bucket
+				PUT hash
+				PLACE bucket
+				PUT value
+				BREAK
+			END
+		REPEAT
+		
 	ELSE
 		ARRAY a
 		PUT hash
