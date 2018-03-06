@@ -11,5 +11,6 @@ import (
 	_ "github.com/qlova/ilang/src/types/table"
 	_ "github.com/qlova/ilang/src/types/decimal"
 	_ "github.com/qlova/ilang/src/types/list"
+	_ "github.com/qlova/ilang/src/types/array"
 	_ "github.com/qlova/ilang/src/types/duplex"
 )
