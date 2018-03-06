@@ -1,69 +1,30 @@
-# i
-i is a hardware-agnostic maths-based cross-platform programming language in heavy development.
+# 'i'
+'i' is a hardware-agnostic maths-based cross-platform programming language in heavy development.
 
 Hello World:
 
 		software {
 			print("Hello World")
 		}
+
+## The Promise  
+'i' offers two promises:
+
+* Determinism
+* Resilience
+
+## Deterministic  
+Given equivalent inputs, a compiled program in 'i' will provide identical outputs on any platform/target.  
+The result of 0/0 is considered as an input.
+
+## Resilient  
+Given hardware with an infinite amount of memory, 'i' will never crash.
 		
 ## Design
-i is a language which is meant to be as clean and visually pleasing as possible, too many languages obfuscate code (Looking at you Java).
-So I created i to solve this.
+'i' is a language which is meant to be clean and concise.
 
-Here is a contrast between different languages and how visually pleasing they are at common tasks.
-
-**File IO:**
-Java:
-```java
-//This is ugly.
-for (String filename : args) {
-    try (FileReader fr = new FileReader(filename);BufferedReader br = new BufferedReader(fr)){
-        String line;
-        int lineNo = 0;
-        while ((line = br.readLine()) != null) {
-            processLine(++lineNo, line);
-        }
-    }
-    catch (Exception x) {
-        x.printStackTrace();
-    }
-}
 ```
-Go:
-```go
-//Marginaly better
-inputFile, err := os.Open("byline.go")
-if err != nil {
-	log.Fatal("Error opening input file:", err)
-}
-defer inputFile.Close()
-
-scanner := bufio.NewScanner(inputFile)
-
-for scanner.Scan() {
-	fmt.Println(scanner.Text())
-}
-
-if err := scanner.Err(); err != nil {
-	log.Fatal(scanner.Err())
-}
-```
-Lua:
-```lua
---Now we're talking! Still kinda obscure.
-filename = "input.txt"
-fp = io.open( filename, "r" )
- 
-for line in fp:lines() do
-    print( line )
-end
- 
-fp:close()
-```
-I:
-```
-	//Much better, well structured, clean and understandable.
+	//Open a file and print its contents.
 	software {
 		var file = open("input.txt")
 		loop {
@@ -74,8 +35,6 @@ I:
 		}
 	}
 ```
-
-So you can hopefully see some of the philosophy of i.
 
 ## Features
 
@@ -94,10 +53,10 @@ There is now a reddit page! http://reddit.com/r/ilang
 
 Documentation is minimal but take a look at the [Wiki](https://github.com/Qlova/ilang/wiki).
 The Rosetta Code [page](http://rosettacode.org/wiki/Category:I) may be helpful. 
-Flick me an email (splizard @ splizard dot com) if you have any questions =)
+Flick me an email (splizard @ splizard dot com) if you have any questions.
 
 ## Types
-There are 13 types in the i language.
+These are all of the builtin types in the 'i' language. Each type has an associate set of symbols.
 ```
 number()
 rational()	\
@@ -117,16 +76,16 @@ Something() ?
 ```
 
 **number**
-Numbers in the i language can be integers of any size.
+Numbers in the 'i' language can be integers of any size.
+
+**rational**
+Rational numbers are pairs of numbers representing a fractional value.
 
 **decimal**
-Decimals are fixed-precision numbers.
+Decimals are fixed-precision decimal numbers.
 
 **letter**
 Letters correspond to a character in a piece of text, for example "a", "!" etc.
-
-**set**
-A set is an unordered collection of arbitary labels.
 
 **array**
 An array is a list of numbers.
@@ -134,11 +93,16 @@ An array is a list of numbers.
 **text**
 Text is a string of letters, these can form words, sentences and the like.
 
+**set**
+A set is an unordered collection of arbitary labels.
+
+
 **pipe**
 A pipe is any object with an input and an output. These can be files, the internet etc.
 
 **function**
 A function is a special form of pipe, one which you can call.
+
 
 **thing**
 Any types which are added in a program are "things".
