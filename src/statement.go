@@ -34,15 +34,7 @@ func (ic *Compiler) ScanTextStatement() {
 	}
 }
 
-func (ic *Compiler) ScanStatement() {
-	var token = ic.Scan(0)
-	
-	if t := ic.GetVariable(token); t != Undefined {
-		
-		ic.NextNextNextToken = ic.NextNextToken
-		ic.NextNextToken = ic.NextToken
-		ic.NextToken = token
-		
+func (ic *Compiler) ShuntStatement(t Type) {
 		if t.User && t.Name != "something" {
 			//A bit of a hack..
 			t = string2type["thing"]
@@ -68,10 +60,31 @@ func (ic *Compiler) ScanStatement() {
 				ic.ScanTextStatement() 
 				
 			//This may become depreciated.
-			case t.IsMatrix(): 					ic.ScanMatrixStatement()
+			case t.IsMatrix(): 					
+				ic.ScanMatrixStatement()
 				
 			default:
-				ic.RaiseError("Unsupported statement!")
+				if t.Class != nil {
+					ic.ShuntStatement(*t.Class)
+				} else {
+					ic.RaiseError("Unsupported statement!")
+				}
+		}
+}
+
+func (ic *Compiler) ScanStatement() {
+	var token = ic.Scan(0)
+	
+	if t := ic.GetVariable(token); t != Undefined {
+		
+		ic.NextNextNextToken = ic.NextNextToken
+		ic.NextNextToken = ic.NextToken
+		ic.NextToken = token
+		
+		if t.Class != nil && ic.Peek() == "." {
+			ic.ShuntStatement(string2type["thing"])
+		} else {
+			ic.ShuntStatement(t)
 		}
 	
 		return
@@ -84,8 +97,11 @@ func (ic *Compiler) ScanStatement() {
 	}
 	
 	ic.NextToken = token
+	
 	ic.ScanExpression()	
 	if ic.ExpressionType == Undefined {
 		ic.RaiseError(token, " undefined!")
 	}
+	
+	ic.ShuntStatement(ic.ExpressionType)
 }

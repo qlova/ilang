@@ -7,6 +7,7 @@ var TypeIota int
 
 type Type struct {
 	Name, Push, Pop string
+	
 	Int int
 	User bool
 	List bool
@@ -19,6 +20,7 @@ type Type struct {
 	Detail *UserType //This contains usertype information.
 	Interface *Interface
 	SubType *Type //Subtype for recursive types such as lists.
+	Class *Type
 }
 
 func (t Type) Equals(b Type) bool {
@@ -29,6 +31,20 @@ func (t Type) Equals(b Type) bool {
 				return true
 			}
 		}
+	}
+	
+	if t.Name == "list" && *t.SubType == Number && b.Name == "array" {
+		return true
+	}
+	if b.Name == "list" && *b.SubType == Number && t.Name == "array" {
+		return true
+	}
+	
+	if t.Name == "list" && t.SubType == nil && b.Name == "array" {
+		return true
+	}
+	if b.Name == "list" && b.SubType == nil && t.Name == "array" {
+		return true
 	}
 	
 	if t.Name == "function" {
@@ -50,7 +66,13 @@ func (t Type) Equals(b Type) bool {
 	}
 
 	if t.Name != b.Name {
-		return false
+		if t.User {
+			return false
+		}
+		
+		if (t.Class == nil || t.Class.Name != b.Name) && (b.Class == nil || b.Class.Name != t.Name) {
+			return false
+		}
 	}
 	if t.SubType != nil && b.SubType != nil {
 		return t.SubType.Equals(*b.SubType)
@@ -178,6 +200,11 @@ func (ic *Compiler) ScanSymbolicType() Type {
 		case `""`:
 			result = Text
 			
+		//TODO move into a type module.
+		case `[`:
+			ic.Scan(']')
+			result = Array
+			
 		default:
 			result = Number
 			ic.NextToken = symbol
@@ -192,6 +219,20 @@ func (ic *Compiler) TypeExists(name string) bool {
 	return ok
 }
 
+
+func (ic *Compiler) GetType(name string) Type {
+	if t, ok := ic.DefinedTypes[name]; ok {
+			return t
+	}
+	return string2type[name]
+}
+
+//This function generates the assembly for a type call.
+//This does not set the ExpressionType.
+//For example:
+//	var x = text()
+//	var y = UserType()
+//	var z = number()
 func (ic *Compiler) CallType(name string) string {
 	if name == "text" || name == "list" {
 		var array = ic.Tmp("user")
@@ -199,16 +240,49 @@ func (ic *Compiler) CallType(name string) string {
 		return array
 	}
 	
-	if ic.DefinedTypes[name].Empty() {
-		return ""
-	} else {
+	var t = ic.GetType(name)
+	if t == Undefined {
+		ic.RaiseError(name, " is not a type!")
+	}
+	
+	//Complex types.
+	//eg. type TextList ..""
+	if t.Class != nil {
+			return ic.CallType(t.Class.Name)
+	}
+	
+	//type modules.
+	if f, ok := ic.DefinedFunctions[name]; ok {
+		ic.Assembly(ic.RunFunction(name))
+	
+		if len(f.Returns) > 0 {
+			id := ic.Tmp("result")
+			
+			var ReturnType = f.Returns[0]
+			
+			ic.Assembly("%v %v", ReturnType.Pop, id)
+			
+			return id
+		}	
+	}
+	
+	
+	
+	if t.User {
+		if t.Empty() { //Empty types can be ignored.
+			return ""
+		} 
+		
+		//Create an array large enough to fit the type.
 		var array = ic.Tmp("user")
-		ic.Assembly("ARRAY ", array)
-		for range ic.DefinedTypes[name].Detail.Elements {
-			ic.Assembly("PUT 0")
-		}
+		ic.Assembly("PUSH ", len(ic.DefinedTypes[name].Detail.Elements))
+		ic.Assembly("MAKE")
+		ic.Assembly("GRAB ", array)
 		return array
 	}
+
+	ic.RaiseError("Complex type ", t.GetComplexName() ," needs to be implemented!")
+	return ""
 }
 
 func (list Type) GetComplexName() string {
@@ -334,8 +408,19 @@ func (ic *Compiler) ScanType() {
 				default:
 					ic.RaiseError()
 			}
-		default:
-			ic.RaiseError()
+		default: 
+			
+			//We assume that this is a complex type.
+			//Introducing... ITDL or 'i' type description language.
+			ic.NextToken = ic.LastToken
+			var t = ic.ScanSymbolicType()
+			var t2 = t
+			t.Class = &t2
+			t.Name = name
+			ic.DefinedTypes[name] = t
+			
+			return
+			
 	}
 		
 	ic.InsertPlugins(name)
@@ -394,6 +479,7 @@ func (ic *Compiler) ScanType() {
 	
 	ic.DefinedTypes[name] = t
 
+	//TODO depreciate this variable, rename it to CurrentMethodType or something.
 	ic.LastDefinedType = t
 }
 

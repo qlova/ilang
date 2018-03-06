@@ -22,7 +22,7 @@ func (ic *Compiler) ScanNumericStatement() {
 			if ic.ExpressionType.Push != "PUSH" {
 				ic.RaiseError("Only numeric values can assigned to ",name,".")
 			}
-			if ic.ExpressionType != numeric {
+			if !ic.ExpressionType.Equals(numeric) {
 				ic.RaiseError("Cannot add %s to %s", ic.ExpressionType, numeric)
 			}
 				

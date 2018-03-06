@@ -45,6 +45,33 @@ func GetOperator(sym string, a Type, b Type) (Operator, bool) {
 			}
 		}
 	}
+	if a.Class != nil {
+		if _, ok := Operations[sym]; ok {
+			if _, ok := Operations[sym][*a.Class]; ok {
+				if o, ok := Operations[sym][*a.Class][b]; ok {
+					return o, true
+				}
+			}
+		}
+	}
+	if b.Class != nil {
+		if _, ok := Operations[sym]; ok {
+			if _, ok := Operations[sym][a]; ok {
+				if o, ok := Operations[sym][a][*b.Class]; ok {
+					return o, true
+				}
+			}
+		}
+	}
+	if a.Class != nil && b.Class != nil {
+		if _, ok := Operations[sym]; ok {
+			if _, ok := Operations[sym][*a.Class]; ok {
+				if o, ok := Operations[sym][*a.Class][*b.Class]; ok {
+					return o, true
+				}
+			}
+		}
+	}
 	return Operator{}, false
 }
 
