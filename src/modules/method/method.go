@@ -24,7 +24,7 @@ func init() {
 			}
 		}
 		
-		if ic.GetFlag(Flag) {
+		if ic.GetFlag(Flag) && ic.LastDefinedType.Detail != nil {
 			if _, ok := ic.LastDefinedType.Detail.Table[token]; ok {
 				ic.NextToken = ic.LastDefinedType.Name
 				ic.NextNextToken = "."
@@ -231,7 +231,7 @@ func ScanMethod(ic *ilang.Compiler) {
 	
 		function.CreateFromArguments(name, ic)
 		
-		if len(t.Detail.Elements) > 0 {
+		if t.Detail == nil || len(t.Detail.Elements) > 0 {
 			ic.Assembly("%v %v", t.Pop, t.Name)
 			ic.SetVariable(t.Name, t)
 			ic.SetVariable(t.Name+"_use", ilang.Used)
