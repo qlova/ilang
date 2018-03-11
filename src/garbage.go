@@ -25,32 +25,47 @@ func (ic *Compiler) CollectGarbage() {
 				continue
 			}
 			
-			if variable.IsUser() != Undefined && !variable.Empty() {
-				ic.Assembly("SHARE ", name)
-				ic.Assembly(ic.RunFunction("collect_m_"+variable.Name))
+			if (variable.IsUser() != Undefined && !variable.Empty()) || variable.SubType != nil {
+				ic.Collect(variable)
+				ic.Assembly(variable.Push, " ", name)
+				ic.Assembly(ic.RunFunction("collect_m_"+variable.GetComplexName()))
 			}
 		}
 	}
 }
 
+var AlreadyGeneratedACollectionMethodFor = make(map[Type]bool)
+
 func (t Type) Free(pointer string) string {
-	if t.IsUser() == Undefined || t.Empty() {
+	if (t.IsUser() == Undefined || t.Empty()) && t.SubType == nil {
 		return ""
 	}
 	
 	return "IF "+pointer+"\nPUSH "+pointer+
-	"\nHEAP\nRUN collect_m_"+t.Name+
+	"\nHEAP\nRUN collect_m_"+t.GetComplexName()+
 	"\nMUL "+pointer+" -1 "+pointer+"\nPUSH "+pointer+"\nHEAP\nEND"
 }
 
 func (ic *Compiler) Collect(t Type) {
-	if t.IsUser() == Undefined || t.Empty() {
+	if AlreadyGeneratedACollectionMethodFor[t] {
 		return
 	}
 	
+	if t.IsUser() == Undefined || t.Empty() {
+		//TODO collect lists, tables and other complex types!
+		
+		for _, collection := range Collections {
+			collection(ic, t)
+		}
+		AlreadyGeneratedACollectionMethodFor[t] = true
+		
+		return
+	}
+
+	
 	var scope = ic.Scope
 	ic.GainScope()
-	ic.Library("FUNCTION collect_m_", t.Name)
+	ic.Library("FUNCTION collect_m_", t.GetComplexName())
 	ic.GainScope()
 	ic.Library("GRAB variable")
 	ic.Library("PLACE variable")
@@ -84,4 +99,6 @@ func (ic *Compiler) Collect(t Type) {
 	ic.LoseScope()
 	ic.Library("RETURN")
 	ic.Scope = scope
+	
+	AlreadyGeneratedACollectionMethodFor[t] = true
 }

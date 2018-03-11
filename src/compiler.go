@@ -69,8 +69,9 @@ type Compiler struct {
 	
 	//This is the expressiontype variable, it stores the type of the last scanned expression.
 	ExpressionType Type
-	DisableOwnership bool
+	DisableOwnership bool //Disable taking ownership.
 	TakingExpression bool
+	ProtectExpression bool //Protect expression values from being garbage collected
 	
 	//A counter for tmp variables so names do not clash.
 	Unique int

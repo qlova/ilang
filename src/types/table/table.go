@@ -16,7 +16,10 @@ func ScanStatement(ic *ilang.Compiler) {
 	}
 	ic.Scan(']')
 	ic.Scan('=')
+	
+	ic.ProtectExpression = true
 	var value = ic.ScanExpression()
+	ic.ProtectExpression = false
 	
     if t.SubType == nil {
         t.SubType = new(ilang.Type)
@@ -41,6 +44,93 @@ func ScanStatement(ic *ilang.Compiler) {
 		ic.Assembly("ADD ERROR 1 0")
 	ic.Assembly("END")
 	
+}
+
+func Collection(ic *ilang.Compiler, t ilang.Type) {
+	if t.Name != "table" {
+		return
+	}
+	
+	var scope = ic.Scope
+	ic.GainScope()
+	ic.Library("FUNCTION collect_m_", t.GetComplexName())
+	ic.GainScope()
+	ic.Library("PULL table")
+	ic.Library("PUSH table")
+	ic.Library("HEAP")
+	ic.Library("GRAB variable")
+	ic.Library("PLACE variable")
+	
+	var FreeSubType = t.SubType.Free("pointer")
+	
+	ic.Library(`
+	PUSH 0
+	GET firstbucket
+	
+	IF firstbucket
+		#Collect it.
+		MUL firstbucket firstbucket -1
+		PUSH firstbucket
+		HEAP
+	END
+	
+	PUSH 1
+	PULL i
+
+	LOOP
+		PLACE variable
+		PUSH i
+		GET address
+		
+		IF address
+			PUSH address
+			HEAP
+			GRAB bucket
+		
+			PUSH 1
+			PULL j
+			
+			#Collect bucket entries
+			LOOP
+				PLACE bucket
+				PUSH j
+				GET pointer
+				ADD pointer 0 pointer
+				
+				`+FreeSubType+`
+				
+				ADD j j 2
+				SGE pointer j #bucket
+				IF pointer
+					BREAK
+				END
+				
+			REPEAT
+			
+			#Collect bucket
+			MUL address address -1
+			PUSH address
+			HEAP
+		END
+		
+		
+		ADD i i 1
+		SGE address i #variable
+		IF address
+			BREAK
+		END
+		
+	REPEAT
+	
+	MUL table table -1
+	PUSH table
+	HEAP
+	
+	`)
+	
+	ic.LoseScope()
+	ic.Library("RETURN")
+	ic.Scope = scope
 }
 
 func ScanSymbol(ic *ilang.Compiler) ilang.Type {
@@ -98,6 +188,7 @@ func init() {
 	ilang.RegisterStatement(Type, ScanStatement)	
 	ilang.RegisterSymbol(":", ScanSymbol)
 	ilang.RegisterShunt("[", Shunt)
+	ilang.RegisterCollection(Collection)
 	
 	ilang.RegisterFunction("table", ilang.Method(Type, true, "PUSH 64\nMAKE\nPUSH 0\nHEAP\n"))
 	
@@ -185,6 +276,9 @@ FUNCTION table_set
 				VAR i_operator31
 				ADD i_operator31 i 1
 				PLACE bucket
+				
+				#Garbage collection...
+				
 				PUSH i_operator31
 				SET value
 				BREAK

@@ -117,6 +117,11 @@ func (ic *Compiler) expression() string {
 				//TODO better gc protection.
 			ic.SetVariable(variable, ic.DefinedTypes[token])
 			ic.SetVariable(variable+"_use", Used)
+			
+			if ic.ProtectExpression {
+				ic.SetVariable(variable+".", Protected)
+			}
+			
 			return variable
 			
 		}

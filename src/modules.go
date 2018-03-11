@@ -13,6 +13,9 @@ var Variables = make([]func(*Compiler, string) Type, 0, 4)
 var Shunts = make(map[string][]func(*Compiler, string) string)
 var Constructors = make([]func(*Compiler, Type), 0, 4)
 
+var Collections = make([]func(*Compiler, Type), 0, 4)
+
+
 var SpecialOperators = make([]func(string, Type, Type) *Operator, 0, 4)
 
 //Register a statement token.
@@ -62,4 +65,8 @@ func RegisterExpression(f func(*Compiler) string) {
 
 func RegisterShunt(token string, f func(*Compiler, string) string) {
 	Shunts[token] = append(Shunts[token], f)
+}
+
+func RegisterCollection(f func(*Compiler, Type)) {
+	Collections = append(Collections, f)
 }
