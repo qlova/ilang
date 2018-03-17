@@ -25,7 +25,7 @@ func (ic *Compiler) CollectGarbage() {
 				continue
 			}
 			
-			if (variable.IsUser() != Undefined && !variable.Empty()) || variable.SubType != nil {
+			if (variable.IsUser() != Undefined && !variable.Empty()) || (variable.SubType != nil && (variable.SubType.Push != "PUSH" || variable.SubType.SubType != nil)) {
 				ic.Collect(variable)
 				ic.Assembly(variable.Push, " ", name)
 				ic.Assembly(ic.RunFunction("collect_m_"+variable.GetComplexName()))
@@ -37,7 +37,7 @@ func (ic *Compiler) CollectGarbage() {
 var AlreadyGeneratedACollectionMethodFor = make(map[Type]bool)
 
 func (t Type) Free(pointer string) string {
-	if (t.IsUser() == Undefined || t.Empty()) && t.SubType == nil {
+	if ((t.IsUser() == Undefined || t.Empty()) && t.SubType == nil) || (t.SubType.Push == "PUSH" && t.SubType.SubType == nil) {
 		return ""
 	}
 	
