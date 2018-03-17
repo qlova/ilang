@@ -54,6 +54,7 @@ func ScanShunt(ic *ilang.Compiler, token string) string {
 		var difference = abs(len(cast)-len(ic.ExpressionType.Super))
 		
 		var tmp = ic.Tmp("decimalcast")
+		ic.Assembly("VAR ", tmp)
 		
 		if len(cast) < len(ic.ExpressionType.Super) {
 			ic.Assembly("DIV ", tmp, " ", token, " 1"+strings.Repeat("0", difference))
@@ -101,7 +102,15 @@ func SpecialOperator(token string, a, b ilang.Type) (operator *ilang.Operator) {
 	return
 }
 
+var GeneratedTypes = make(map[int]ilang.Type)
+
 func GenerateTypeFor(ic *ilang.Compiler, precision int) ilang.Type {
+	
+	//Check if we have already generated this type or not.
+	if t, ok := GeneratedTypes[precision]; ok {
+		return t
+	}
+	
 	var Copy = Type
 	var token = "decimal"
 	
@@ -210,7 +219,7 @@ FUNCTION text_m_`+token+`
 			PUT 48
 			ARRAY i_operator8
 			JOIN i_operator8 i_string7 decimal
-			PLACE i_operator8
+			SHARE i_operator8
 			RENAME decimal
 		REPEAT
 		END
@@ -270,7 +279,7 @@ FUNCTION text_m_`+token+`
 		PUT 46
 		ARRAY i_operator19
 		JOIN i_operator19 i_string18 decimal
-		PLACE i_operator19
+		SHARE i_operator19
 		RENAME decimal
 	END
 	VAR i_operator20
@@ -357,6 +366,8 @@ END
 		ilang.RegisterFunction("rational_m_"+token, f5)
 	}	
 
+	
+	GeneratedTypes[precision] = Copy
 	return Copy
 }
 
