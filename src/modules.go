@@ -2,6 +2,7 @@ package ilang
 
 //Pretty much the compiler API.
 
+var EnglishTokens = make(map[string]func(*Compiler))
 var Tokens = make(map[string]func(*Compiler))
 var Listeners = make(map[Type]func(*Compiler))
 var Functions = make(map[string]Function)
@@ -23,6 +24,7 @@ func RegisterToken(tokens []string, f func(*Compiler)) {
 	for _, name := range tokens {
 		Tokens[name] = f
 	}
+	EnglishTokens[tokens[0]] = f
 }
 
 func RegisterListener(listener Type, f func(*Compiler)) {
