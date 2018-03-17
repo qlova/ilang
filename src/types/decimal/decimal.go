@@ -26,7 +26,8 @@ func ScanSymbol(ic *ilang.Compiler) ilang.Type {
 	if len(ic.LastToken) > 0 {
 		var precision, err = strconv.Atoi(ic.LastToken[1:])
 		if err != nil {
-			ic.RaiseError("Decimals can only have numeric precisions!")
+			return Type
+			//ic.RaiseError("Decimals can only have numeric precisions!")
 		}
 
 		return GenerateTypeFor(ic, precision)
@@ -128,7 +129,7 @@ func GenerateTypeFor(ic *ilang.Compiler, precision int) ilang.Type {
 	ilang.NewOperator(Copy, ">=",Copy, "VAR %c\nSGE %c %a %b", true, ilang.Number)
 	ilang.NewOperator(Copy, "mod", Copy, "VAR %c\nMOD %c %a %b", true)
 	ilang.NewOperator(Copy, "^", ilang.Number, 
-		"VAR %c\nPOW %c %a %b\nVAR %t\nPOW %t 100 %b\nMUL %t %t "+Copy.Super+"\nDIV %c %c %t\n", true, Copy)
+		"VAR %c\nPOW %c %a %b\nVAR %t\nSUB %t %b 1\nPOW %t "+Copy.Super+" %t\nDIV %c %c %t\n", true, Copy)
 	ilang.NewOperator(Copy, "+=", Copy, "ADD %a %a %b", false, ilang.Undefined)
 	ilang.NewOperator(Copy, "-=", Copy, "SUB %a %a %b", false, ilang.Undefined)
 
@@ -138,6 +139,7 @@ func GenerateTypeFor(ic *ilang.Compiler, precision int) ilang.Type {
 	ilang.NewOperator(Copy, "+", Copy, "VAR %c\nADD %c %a %b", false)
 	ilang.NewOperator(Copy, "-", Copy, "VAR %c\nSUB %c %a %b", false)
 	ilang.NewOperator(Copy, "/", Copy, "VAR %t\nVAR %c\nMUL %t %a "+Copy.Super+"\nDIV %c %t %b", true)
+	ilang.NewOperator(Copy, "mod", ilang.Number, "VAR %t\nVAR %c\nMUL %t %b "+Copy.Super+"\nMOD %c %a %t", true)
 	ilang.NewOperator(Copy, "*", Copy, "VAR %c\nMUL %c %a %b\nDIV %c %c "+Copy.Super+"", true)
 	
 	//We want Normal numbers to work with decimal numbers.
@@ -148,7 +150,7 @@ func GenerateTypeFor(ic *ilang.Compiler, precision int) ilang.Type {
 	
 	ilang.NewOperator(Copy, "+", ilang.Number, "VAR %c\nVAR %t\nMUL %t %b "+Copy.Super+"\nADD %c %a %t", false)
 	ilang.NewOperator(Copy, "-", ilang.Number, "VAR %c\nVAR %t\nMUL %t %b "+Copy.Super+"\nSUB %c %a %t", false)
-	ilang.NewOperator(Copy, "/", ilang.Number, "VAR %c\nDIV %t %a %b", true)
+	ilang.NewOperator(Copy, "/", ilang.Number, "VAR %c\nDIV %c %a %b", true)
 	ilang.NewOperator(Copy, "*", ilang.Number, "VAR %c\nMUL %c %a %b", true)
 	
 	ilang.NewOperator(ilang.Number, "+", Copy, "VAR %c\nVAR %t\nMUL %t %a "+Copy.Super+"\nADD %c %t %b", false, Copy)
