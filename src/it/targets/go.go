@@ -21,13 +21,13 @@ func (Go) Run(mainFile string) error {
 	return run.Run()	
 }
 func (Go) Export(mainFile string) error { 
-	if runtime.GOOS == "linux" {
+	if runtime.GOOS == "linux" ||  runtime.GOOS == "darwin" {
 
 		return os.Rename(path.Base(mainFile[:len(mainFile)-2])+".gob", "../"+path.Base(mainFile[:len(mainFile)-2]))
 		
 	//TODO support exe on windows.
 	} else {
-		return errors.New("Cannot export on "+runtime.GOOS+ "systems!")
+		return errors.New("Cannot export on "+runtime.GOOS+ " systems!")
 	}
 }
 
