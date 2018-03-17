@@ -34,6 +34,7 @@ type Compiler struct {
 	Scanner *scanner.Scanner	//This is the current scanner.
 	Scanners []*scanner.Scanner //Multiple files, multiple scanners.
 	
+	CurrentLine string //All the tokens up to this point.
 	LastToken string
 	NextToken string			//You can overide the next token, this will be returned by the next call to scan.
 	NextNextToken string
@@ -337,6 +338,12 @@ func (c *Compiler) scan(verify rune) string {
 		}
 	}
 	c.LastToken = c.Scanner.TokenText()
+	
+	c.CurrentLine += c.LastToken
+	if c.LastToken == "\n" {
+		c.CurrentLine = ""
+	}
+	
 	return c.Scanner.TokenText()
 }
 
@@ -377,15 +384,25 @@ func (c *Compiler) TokenText() string {
 }
 
 func (c *Compiler) RaiseError(message ...interface{}) {
-	pos := fmt.Sprint(c.Scanner.Pos())
-	if len(c.Insertion) > 0 && c.P < len(c.Insertion) {
-		pos = fmt.Sprintf("%v:%v:%v", c.Insertion[c.P].File, c.Insertion[c.P].Line+c.Lines, c.I) 
+	
+	//Let the user know what line it is!
+	fmt.Print(c.Scanner.Pos().Line, ": ", c.CurrentLine)
+	c.NextToken = ""
+	char := len(c.CurrentLine)
+	for {
+		tok := c.Scan(0)
+		fmt.Print(tok)
+		if tok == "\n" {
+			break
+		}
 	}
+	fmt.Print(strings.Repeat(" ", len(fmt.Sprint(c.Scanner.Pos().Line))+1), " ", strings.Repeat(" ", char-1))
+	fmt.Println("^")
 
 	if len(message) == 0 {
-		fmt.Fprintf(os.Stderr, "[%v] %v\n", pos, "Unexpected "+strconv.Quote(c.TokenText()))
+		fmt.Fprintf(os.Stderr, "    %v\n", "Unexpected "+strconv.Quote(c.TokenText()))
 	} else {
-		fmt.Fprintf(os.Stderr, "[%v] %v\n", pos, fmt.Sprint(message...))
+		fmt.Fprintf(os.Stderr, "    %v\n", fmt.Sprint(message...))
 	}
 	//panic("DEBUG TRACEBACK")
 	os.Exit(1)
