@@ -28,6 +28,7 @@ func ic(input, directory string) {
 		ic.RaiseError("Could not create output file!", err.Error())
 	} else {
 		ic.Output = output
+		defer output.Close()
 	}
 	
 	
@@ -35,6 +36,7 @@ func ic(input, directory string) {
 		ic.RaiseError("Could not create output library file!", err.Error())
 	} else {
 		ic.Lib = lib	
+		defer lib.Close()
 	}
 
 	ic.Compile()
