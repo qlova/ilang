@@ -35,6 +35,8 @@ type Compiler struct {
 	Scanners []*scanner.Scanner //Multiple files, multiple scanners.
 	
 	CurrentLine string //All the tokens up to this point.
+	CurrentLineReset bool
+	
 	LastToken string
 	NextToken string			//You can overide the next token, this will be returned by the next call to scan.
 	NextNextToken string
@@ -339,9 +341,18 @@ func (c *Compiler) scan(verify rune) string {
 	}
 	c.LastToken = c.Scanner.TokenText()
 	
-	c.CurrentLine += c.LastToken
-	if c.LastToken == "\n" {
+	
+	if c.CurrentLineReset {
 		c.CurrentLine = ""
+		c.CurrentLineReset = false
+	}
+	if len(c.LastToken) > 1 {
+		c.CurrentLine += " "+c.LastToken
+	} else {
+		c.CurrentLine += c.LastToken
+	}
+	if c.LastToken == "\n" {
+		c.CurrentLineReset = true
 	}
 	
 	return c.Scanner.TokenText()
@@ -389,12 +400,22 @@ func (c *Compiler) RaiseError(message ...interface{}) {
 	fmt.Print(c.Scanner.Pos().Line, ": ", c.CurrentLine)
 	c.NextToken = ""
 	char := len(c.CurrentLine)
-	for {
-		tok := c.Scan(0)
-		fmt.Print(tok)
-		if tok == "\n" {
-			break
+	if char == 0 {
+		char = 1
+	}
+	if !c.CurrentLineReset {
+		for {
+			tok := c.Scan(0)
+			fmt.Print(tok)
+			if len(tok) > 0 {
+				fmt.Print(" ")
+			}
+			if tok == "\n" {
+				break
+			}
 		}
+	} else {
+		char--
 	}
 	fmt.Print(strings.Repeat(" ", len(fmt.Sprint(c.Scanner.Pos().Line))+1), " ", strings.Repeat(" ", char-1))
 	fmt.Println("^")
@@ -471,7 +492,6 @@ func (ic *Compiler) ScanAndCompile() bool {
 	if ic.Stop {
 		//Output the rest of the buffered assembly to the file.
 		ic.Assembly("\n")
-		
 		return false
 	}
 	
