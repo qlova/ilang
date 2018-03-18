@@ -40,10 +40,16 @@ func IfEnd(ic *ilang.Compiler) {
 
 func ScanIf(ic *ilang.Compiler) {
 	var expression = ic.ScanExpression()
-	if ic.ExpressionType != ilang.Number {
+	if !ic.ExpressionType.Equals(ilang.Number) && !ic.ExpressionType.Equals(ilang.Text) {
 		ic.RaiseError("if statements must have numeric conditions!")
 	}
-	ic.Assembly("IF ", expression)
+	
+	var condition = expression
+	if ic.ExpressionType.Equals(ilang.Text) {
+		condition = "#"+condition
+	}
+	
+	ic.Assembly("IF ", condition)
 	ic.GainScope()
 	ic.SetFlag(If)
 }
