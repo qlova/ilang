@@ -25,7 +25,10 @@ func (Go) Export(mainFile string) error {
 
 		return os.Rename(path.Base(mainFile[:len(mainFile)-2])+".gob", "../"+path.Base(mainFile[:len(mainFile)-2]))
 		
-	//TODO support exe on windows.
+	} else if runtime.GOOS == "windows" {
+		
+		return os.Rename(path.Base(mainFile[:len(mainFile)-2])+".gob", "../"+path.Base(mainFile[:len(mainFile)-2])+".exe")
+		
 	} else {
 		return errors.New("Cannot export on "+runtime.GOOS+ " systems!")
 	}
