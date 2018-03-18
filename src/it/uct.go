@@ -14,11 +14,13 @@ func uct(language, file string) {
 			
 			var extension = filepath.Ext(file)
 			var err error
-			uc.Output, err = os.Create(file[0:len(file)-len(extension)]+"."+asm.Ext)
+			out, err := os.Create(file[0:len(file)-len(extension)]+"."+asm.Ext)
 			if err != nil {
 				uc.Output = os.Stdout
 			} else {
 				os.Chmod(file[0:len(file)-len(extension)]+"."+asm.Ext, 0755)
+				uc.Output = out
+				defer out.Close()
 			}
 		}
 	}
