@@ -69,8 +69,6 @@ func (ic *Compiler) Builtin() {
 	
 	ic.DefinedFunctions["random"] = Method(Number, true, "PUSH 0")
 	
-	ic.DefinedFunctions["delete_m_text"] = Method(Text, true, "DELETE")
-	
 	ic.DefinedFunctions["load"] = Method(Text, true, "PUSH 0")
 	ic.DefinedFunctions["text"] = Method(Number, false, `
 FUNCTION text
@@ -82,7 +80,7 @@ RETURN
 	//ic.DefinedFunctions["random_m_decimal"] = Alias("random_m_number", Decimal)
 
 	ic.DefinedFunctions["copy"] = Method(Undefined, true, "")
-	
+	ic.DefinedFunctions["delete"] = Method(Undefined, true, "")
 	
 	ic.DefinedFunctions["collect_m_text"] = BlankMethod(Number)
 	ic.DefinedFunctions["number_m_letter"] = BlankMethod(Number)
@@ -95,7 +93,7 @@ RETURN
 	ic.DefinedFunctions["trim"] = Method(Undefined, true, "")
 	
 	ic.DefinedFunctions["execute"] = InlineFunction([]Type{Text}, "EXECUTE", []Type{Text})
-	ic.DefinedFunctions["delete"] = InlineFunction([]Type{Text}, "DELETE", nil)
+	ic.DefinedFunctions["delete_m_text"] = InlineFunction([]Type{Text}, "DELETE", nil)
 	ic.DefinedFunctions["rename"] = InlineFunction([]Type{Text, Text}, "MOVE", nil)
 	
 	ic.DefinedFunctions["read"] = Method(Text, true, "PUSH 0\nSTDIN")
