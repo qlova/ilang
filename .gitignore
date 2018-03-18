@@ -18,3 +18,7 @@
 *.toml
 *.rlib
 *.json
+*.h
+*.cpp
+*.gob
+*.o
