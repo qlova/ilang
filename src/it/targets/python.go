@@ -10,7 +10,11 @@ type Python struct {}
 
 func (Python) Compile(filename string) error { return nil }
 func (Python) Run(mainFile string) error {
-	run := exec.Command("python3", path.Base(mainFile[:len(mainFile)-2]+".py"))
+	var command = "python3"
+	if runtime.GOOS == "windows" {
+		command = "python"
+	}
+	run := exec.Command(command, path.Base(mainFile[:len(mainFile)-2]+".py"))
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	return run.Run()	
