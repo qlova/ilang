@@ -85,7 +85,6 @@ LOOP
     }
     
     ic.GainScope()
-    ic.GainScope()
     ic.SetFlag(ForLoop)
     
     ic.SetVariable(strindex, ilang.Text)
