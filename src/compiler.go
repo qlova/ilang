@@ -217,7 +217,7 @@ func (c *Compiler) scan(verify rune) string {
 			c.I = 0
 			c.Insertion = nil
 			c.Lines = 0
-			return "\n"
+			return c.scan(verify)
 		}
 		
 		if c.P != len(c.Insertion) {
