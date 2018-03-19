@@ -108,7 +108,7 @@ func Sync(ic *ilang.Compiler, variables ...string) {
 func ShuntMethodCall(ic *ilang.Compiler, name string) string {
 	var index = ic.Scan(ilang.Name)
 	
-	if f, ok  := ic.DefinedFunctions[index+"_m_"+ic.ExpressionType.GetComplexName()]; ok && len(f.Args) > 0 {
+	if _, ok  := ic.DefinedFunctions[index+"_m_"+ic.ExpressionType.GetComplexName()]; ok {
 		var f = index+"_m_"+ic.ExpressionType.GetComplexName()
 		ic.Assembly(ic.ExpressionType.Push," ", name)
 		ic.ExpressionType = function.Flag
