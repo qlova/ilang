@@ -184,6 +184,47 @@ func Shunt(ic *ilang.Compiler, name string) string {
 	return ""
 }
 
+func Collection(ic *ilang.Compiler, t ilang.Type) {
+	if t.Name != "list" {
+		return
+	}
+	
+	var scope = ic.Scope
+	ic.GainScope()
+	ic.Library("FUNCTION collect_m_", t.GetComplexName())
+	ic.Library("GRAB list")
+	
+	
+	ic.Library("VAR i")
+	ic.Library("VAR condition")
+	ic.Library("LOOP")
+	ic.GainScope()
+		ic.Library("SGE condition i #list")
+		ic.Library("IF condition")
+			ic.GainScope()
+			ic.Library("BREAK")
+			ic.LoseScope()
+		ic.Library("END")
+	
+		ic.Library("PLACE list")
+		ic.Library("PUSH i")
+		ic.Library("GET pointer")
+		
+		
+		ic.Library(t.SubType.Free("pointer"))
+		
+		ic.Library("MUL pointer pointer -1")
+		ic.Library("PUSH pointer")
+		ic.Library("HEAP")
+		
+		ic.Library("ADD i i 1")
+	ic.LoseScope()
+	ic.Library("REPEAT")
+	ic.Library("RETURN")
+	ic.LoseScope()
+	ic.Scope = scope
+}
+
 var Number = Type
 
 func init() {
@@ -193,6 +234,7 @@ func init() {
 	ilang.RegisterStatement(Type, ScanStatement)	
 	ilang.RegisterSymbol("..", ScanSymbol)
 	ilang.RegisterShunt("[", Shunt)
+	ilang.RegisterCollection(Collection)
 	ilang.RegisterExpression(ScanExpression)
 	
 	ilang.RegisterFunction("table", ilang.Method(Type, true, "PUSH 64\nMAKE\nPUSH 0\nHEAP\n"))
