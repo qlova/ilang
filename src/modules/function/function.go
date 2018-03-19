@@ -146,6 +146,8 @@ func ScanReturn(ic *ilang.Compiler) {
 	if len(ic.CurrentFunction.Returns) == 1 {
 		r := ic.ScanExpression()
 		
+		ic.SetVariable(r+".", ilang.Protected)
+		
 		if ic.CurrentFunction.Returns[0].Name == "thing" {
 			ic.CurrentFunction.Returns[0] = ic.ExpressionType
 		}
@@ -163,6 +165,7 @@ func ScanReturn(ic *ilang.Compiler) {
 				"', expecting ",ic.CurrentFunction.Returns[0].GetComplexName())
 		}
 		
+		
 		ic.Assembly("%v %v", ic.ExpressionType.Push, r)
 		
 	}
@@ -171,6 +174,8 @@ func ScanReturn(ic *ilang.Compiler) {
 	if len(ic.CurrentFunction.Returns) == 0 {
 		if ic.Peek() != "\n" {
 			r := ic.ScanExpression()
+			
+			ic.SetVariable(r+".", ilang.Protected)
 	
 			ic.CurrentFunction.Returns = append(ic.CurrentFunction.Returns, ic.ExpressionType)
 		
