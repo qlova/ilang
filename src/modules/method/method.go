@@ -15,12 +15,27 @@ func init() {
 		
 		if ic.TypeExists(token) {
 			if ic.DefinedTypes[token].Empty() && ic.Peek() == "." {
-				ic.Scan('.')
-				ic.ExpressionType = function.Flag
-				var name = ic.Scan(ilang.Name)
-				ic.Shunt(name+"_m_"+token)
-				ic.Scan('(') //BUG I don't know why this has to be here.
-				return true
+				
+				var TYPE = ic.DefinedTypes[token]
+				
+				for {
+					ic.Scan('.')
+				
+					var name = ic.Scan(ilang.Name)
+					
+					if TYPE.Detail != nil {
+						if index, ok := TYPE.Detail.Table[name]; ok {
+							TYPE = TYPE.Detail.Elements[index]
+							continue
+						}
+					}
+					
+					ic.ExpressionType = function.Flag
+					
+					ic.Shunt(name+"_m_"+TYPE.GetComplexName())
+					ic.Scan('(') //BUG I don't know why this has to be here.
+					return true
+				}
 			}
 		}
 		
@@ -42,10 +57,34 @@ func init() {
 		
 		if ic.TypeExists(token) {
 			if ic.DefinedTypes[token].Empty() && ic.Peek() == "." {
-				ic.Scan('.')
-				ic.ExpressionType = function.Flag
-				var name = ic.Scan(ilang.Name)
-				return ic.Shunt(name+"_m_"+ic.DefinedTypes[token].GetComplexName())
+				
+				var TYPE = ic.DefinedTypes[token]
+				
+				for {
+					ic.Scan('.')
+					var name = ic.Scan(ilang.Name)
+					
+					if TYPE.Detail != nil {
+						if index, ok := TYPE.Detail.Table[name]; ok {
+							TYPE = TYPE.Detail.Elements[index]
+							continue
+						}
+					}
+					
+					ic.ExpressionType = function.Flag
+					
+					//Error checking.
+					f, ok := ic.DefinedFunctions[name+"_m_"+TYPE.GetComplexName()]
+					if !ok {
+						ic.RaiseError("Method ",  name, " for ", TYPE.GetComplexName(), " does not exist!")
+					}
+					if len(f.Returns) == 0 {
+						ic.RaiseError("Method ", TYPE.GetComplexName(), ".", name, "() does not return anything!")
+					}
+					
+					var test = ic.Shunt(name+"_m_"+TYPE.GetComplexName())
+					return test
+				}
 			}
 		}
 		
