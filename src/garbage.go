@@ -25,10 +25,13 @@ func (ic *Compiler) CollectGarbage() {
 				continue
 			}
 			
-			if (variable.IsUser() != Undefined && !variable.Empty()) || (variable.SubType != nil && (variable.SubType.Push != "PUSH" || variable.SubType.SubType != nil)) {
+			if (variable.IsUser() != Undefined)  || (variable.SubType != nil && (variable.SubType.Push != "PUSH" || variable.SubType.SubType != nil)) {
+				
+				if !variable.Empty() {
 				ic.Collect(variable)
 				ic.Assembly(variable.Push, " ", name)
 				ic.Assembly(ic.RunFunction("collect_m_"+variable.GetComplexName()))
+				}
 			}
 		}
 	}
@@ -37,7 +40,10 @@ func (ic *Compiler) CollectGarbage() {
 var AlreadyGeneratedACollectionMethodFor = make(map[Type]bool)
 
 func (t Type) Free(pointer string) string {
-	if ((t.IsUser() == Undefined || t.Empty()) && t.SubType == nil) || (t.SubType.Push == "PUSH" && t.SubType.SubType == nil) {
+	if (t.IsUser() == Undefined && t.SubType == nil) || (t.SubType.Push == "PUSH" && t.SubType.SubType == nil) {
+		return ""
+	}
+	if t.Empty() {
 		return ""
 	}
 	
@@ -51,7 +57,11 @@ func (ic *Compiler) Collect(t Type) {
 		return
 	}
 	
-	if t.IsUser() == Undefined || t.Empty() {
+	if t.Empty() {
+		return
+	}
+	
+	if t.IsUser() == Undefined  {
 		//TODO collect lists, tables and other complex types!
 		
 		for _, collection := range Collections {

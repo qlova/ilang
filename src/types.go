@@ -147,7 +147,21 @@ func (t Type) IsList() Type {
 
 //TODO this will break something types.
 func (t Type) Empty() bool { 
-	return t.Detail != nil && len(t.Detail.Elements) == 0
+	simple := t.Detail != nil && len(t.Detail.Elements) == 0
+	if simple {
+		return true
+	}
+	
+	if t.Detail != nil && len(t.Detail.Elements) > 0 {
+		for _, subtype := range t.Detail.Elements {
+			if !subtype.Empty() {
+				return false
+			}
+		}
+		return true
+	}
+	
+	return false
 }
 
 type UserType struct {	
