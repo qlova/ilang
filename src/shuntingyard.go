@@ -40,7 +40,7 @@ func (ic *Compiler) Shunt(name string) string {
 			var index = ic.Scan(Name)
 			
 			if ic.ExpressionType.IsUser() == Undefined {
-				ic.RaiseError("Type '%s', cannot be indexed!", ic.ExpressionType.Name)
+				ic.RaiseError("Type ", ic.ExpressionType.GetComplexName(), ", cannot be indexed with ", index ,"!")
 			}
 
 			if ic.Peek() != "." && !ic.DisableOwnership {

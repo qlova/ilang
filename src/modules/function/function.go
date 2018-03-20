@@ -3,7 +3,7 @@ package function
 import "github.com/qlova/ilang/src"
 import "github.com/qlova/ilang/src/types/function"
 
-var Flag = ilang.NewFlag()
+var Flag = ilang.NewNamedFlag("Function")
 
 func init() {
 	ilang.RegisterToken([]string{"function"}, ScanFunction)

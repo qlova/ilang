@@ -3,8 +3,8 @@ package method
 import "github.com/qlova/ilang/src"
 import "github.com/qlova/ilang/src/modules/function"
 
-var Flag = ilang.NewFlag()
-var New = ilang.NewFlag()
+var Flag = ilang.NewNamedFlag("Method")
+var New = ilang.NewNamedFlag("New")
 
 func init() {
 	ilang.RegisterToken([]string{"method"}, ScanMethod)

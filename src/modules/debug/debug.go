@@ -20,6 +20,7 @@ func ScanDebug(ic *ilang.Compiler) {
 			if ic.ExpressionType.SubType != nil {
 				fmt.Println("\tSubtype: ", ic.ExpressionType.SubType.Name)
 			}
+			fmt.Println("[RAW]" , ic.ExpressionType)
 		
 		case "variable":
 			name := ic.Scan(ilang.Name)

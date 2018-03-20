@@ -180,6 +180,7 @@ func (ic *Compiler) expression() string {
 	ic.NextToken = token
 	ic.ExpressionType = Undefined
 	//ic.RaiseError()
+	//panic("here")
 	return ""
 }
 

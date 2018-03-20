@@ -90,7 +90,9 @@ func (ic *Compiler) ScanStatement() {
 		return
 	//Function Calls and things.
 	} else if _, ok := ic.DefinedFunctions[token]; ok {
-		ic.Scan('(')
+		if t := ic.Scan(0); t != "(" {
+			ic.RaiseError(token, " is a function or method, expecting (")
+		}
 		ic.ScanFunctionCall(token)
 		ic.Scan(')')
 		return

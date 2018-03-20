@@ -10,14 +10,21 @@ func NewFlag() Type {
 	return t
 }
 
-var Protected = NewFlag()
-var New = NewFlag()
-var InFunction = NewFlag()
-var InMethod = NewFlag()
-var FirstCase = NewFlag()
+func NewNamedFlag(name string) Type {
+	var t Type
+	t.Int = TypeIota
+	TypeIota++
+	t.Name = "flag_"+name
+	return t
+}
 
-var Unused = NewFlag()
-var Used = NewFlag()
+var Protected = NewNamedFlag("Protected")
+var InFunction = NewNamedFlag("InFunction")
+var InMethod = NewNamedFlag("InMethod")
+var FirstCase = NewNamedFlag("FirstCase")
+
+var Unused = NewNamedFlag("Unused")
+var Used = NewNamedFlag("Used")
 
 //This will return the value of a scopped flag.
 func (c *Compiler) GetFlag(sort Type) bool {
