@@ -14,6 +14,8 @@ var Variables = make([]func(*Compiler, string) Type, 0, 4)
 var Shunts = make(map[string][]func(*Compiler, string) string)
 var Constructors = make([]func(*Compiler, Type), 0, 4)
 
+var FunctionBuilders =  make([]func(string) string, 0, 4)
+
 var Collections = make([]func(*Compiler, Type), 0, 4)
 
 
@@ -43,6 +45,9 @@ func RegisterFunction(name string, f Function) {
 	Functions[name] = f
 }
 
+func RegisterFunctionBuilder(f func(string) string) {
+	FunctionBuilders = append(FunctionBuilders, f)
+}
 
 func RegisterSymbol(name string, f func(*Compiler) Type) {
 	Symbols[name] = f

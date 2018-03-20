@@ -23,6 +23,23 @@ type Type struct {
 	Class *Type
 }
 
+func (ic *Compiler) CanCast(t Type, b Type) bool {
+	_, ok := ic.DefinedFunctions[b.GetComplexName()+"_m_"+t.GetComplexName()]
+	if ok {
+		return true
+	}
+	
+	//Maybe the function needs to be generated?
+	for _, builder := range FunctionBuilders {
+		var r = builder(b.GetComplexName()+"_m_"+t.GetComplexName())
+		if r != "" {
+			return true
+		}
+	}
+	
+	return false
+}
+
 func (t Type) Equals(b Type) bool {
 
 	if t.Name == "list" {

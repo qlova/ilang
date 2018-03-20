@@ -42,6 +42,53 @@ func abs(a int) int {
 	return a
 }
 
+func Builder(name string) string {
+	
+	if strings.Contains(name, "decimal") && strings.Contains(name, "_m_") {
+		
+		var parts = strings.Split(name, "_m_") 
+		
+		for i := range parts {
+			
+			if !strings.Contains(parts[i], "decimal") {
+				return ""
+			}
+			
+			if parts[i] == "decimal" {
+				parts[i] = "decimal6"
+			}
+		}
+
+		var precision1, _ = strconv.Atoi(strings.Split(parts[0], "decimal")[1])
+		var precision2, _ = strconv.Atoi(strings.Split(parts[1], "decimal")[1])
+		
+		var cast = "1"+strings.Repeat("0", precision1)
+		var super = "1"+strings.Repeat("0",  precision2)
+		var difference = abs(len(cast)-len(super))
+		
+		var asm = ""
+		
+		asm += "FUNCTION "+name
+		asm += "\nPULL d"
+		asm += "\nVAR decimalcast"
+		
+		if len(cast) < len(super) {
+			asm += fmt.Sprint("\nDIV decimalcast d 1"+strings.Repeat("0", difference))
+		} else {
+			asm += fmt.Sprint("\nMUL decimalcast d 1"+strings.Repeat("0", difference))
+		}
+		
+		GenerateTypeFor(nil, precision1)
+		
+		asm += "\nPUSH decimalcast"
+		asm += "\nRETURN"
+		
+		return asm
+	}
+
+	return ""
+}
+
 func ScanShunt(ic *ilang.Compiler, token string) string {
 	if len(ic.ExpressionType.Name) >= len("decimal") && 
 			ic.ExpressionType.Name[:len("decimal")] == "decimal" {
@@ -432,6 +479,7 @@ func init() {
 	ilang.RegisterDefault(ScanStatement)	
 	ilang.RegisterSymbol(".", ScanSymbol)
 	ilang.RegisterShunt(".", ScanShunt)	
+	ilang.RegisterFunctionBuilder(Builder)	
 	
 	ilang.RegisterFunction("decimal", ilang.Method(GenerateTypeFor(nil, 6), true, "PUSH 0"))
 	

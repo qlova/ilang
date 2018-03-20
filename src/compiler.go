@@ -429,21 +429,6 @@ func (c *Compiler) RaiseError(message ...interface{}) {
 	os.Exit(1)
 }
 
-func (ic *Compiler) LoadFunction(name string) {
-	f, ok := ic.DefinedFunctions[name]
-	if !ok {
-		ic.RaiseError(name, " does not exist!")
-	}
-	if !f.Inline && !f.Loaded {
-		fmt.Fprintf(ic.Lib, f.Data)
-		f.Loaded = true
-		ic.DefinedFunctions[name] = f
-	}
-	if f.Import != "" {
-		ic.LoadFunction(f.Import)
-	}
-}
-
 func NewCompiler(input io.Reader) Compiler {
 	var s scanner.Scanner
 	s.Init(input)

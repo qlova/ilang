@@ -1,6 +1,7 @@
 package ilang
 
 import "strings"
+import "fmt"
 
 type Function struct {
 	Name string
@@ -25,6 +26,31 @@ type Function struct {
 	UnpackArguments string
 }
 
+func (ic *Compiler) LoadFunction(name string) {
+	
+	//Maybe the function needs to be generated?
+	for _, builder := range FunctionBuilders {
+		var r = builder(name)
+		if r != "" {
+			ic.Library(r)
+			return
+		}
+	}
+	
+	f, ok := ic.DefinedFunctions[name]
+	if !ok {
+		ic.RaiseError(name, " does not exist!")
+	}
+	if !f.Inline && !f.Loaded {
+		fmt.Fprintf(ic.Lib, f.Data)
+		f.Loaded = true
+		ic.DefinedFunctions[name] = f
+	}
+	if f.Import != "" {
+		ic.LoadFunction(f.Import)
+	}
+}
+
 func (ic *Compiler) RunFunction(name string) string {
 	if strings.Contains(name, "_m_Something") && ic.ExpressionType.Interface != nil {
 		var sort = name[:len(name)-len("_m_Something")]
@@ -37,6 +63,7 @@ func (ic *Compiler) RunFunction(name string) string {
 			return "RUN "+name
 		}
 		if strings.Contains(name, "_flag_") {
+			panic("Serious bug! Cannot create function from flag.")
 			ic.RaiseError("Serious bug! Cannot create function from flag.")
 		}
 		ic.RaiseError(name, " does not exist!")
@@ -78,44 +105,58 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 			
 			if ! f.Args[i].Equals(ic.ExpressionType) {
 			
-				if ic.ExpressionType == Undefined {
-					ic.RaiseError(ic.LastToken, " is undefined!")
+				//Try converting the argument.
+				if ic.CanCast(ic.ExpressionType, f.Args[i]) {
+
+					ic.LoadFunction(f.Args[i].GetComplexName()+"_m_"+ic.ExpressionType.GetComplexName())
+					
+					ic.Assembly(ic.ExpressionType.Push, " ", arg)
+					ic.Assembly("RUN ", f.Args[i].GetComplexName()+"_m_"+ic.ExpressionType.GetComplexName())
+					arg = ic.Tmp("auto_cast")
+					ic.Assembly(f.Args[i].Pop, " ", arg)
+					
+				} else {
+					
+					if ic.ExpressionType == Undefined {
+						ic.RaiseError(ic.LastToken, " is undefined!")
+					}
+				
+					//Hacky varidic lists!
+					if i == len(f.Args)-1 && f.Args[i].SubType != nil && *f.Args[i].SubType == ic.ExpressionType {
+						var tmp = ic.Tmp("varaidic")
+						ic.Assembly("ARRAY ", tmp)
+						ic.Assembly("PUT ", ic.GetPointerTo(arg))
+						
+						for {
+							var token = ic.Scan(0)
+							if token != "," {
+								if token == ")" {
+									ic.NextToken = ")"
+									break
+								}
+								ic.RaiseError("Expecting , or )")
+							}
+							var value = ic.ScanExpression()
+							
+							if *f.Args[i].SubType != ic.ExpressionType {
+								ic.RaiseError("Type mismatch! Variadic arguments of '"+name+"()' expect ",
+									f.Args[i].SubType.Name,", got ",ic.ExpressionType.Name) 
+							}
+							
+							ic.Assembly("PLACE ", tmp)
+							ic.Assembly("PUT ", ic.GetPointerTo(value))
+						}
+						
+						ic.Assembly("SHARE %v", tmp)
+						
+						break
+						
+					}
+				
+					ic.RaiseError("Type mismatch! Argument ",i+1," of '"+name+"()' expects ",
+						f.Args[i].GetComplexName(),", got ",ic.ExpressionType.GetComplexName()) 
 				}
-			
-				//Hacky varidic lists!
- 				if i == len(f.Args)-1 && f.Args[i].SubType != nil && *f.Args[i].SubType == ic.ExpressionType {
- 					var tmp = ic.Tmp("varaidic")
- 					ic.Assembly("ARRAY ", tmp)
- 					ic.Assembly("PUT ", ic.GetPointerTo(arg))
- 					
- 					for {
- 						var token = ic.Scan(0)
- 						if token != "," {
- 							if token == ")" {
- 								ic.NextToken = ")"
- 								break
- 							}
- 							ic.RaiseError("Expecting , or )")
- 						}
- 						var value = ic.ScanExpression()
- 						
- 						if *f.Args[i].SubType != ic.ExpressionType {
- 							ic.RaiseError("Type mismatch! Variadic arguments of '"+name+"()' expect ",
- 								f.Args[i].SubType.Name,", got ",ic.ExpressionType.Name) 
- 						}
- 						
- 						ic.Assembly("PLACE ", tmp)
- 						ic.Assembly("PUT ", ic.GetPointerTo(value))
- 					}
- 					
- 					ic.Assembly("SHARE %v", tmp)
- 					
- 					break
- 					
- 				}
-			
-				ic.RaiseError("Type mismatch! Argument ",i+1," of '"+name+"()' expects ",
-					f.Args[i].GetComplexName(),", got ",ic.ExpressionType.GetComplexName()) 
+
 			}
 			
 			ic.Assembly("%v %v", ic.ExpressionType.Push, arg)
