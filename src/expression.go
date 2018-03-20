@@ -45,8 +45,10 @@ func (ic *Compiler) expression() string {
 	
 	//Is it a literal number? Then just return it.
 	if _, err := strconv.Atoi(token); err == nil{
-		ic.ExpressionType = Number
-		return token
+		if ic.Peek() != "i" {
+			ic.ExpressionType = Number
+			return token
+		}
 	}
 	
 	//Minus.

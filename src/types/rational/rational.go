@@ -16,7 +16,7 @@ func ScanStatement(ic *ilang.Compiler) {
 				ic.RaiseError("Type mismatch! Type '%s' cannot be assigned to %s which is a rational number.", ic.ExpressionType, name)
 			}
 			
-			ic.Assembly("PLACE ", value)
+			ic.Assembly("SHARE ", value)
 			ic.Assembly("RENAME ", name)
 			
 		default:
@@ -44,10 +44,10 @@ func init() {
 	ilang.NewOperator(Type, "*", Type, "SHARE %a\nSHARE %b\nRUN rational_times_rational\nGRAB %c", false)
 	ilang.NewOperator(Type, "/", Type, "SHARE %a\nSHARE %b\nRUN rational_div_rational\nGRAB %c", false)
 	
-	ilang.NewOperator(Type, "+=", Type, "SHARE %a\nSHARE %b\nRUN rational_plus_rational\nGRAB %c\nPLACE %c\nRENAME %a", false, ilang.Undefined)
-	ilang.NewOperator(Type, "-=", Type, "SHARE %a\nSHARE %b\nRUN rational_minus_rational\nGRAB %c\nPLACE %c\nRENAME %a", false, ilang.Undefined)
-	ilang.NewOperator(Type, "*=", Type, "SHARE %a\nSHARE %b\nRUN rational_times_rational\nGRAB %c\nPLACE %c\nRENAME %a", false, ilang.Undefined)
-	ilang.NewOperator(Type, "/=", Type, "SHARE %a\nSHARE %b\nRUN rational_div_rational\nGRAB %c\nPLACE %c\nRENAME %a", false, ilang.Undefined)
+	ilang.NewOperator(Type, "+=", Type, "SHARE %a\nSHARE %b\nRUN rational_plus_rational\nRENAME %a", false, ilang.Undefined)
+	ilang.NewOperator(Type, "-=", Type, "SHARE %a\nSHARE %b\nRUN rational_minus_rational\nRENAME %a", false, ilang.Undefined)
+	ilang.NewOperator(Type, "*=", Type, "SHARE %a\nSHARE %b\nRUN rational_times_rational\nRENAME %a", false, ilang.Undefined)
+	ilang.NewOperator(Type, "/=", Type, "SHARE %a\nSHARE %b\nRUN rational_div_rational\nRENAME %a", false, ilang.Undefined)
 	
 	ilang.NewOperator(ilang.Number, "\\", ilang.Number, "ARRAY %c\nPUT %a\nPUT %b", false, Type)
 	

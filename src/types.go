@@ -283,7 +283,7 @@ func (ic *Compiler) CallType(name string) string {
 	}
 	
 	//type modules.
-	if f, ok := ic.DefinedFunctions[name]; ok {
+	/*if f, ok := ic.DefinedFunctions[name]; ok {
 		ic.Assembly(ic.RunFunction(name))
 	
 		if len(f.Returns) > 0 {
@@ -295,7 +295,7 @@ func (ic *Compiler) CallType(name string) string {
 			
 			return id
 		}	
-	}
+	}*/
 	
 	
 	

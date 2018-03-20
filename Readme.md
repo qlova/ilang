@@ -61,6 +61,7 @@ These are all of the builtin types in the 'i' language. Each type has an associa
 number()
 rational()	\
 decimal()	.
+complex()	%
 duplex()	±
 letter()	' '
 array() 	[]
@@ -84,6 +85,12 @@ Rational numbers are pairs of numbers representing a fractional value.
 
 **decimal**
 Decimals are fixed-precision decimal numbers.
+
+**complex**
+Complex numbers consist of both a real and an imaginary part.
+
+**duplex**
+Duplex numbers can represent many different numbers at the same time.
 
 **letter**
 Letters correspond to a character in a piece of text, for example "a", "!" etc.

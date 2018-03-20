@@ -5,8 +5,8 @@ type Complex {
 }
 
 method Complex * Complex {
-	c.real = a.real*b.real - a.imag*b.imag
-	c.imag = a.real*b.imag + b.real*a.imag
+	c.real = (a.real*b.real) - (a.imag*b.imag)
+	c.imag = (a.real*b.imag) + (b.real*a.imag)
 }
 
 
@@ -22,8 +22,8 @@ method Complex - Complex {
 
 method Complex / Complex {
 	var d = b.real² + b.imag²
-	c.real  = (a.real*b.real + a.imag*b.imag) / d
-	c.imag = (a.imag*b.real - a.real*b.imag) / d
+	c.real  = ((a.real*b.real) + (a.imag*b.imag)) / d
+	c.imag = ((a.imag*b.real) - (a.real*b.imag)) / d
 }
 
 method text(Complex) "" {
@@ -33,7 +33,7 @@ method text(Complex) "" {
 
 software {
 
-	var n = Complex{3, 6}
+	var n = Complex{2, 1}
 	
 	var m = Complex()
 	m.real = 2
@@ -41,7 +41,7 @@ software {
 	
 	var b = n+m
 	
-	print(b)
+	print(n*n)
 	
 	
 }
