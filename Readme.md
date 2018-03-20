@@ -61,6 +61,7 @@ These are all of the builtin types in the 'i' language. Each type has an associa
 number()
 rational()		\
 decimal()   	.
+duplex()		±
 letter()		' '
 array() 		[]
 text() 			""
