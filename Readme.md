@@ -94,8 +94,8 @@ An array is a list of numbers.
 **text**
 Text is a string of letters, these can form words, sentences and the like.
 
-**set**
-A set is an unordered collection of arbitary labels.
+**collection**
+A collection is an unordered set of arbitary labels.
 
 
 **pipe**
