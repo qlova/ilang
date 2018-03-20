@@ -3,7 +3,7 @@ package all
 import (
 	_ "github.com/qlova/ilang/src/types/function"
 	_ "github.com/qlova/ilang/src/types/pipe"
-	_ "github.com/qlova/ilang/src/types/set"
+	_ "github.com/qlova/ilang/src/types/collection"
 	_ "github.com/qlova/ilang/src/types/thing"
 	_ "github.com/qlova/ilang/src/types/something"
 	_ "github.com/qlova/ilang/src/types/rational"

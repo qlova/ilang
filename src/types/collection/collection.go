@@ -1,15 +1,15 @@
-package set
+package collection
 
 import "github.com/qlova/ilang/src"
 
-var Type = ilang.NewType("set", "PUSH", "PULL")
+var Type = ilang.NewType("collection", "PUSH", "PULL")
 
 func init() {
 	ilang.RegisterStatement(Type, ScanStatement)
 	ilang.RegisterSymbol("<", ScanSymbol)
 	ilang.RegisterExpression(ScanExpression)
 	
-	ilang.RegisterFunction("set", ilang.Method(Type, true, "PUSH 1"))
+	ilang.RegisterFunction("collection", ilang.Method(Type, true, "PUSH 1"))
 	
 	//Set Operations.
 	ilang.NewOperator(Type, "=", Type, "VAR %c\nSEQ %c %a %b", true, ilang.Number)
@@ -30,7 +30,7 @@ func ScanSymbol(ic *ilang.Compiler) ilang.Type {
 
 func ScanExpression(ic *ilang.Compiler) string {
 	if ic.LastToken == "<" {
-		var id = ic.Tmp("set")
+		var id = ic.Tmp("collection")
 
 		ic.Assembly("VAR ", id)
 		ic.Assembly("ADD ", id, " 1 0")

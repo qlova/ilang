@@ -59,20 +59,20 @@ Flick me an email (splizard @ splizard dot com) if you have any questions.
 These are all of the builtin types in the 'i' language. Each type has an associate set of symbols.
 ```
 number()
-rational()	\
-decimal()   .
-letter()	' '
-array() 	[]
-text() 		""
-set()		<>
+rational()		\
+decimal()   	.
+letter()		' '
+array() 		[]
+text() 			""
+collection()	<>
 
-pipe 		||
-function 	()
+pipe 			||
+function 		()
 
-Thing() 	{}
-List()  	..
-Table()		:
-Something() ?
+Thing() 		{}
+List()  		..
+Table()			:
+Something() 	?
 ```
 
 **number**
