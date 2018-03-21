@@ -1,9 +1,9 @@
 import grate
 
-type Game {}
+type Graphics {}
 
-method draw(Game) {
-	set(Color{255, 255, 0})
+method draw(Graphics) {
+	set.color(255, 255, 255)
 	draw(Text{"Hello World"})
-	set(Color{0, 0, 0})
+	set.color(0, 0, 0)
 }
