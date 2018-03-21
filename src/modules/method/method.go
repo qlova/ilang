@@ -198,13 +198,13 @@ func ScanMethod(ic *ilang.Compiler) {
 		ic.LastDefinedType = MethodType
 	
 	
-		if MethodType.Name == "Game" && name == "new" {
+		if MethodType.Name == "Graphics" && name == "new" {
 			ic.NewGame = true
 		}
-		if MethodType.Name == "Game" && name == "draw" {
+		if MethodType.Name == "Graphics" && name == "draw" {
 			ic.DrawGame = true
 		}
-		if MethodType.Name == "Game" && name == "update" {
+		if MethodType.Name == "Graphics" && name == "update" {
 			ic.UpdateGame = true
 		}
 	

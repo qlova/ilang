@@ -416,7 +416,7 @@ func (ic *Compiler) ScanType() {
 	
 	//This is for the grate engine.
 	//Are we declaring a game?
-	if name == "Game" {
+	if name == "Graphics" {
 		ic.Game = true
 	}
 	

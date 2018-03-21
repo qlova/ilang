@@ -299,31 +299,31 @@ func (c *Compiler) scan(verify rune) string {
 			//Create a software block.
 			if !c.SoftwareBlockExists && c.Game && !c.GUIExists {
 				if !c.NewGame {
-					c.Assembly("FUNCTION new_m_Game")
+					c.Assembly("FUNCTION new_m_Graphics")
 					c.GainScope()
 					c.Assembly("ARRAY game")
-					for range c.DefinedTypes["Game"].Detail.Elements {
+					for range c.DefinedTypes["Graphics"].Detail.Elements {
 						c.Assembly("PUT 0")
 					}
 					c.Assembly("SHARE game")
 					c.LoseScope()
 					c.Assembly("RETURN")
 				}
-					c.Assembly("FUNCTION Game")
+					c.Assembly("FUNCTION Graphics")
 					c.GainScope()
 					c.Assembly("ARRAY game")
-					for range c.DefinedTypes["Game"].Detail.Elements {
+					for range c.DefinedTypes["Graphics"].Detail.Elements {
 						c.Assembly("PUT 0")
 					}
 					c.Assembly("SHARE game")
 					c.LoseScope()
 					c.Assembly("RETURN")
 				if !c.UpdateGame {
-					c.Assembly("FUNCTION update_m_Game")
+					c.Assembly("FUNCTION update_m_Graphics")
 					c.Assembly("RETURN")
 				}
 				if !c.DrawGame {
-					c.Assembly("FUNCTION draw_m_Game")
+					c.Assembly("FUNCTION draw_m_Graphics")
 					c.Assembly("RETURN")
 				}
 			
