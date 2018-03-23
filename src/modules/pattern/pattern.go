@@ -44,7 +44,7 @@ func init() {
 		
 		if p, ok := DefinedPatterns[ic.LastToken]; ok {
 		
-			println("pattern statement")
+			//println("pattern statement")
 		
 			//Argument loop.
 			ic.Scan('(')
