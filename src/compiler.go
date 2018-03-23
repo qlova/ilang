@@ -424,7 +424,9 @@ func (c *Compiler) RaiseError(message ...interface{}) {
 	} else {
 		fmt.Fprintf(os.Stderr, "    %v\n", fmt.Sprint(message...))
 	}
-	//panic("DEBUG TRACEBACK")
+	if os.Getenv("PANIC") == "1" { 
+		panic("PANIC=1")
+	}
 	os.Exit(1)
 }
 
