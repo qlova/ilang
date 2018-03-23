@@ -42,16 +42,18 @@ func abs(a int) int {
 	return a
 }
 
-func Builder(name string) string {
+func Builder(name string) *ilang.Function {
 	
 	if strings.Contains(name, "decimal") && strings.Contains(name, "_m_") {
+		
+		var f = ilang.Function{Name: name}
 		
 		var parts = strings.Split(name, "_m_") 
 		
 		for i := range parts {
 			
 			if !strings.Contains(parts[i], "decimal") {
-				return ""
+				return nil
 			}
 			
 			if parts[i] == "decimal" {
@@ -66,27 +68,25 @@ func Builder(name string) string {
 		var super = "1"+strings.Repeat("0",  precision2)
 		var difference = abs(len(cast)-len(super))
 		
-		var asm = ""
-		
-		asm += "FUNCTION "+name
-		asm += "\nPULL d"
-		asm += "\nVAR decimalcast"
+		f.Data += "FUNCTION "+name
+		f.Data += "\nPULL d"
+		f.Data += "\nVAR decimalcast"
 		
 		if len(cast) < len(super) {
-			asm += fmt.Sprint("\nDIV decimalcast d 1"+strings.Repeat("0", difference))
+			f.Data += fmt.Sprint("\nDIV decimalcast d 1"+strings.Repeat("0", difference))
 		} else {
-			asm += fmt.Sprint("\nMUL decimalcast d 1"+strings.Repeat("0", difference))
+			f.Data += fmt.Sprint("\nMUL decimalcast d 1"+strings.Repeat("0", difference))
 		}
 		
 		GenerateTypeFor(nil, precision1)
 		
-		asm += "\nPUSH decimalcast"
-		asm += "\nRETURN"
+		f.Data += "\nPUSH decimalcast"
+		f.Data += "\nRETURN"
 		
-		return asm
+		return &f
 	}
 
-	return ""
+	return nil
 }
 
 func ScanShunt(ic *ilang.Compiler, token string) string {

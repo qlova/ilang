@@ -42,7 +42,25 @@ func ScanStatement(ic *ilang.Compiler) {
 				}
 				
 				if ic.ExpressionType != *t.SubType {
-					ic.RaiseError("Cannot add value of type '",ic.ExpressionType.Name,"' to a list of '",t.SubType.Name,"'")
+					
+					if ic.CanCast(ic.ExpressionType, *t.SubType) {
+						
+						
+						ic.Assembly(ic.Cast(value,  ic.ExpressionType, *t.SubType))
+						
+						var cast = ic.Tmp("cast")
+						ic.Assembly(t.SubType.Pop, " ", cast)
+						ic.ExpressionType = *t.SubType
+						
+						ic.Assembly("PLACE ", name)
+						ic.Assembly("PUT ", ic.GetPointerTo(cast))
+						ic.SetVariable(value+".", ilang.Protected)
+						
+						return
+						
+					} else {
+						ic.RaiseError("Cannot add value of type '",ic.ExpressionType.Name,"' to a list of '",t.SubType.Name,"'")
+					}
 				}
 			} else {
 					ic.RaiseError("Expecting ++ or += got +", ic.Peek())
@@ -104,13 +122,31 @@ func ScanStatement(ic *ilang.Compiler) {
 
 func ScanSymbol(ic *ilang.Compiler) ilang.Type {
 	var ListType = Type
-	ListType.SubType = new(ilang.Type)
+	ListType.SubType  = new(ilang.Type)
 	*ListType.SubType = ic.ScanSymbolicType()
 	return ListType
 }
 
 func ScanExpression(ic *ilang.Compiler) string {
 	var token = ic.LastToken
+	
+	if token == "list" {
+		ic.Scan('(')
+		var t = ic.Scan(0)
+		ic.Scan(')')
+		
+		var ListType = Type
+		ListType.SubType = new(ilang.Type)
+		*ListType.SubType = ic.GetType(t)
+		
+		var tmp = ic.Tmp("newlist")
+		ic.Assembly("ARRAY ", tmp)
+		
+		ic.ExpressionType = ListType
+		
+		return tmp
+	}
+	
 	//Types.
 	if token == "[" {
 					

@@ -26,13 +26,32 @@ type Function struct {
 	UnpackArguments string
 }
 
+var ExportedInlineFunctions = make(map[string]bool)
+
+func (ic *Compiler) ExportInlineFunction(name string, f Function) {
+	if ExportedInlineFunctions[name] {
+		return
+	}
+	
+	ic.Library("FUNCTION ", name)
+	ic.Library(f.Data)
+	ic.Library("RETURN")
+	
+	ExportedInlineFunctions[name] = true
+}
+
+func (ic *Compiler) FunctionExists(name string) bool {
+	_, ok := ic.DefinedFunctions[name]
+	return ok
+}
+
 func (ic *Compiler) LoadFunction(name string) {
 	
 	//Maybe the function needs to be generated?
 	for _, builder := range FunctionBuilders {
-		var r = builder(name)
-		if r != "" {
-			ic.Library(r)
+		var f = builder(name)
+		if f != nil {
+			ic.DefinedFunctions[name] = *f
 			return
 		}
 	}
@@ -52,11 +71,6 @@ func (ic *Compiler) LoadFunction(name string) {
 }
 
 func (ic *Compiler) RunFunction(name string) string {
-	if strings.Contains(name, "_m_Something") && ic.ExpressionType.Interface != nil {
-		var sort = name[:len(name)-len("_m_Something")]
-		return ic.CallInterfaceMethod(sort)
-	}
-
 	f, ok := ic.DefinedFunctions[name]
 	if !ok {
 		if strings.Contains(name, "collect_m_") {
@@ -107,13 +121,8 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 			
 				//Try converting the argument.
 				if ic.CanCast(ic.ExpressionType, f.Args[i]) {
-
-					ic.LoadFunction(f.Args[i].GetComplexName()+"_m_"+ic.ExpressionType.GetComplexName())
 					
-					ic.Assembly(ic.ExpressionType.Push, " ", arg)
-					ic.Assembly("RUN ", f.Args[i].GetComplexName()+"_m_"+ic.ExpressionType.GetComplexName())
-					arg = ic.Tmp("auto_cast")
-					ic.Assembly(f.Args[i].Pop, " ", arg)
+					ic.Assembly(ic.Cast(arg, ic.ExpressionType, f.Args[i]))
 					
 				} else {
 					

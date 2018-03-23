@@ -6,6 +6,25 @@ import "github.com/qlova/ilang/src/modules/function"
 var Flag = ilang.NewNamedFlag("Method")
 var New = ilang.NewNamedFlag("New")
 
+func Get(ic *ilang.Compiler, t ilang.Type, name string) *ilang.Function {
+	
+	if ic.FunctionExists(name+"_m_"+t.GetComplexName()) {
+		
+		var f = ic.DefinedFunctions[name+"_m_"+t.GetComplexName()]
+		return &f
+		
+	} else if ic.FunctionExists(name+"_m_"+t.Super) {
+		
+		var f = ic.DefinedFunctions[name+"_m_"+t.Super]
+		return &f
+		
+	} else {
+		
+		return nil
+	}
+	
+}
+
 func init() {
 	ilang.RegisterToken([]string{"method"}, ScanMethod)
 	ilang.RegisterListener(New, NewEnd)
@@ -164,7 +183,13 @@ func NewEnd(ic *ilang.Compiler) {
 }
 
 func Call(ic *ilang.Compiler, name string, t ilang.Type) {
-	ic.Assembly(ic.RunFunction(name+"_m_"+t.GetComplexName()))
+	if ic.FunctionExists(name+"_m_"+t.GetComplexName()) {
+		ic.Assembly(ic.RunFunction(name+"_m_"+t.GetComplexName()))
+	} else if ic.FunctionExists(name+"_m_"+t.Super) {
+		ic.Assembly(ic.RunFunction(name+"_m_"+t.Super))
+	} else {
+		ic.RaiseError("Method ", name, " for type ", t.GetComplexName(), " does not exist!")
+	}
 }
 
 func ScanMethod(ic *ilang.Compiler) {

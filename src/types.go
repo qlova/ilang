@@ -2,6 +2,7 @@ package ilang
 
 import "strings"
 import "github.com/gedex/inflector"
+import "fmt"
 
 var TypeIota int
 
@@ -18,12 +19,39 @@ type Type struct {
 	
 	Plugin *Plugin
 	Detail *UserType //This contains usertype information.
-	Interface *Interface
 	SubType *Type //Subtype for recursive types such as lists.
 	Class *Type
+	
+	Functions *[]Function
+}
+
+func (ic *Compiler) Cast(name string, t Type, b Type) string {
+	
+	for _, cast := range Casts {
+		var r = cast(ic, name, t, b)
+		if r != "" {
+			return r
+		}
+	}
+	
+	var arg = ic.Tmp("cast")
+	
+	var asm = ""
+	asm += t.Push+" "+arg
+	asm += ic.RunFunction(b.GetComplexName()+"_m_"+t.GetComplexName())
+	asm += b.Pop+" "+arg
+	
+	return asm
 }
 
 func (ic *Compiler) CanCast(t Type, b Type) bool {
+	for _, cast := range Casts {
+		var r = cast(ic, "", t, b)
+		if r != "" {
+			return true
+		}
+	}
+	
 	_, ok := ic.DefinedFunctions[b.GetComplexName()+"_m_"+t.GetComplexName()]
 	if ok {
 		return true
@@ -32,7 +60,7 @@ func (ic *Compiler) CanCast(t Type, b Type) bool {
 	//Maybe the function needs to be generated?
 	for _, builder := range FunctionBuilders {
 		var r = builder(b.GetComplexName()+"_m_"+t.GetComplexName())
-		if r != "" {
+		if r != nil {
 			return true
 		}
 	}
@@ -353,26 +381,34 @@ func (list Type) GetComplexName() string {
 	return serialised
 }	
 
-//Get a numeric value which represents the type.
-func (ic *Compiler) GetPointerTo(name string) string {
+func (ic *Compiler) CreatePointer(t Type, pointer string, name string) string {
+	var asm = ""
 	if ic.ExpressionType.Push == "SHARE" {
-		var pointer = ic.Tmp("pointer")
-		ic.Assembly("PUSH 0")
-		ic.Assembly("SHARE ", name)
-		ic.Assembly("HEAP")
-		ic.Assembly("PULL ", pointer)
-		ic.Assembly("ADD ",pointer," 0 ", pointer)
-		return pointer
+		asm += fmt.Sprintln("PUSH 0")
+		asm += fmt.Sprintln("SHARE", name)
+		asm += fmt.Sprintln("HEAP")
+		asm += fmt.Sprintln("PULL", pointer)
+		asm += fmt.Sprintln("ADD",pointer,"0", pointer)
+		return asm
 	}
 	if ic.ExpressionType.Push == "RELAY" {
-		var pointer = ic.Tmp("pointer")
-		ic.Assembly("PUSH 0")
-		ic.Assembly("RELAY ", name)
-		ic.Assembly("HEAPIT")
-		ic.Assembly("PULL ", pointer)
-		return pointer
+		asm += fmt.Sprintln("PUSH 0")
+		asm += fmt.Sprintln("RELAY", name)
+		asm += fmt.Sprintln("HEAPIT")
+		asm += fmt.Sprintln("PULL", pointer)
+		return asm
 	}
-	return name
+	asm += fmt.Sprintln("PUSH",name)
+	asm += fmt.Sprintln("PULL",pointer)
+	return asm
+	
+}	
+
+//Get a numeric value which represents the type.
+func (ic *Compiler) GetPointerTo(name string) string {
+	var pointer = ic.Tmp("pointer")
+	ic.Assembly(ic.CreatePointer(ic.ExpressionType, pointer, name))
+	return pointer
 }
 
 func (ic *Compiler) Dereference(pointer string) string {

@@ -14,6 +14,11 @@ func init() {
 }
 
 func ScanSymbol(ic *ilang.Compiler) ilang.Type {
+	
+	if ic.Peek() == "{" {
+		return ScanInterface(ic)
+	}
+	
 	return Type
 }
 
@@ -110,36 +115,6 @@ func Index(ic *ilang.Compiler, name string, cast string) string {
 }
 
 func Assign(ic *ilang.Compiler, name string, value string) {
-	var intf = ic.GetVariable(name).Interface
-	if intf != nil {
-		var originalname = ic.ExpressionType.Name
-		for _, method := range intf.Methods {
-			InheritMethodForInterface:
-			if f, ok := ic.DefinedFunctions[method.Name+"_m_"+ic.ExpressionType.Name]; !ok {
-				if ic.ExpressionType.Super != "" {
-					ic.ExpressionType = ic.DefinedTypes[ic.ExpressionType.Super]
-					
-					ic.Library(`
-FUNCTION `+method.Name+"_m_"+originalname+`
-	RUN `+method.Name+"_m_"+ic.ExpressionType.Name+`
-RETURN
-					`)
-					
-					goto InheritMethodForInterface
-				}
-				ic.RaiseError("Invalid assignment, value of type ", originalname, " does not implement the method ", method.Name)
-			} else {
-				ic.LoadFunction(method.Name+"_m_"+ic.ExpressionType.Name)
-				if f.Inline {
-					ic.Library(`
-FUNCTION `+method.Name+"_m_"+ic.ExpressionType.Name+`
-`+f.Data+`
-RETURN
-					`)
-				}
-			}
-		}
-	}
 	switch ic.ExpressionType.Push {
 	
 		case "PUSH":
