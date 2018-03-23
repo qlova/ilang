@@ -128,7 +128,7 @@ func Assign(ic *ilang.Compiler, name string, value string) {
 			}
 			ic.Assembly("SHARE ", name)
 			ic.Assembly("RUN collect_m_something")
-			ic.Assembly("PLACE ", tmp)
+			ic.Assembly("SHARE ", tmp)
 			ic.Assembly("RENAME ", name)
 			
 		case "SHARE":
@@ -147,7 +147,7 @@ func Assign(ic *ilang.Compiler, name string, value string) {
 			}
 			ic.Assembly("SHARE ", name)
 			ic.Assembly("RUN collect_m_something")
-			ic.Assembly("PLACE ", tmp)
+			ic.Assembly("SHARE ", tmp)
 			ic.Assembly("RENAME ", name)
 			
 		default:

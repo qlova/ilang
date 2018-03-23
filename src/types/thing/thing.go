@@ -105,6 +105,7 @@ func ScanStatement(ic *ilang.Compiler) {
 		ic.NextNextToken = token
 		ic.ScanStatement()
 	}
+	ic.SetVariable(value+".", ilang.Protected)
 	
 	//Function and pipe calls do not need to be reassigned. 
 	if token == "(" || (token == "-" && ic.Peek() == "-") {
@@ -115,7 +116,8 @@ func ScanStatement(ic *ilang.Compiler) {
 	if index == "" {
 		if !usertype.Empty() {
 			//TODO garbage collection.
-			ic.Assembly("PLACE ", value)
+			ic.Assembly(usertype.FreeChildren(name))
+			ic.Assembly("SHARE ", value)
 			ic.Assembly("RENAME ", name)
 		}
 	} else {

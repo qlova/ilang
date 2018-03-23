@@ -80,6 +80,8 @@ func ScanStatement(ic *ilang.Compiler) {
 			if token == "=" {
 				
 				value := ic.ScanExpression()
+				//TODO Garbage collection.
+				ic.SetVariable(value+".", ilang.Protected)
 				ic.Assembly("PUSH ", index)
 				ic.Assembly("PLACE ", name)
 				ic.Assembly("SET ", ic.GetPointerTo(value))
@@ -245,13 +247,9 @@ func Collection(ic *ilang.Compiler, t ilang.Type) {
 		ic.Library("PLACE list")
 		ic.Library("PUSH i")
 		ic.Library("GET pointer")
-		
+		ic.Library("ADD pointer pointer 0")
 		
 		ic.Library(t.SubType.Free("pointer"))
-		
-		ic.Library("MUL pointer pointer -1")
-		ic.Library("PUSH pointer")
-		ic.Library("HEAP")
 		
 		ic.Library("ADD i i 1")
 	ic.LoseScope()

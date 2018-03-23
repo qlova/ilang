@@ -142,6 +142,7 @@ func init() {
 				
 				ic.AssembleVar(name, value)
 				ic.SetVariable(name+"_use", ilang.Used)
+				ic.SetVariable(name+".", ilang.Protected)
 				return ic.ExpressionType
 			}
 		}
@@ -166,7 +167,7 @@ func Sync(ic *ilang.Compiler, variables ...string) {
 func ShuntMethodCall(ic *ilang.Compiler, name string) string {
 	var index = ic.Scan(ilang.Name)
 	
-	if _, ok  := ic.DefinedFunctions[index+"_m_"+ic.ExpressionType.GetComplexName()]; ok {
+	if _, ok  := ic.DefinedFunctions[index+"_m_"+ic.ExpressionType.GetComplexName()]; ok && ic.Peek() == "(" {
 		var f = index+"_m_"+ic.ExpressionType.GetComplexName()
 		ic.Assembly(ic.ExpressionType.Push," ", name)
 		ic.ExpressionType = function.Flag

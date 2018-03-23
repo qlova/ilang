@@ -37,10 +37,10 @@ func (ic *Compiler) CollectGarbage() {
 	}
 }
 
-var AlreadyGeneratedACollectionMethodFor = make(map[Type]bool)
+var AlreadyGeneratedACollectionMethodFor = make(map[string]bool)
 
 func (t Type) Free(pointer string) string {
-	if (t.IsUser() == Undefined && t.SubType == nil) || (t.SubType.Push == "PUSH" && t.SubType.SubType == nil) {
+	if (t.IsUser() == Undefined && t.SubType == nil) || (t.SubType != nil && t.SubType.Push == "PUSH" && t.SubType.SubType == nil) {
 		return ""
 	}
 	if t.Empty() {
@@ -52,8 +52,20 @@ func (t Type) Free(pointer string) string {
 	"\nMUL "+pointer+" -1 "+pointer+"\nPUSH "+pointer+"\nHEAP\nEND"
 }
 
+func (t Type) FreeChildren(pointer string) string {
+	if (t.IsUser() == Undefined && t.SubType == nil) || (t.SubType != nil && t.SubType.Push == "PUSH" && t.SubType.SubType == nil) {
+		return ""
+	}
+	if t.Empty() {
+		return ""
+	}
+	
+	return "SHARE "+pointer+"\nRUN collect_m_"+t.GetComplexName()
+}
+
+
 func (ic *Compiler) Collect(t Type) {
-	if AlreadyGeneratedACollectionMethodFor[t] {
+	if AlreadyGeneratedACollectionMethodFor[t.GetComplexName()] {
 		return
 	}
 	
@@ -67,9 +79,13 @@ func (ic *Compiler) Collect(t Type) {
 		for _, collection := range Collections {
 			collection(ic, t)
 		}
-		AlreadyGeneratedACollectionMethodFor[t] = true
+		AlreadyGeneratedACollectionMethodFor[t.GetComplexName()] = true
 		
 		return
+	}
+	
+	for _, element := range t.Detail.Elements {
+		ic.Collect(element)
 	}
 
 	
@@ -81,34 +97,18 @@ func (ic *Compiler) Collect(t Type) {
 	ic.Library("PLACE variable")
 	
 	for i, element := range t.Detail.Elements {
-		if element == Text || element.IsUser() != Undefined {
+		if element.Push == "SHARE" {
 			var tmp = ic.Tmp("gc")
 			ic.Library("PUSH ", i)
 			ic.Library("GET ", tmp)
+			ic.Library("ADD ", tmp, " 0 ", tmp)
 			
-			ic.Library("IF ", tmp)
-			ic.GainScope()
-			ic.Library("PUSH ", tmp)
-			ic.Library("HEAP")
-			ic.Library("MUL %v %v -1", tmp, tmp)
-			if element.IsUser() != Undefined {
-				ic.Library("PUSH ", tmp)
-				ic.Library("HEAP")
-				
-				var member = ic.Tmp("member")
-				ic.Library("GRAB ", member)
-				ic.Library("IF #", member)
-					ic.Library("SHARE ", member)
-					ic.Library(ic.RunFunction("collect_m_"+element.Name))
-				ic.Library("END")
-			}
-			ic.LoseScope()
-			ic.Library("END")
+			ic.Library(element.Free(tmp))
 		}
 	}
 	ic.LoseScope()
 	ic.Library("RETURN")
 	ic.Scope = scope
 	
-	AlreadyGeneratedACollectionMethodFor[t] = true
+	AlreadyGeneratedACollectionMethodFor[t.GetComplexName()] = true
 }
