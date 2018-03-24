@@ -14,6 +14,10 @@ method clear(Bank) {
 	items = []
 }
 
+method add(Bank) {
+	items += Item{64}
+}
+
 software {
 	var list = []
 	list += Item{22}
@@ -27,6 +31,8 @@ software {
 	
 	print(list[0])
 	print(b.items[1])
+	
+	add(b)
 	
 	for item in list
 		print(item)

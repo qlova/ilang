@@ -98,6 +98,16 @@ func ScanStatement(ic *ilang.Compiler) {
 	//Figure out the value which needs to be assigned.
 	if token == "=" {
 		value = ic.ScanExpression()
+	
+	
+	//This works well.
+	} else if token == "+" {
+		
+		ic.NextToken = index
+		ic.NextNextToken = "+"
+		ic.ScanStatement()
+		return
+	
 	} else {
 		value = ic.IndexUserType(name, index)
 		ic.SetVariable(value, ic.ExpressionType)
