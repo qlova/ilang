@@ -185,9 +185,18 @@ func NewEnd(ic *ilang.Compiler) {
 
 func Call(ic *ilang.Compiler, name string, t ilang.Type) {
 	if ic.FunctionExists(name+"_m_"+t.GetComplexName()) {
+		
 		ic.Assembly(ic.RunFunction(name+"_m_"+t.GetComplexName()))
+		
 	} else if ic.FunctionExists(name+"_m_"+t.Super) {
+		
 		ic.Assembly(ic.RunFunction(name+"_m_"+t.Super))
+	
+	} else if t.Class != nil && ic.FunctionExists(name+"_m_"+t.Class.GetComplexName()) {
+	
+	ic.Assembly(ic.RunFunction(name+"_m_"+t.Class.GetComplexName()))
+		
+		
 	} else {
 		ic.RaiseError("Method ", name, " for type ", t.GetComplexName(), " does not exist!")
 	}
@@ -296,7 +305,7 @@ func ScanMethod(ic *ilang.Compiler) {
 	
 		function.CreateFromArguments(name, ic)
 		
-		if t.Detail == nil || len(t.Detail.Elements) > 0 {
+		if !t.Empty() {
 			ic.Assembly("%v %v", t.Pop, t.Name)
 			ic.SetVariable(t.Name, t)
 			ic.SetVariable(t.Name+"_use", ilang.Used)

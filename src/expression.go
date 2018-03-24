@@ -104,6 +104,11 @@ func (ic *Compiler) expression() string {
 					} else {
 						ic.RaiseError("Blank constructor!")
 					}
+				} else if ic.DefinedTypes[token].Equals(ic.ExpressionType) { 
+					
+					ic.ExpressionType = ic.DefinedTypes[token]
+					return arg
+					
 				} else {
 					ic.RaiseError("Undefined constructor!")
 				}
