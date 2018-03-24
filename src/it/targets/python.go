@@ -14,7 +14,11 @@ func (Python) Run(mainFile string) error {
 	if runtime.GOOS == "windows" {
 		command = "python"
 	}
-	run := exec.Command(command, path.Base(mainFile[:len(mainFile)-2]+".py"))
+	
+	os.Chdir("../")
+	defer os.Chdir("./.it")
+	
+	run := exec.Command(command, "./.it/"+path.Base(mainFile[:len(mainFile)-2]+".py"))
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	return run.Run()	
