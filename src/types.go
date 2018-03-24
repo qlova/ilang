@@ -34,12 +34,9 @@ func (ic *Compiler) Cast(name string, t Type, b Type) string {
 		}
 	}
 	
-	var arg = ic.Tmp("cast")
-	
 	var asm = ""
-	asm += t.Push+" "+arg
+	asm += t.Push+" "+name+"\n"
 	asm += ic.RunFunction(b.GetComplexName()+"_m_"+t.GetComplexName())
-	asm += b.Pop+" "+arg
 	
 	return asm
 }

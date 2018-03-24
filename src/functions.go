@@ -46,18 +46,19 @@ func (ic *Compiler) FunctionExists(name string) bool {
 }
 
 func (ic *Compiler) LoadFunction(name string) {
-	
-	//Maybe the function needs to be generated?
-	for _, builder := range FunctionBuilders {
-		var f = builder(name)
-		if f != nil {
-			ic.DefinedFunctions[name] = *f
-			return
-		}
-	}
-	
 	f, ok := ic.DefinedFunctions[name]
 	if !ok {
+		
+		//Maybe the function needs to be generated?
+		for _, builder := range FunctionBuilders {
+			var f = builder(name)
+			if f != nil {
+				ic.DefinedFunctions[name] = *f
+				ic.LoadFunction(name)
+				return
+			}
+		}
+		
 		ic.RaiseError(name, " does not exist!")
 	}
 	if !f.Inline && !f.Loaded {
@@ -71,20 +72,20 @@ func (ic *Compiler) LoadFunction(name string) {
 }
 
 func (ic *Compiler) RunFunction(name string) string {
+	
 	f, ok := ic.DefinedFunctions[name]
 	if !ok {
 		if strings.Contains(name, "collect_m_") {
-			return "RUN "+name
+			return "RUN "+name+"\n"
 		}
 		if strings.Contains(name, "_flag_") {
 			panic("Serious bug! Cannot create function from flag.")
 			ic.RaiseError("Serious bug! Cannot create function from flag.")
 		}
-		ic.RaiseError(name, " does not exist!")
 	}
 	
 	ic.LoadFunction(name)
-	
+
 	if f.Import != "" {
 		ic.LoadFunction(f.Import)
 	}
@@ -102,9 +103,9 @@ func (ic *Compiler) RunFunction(name string) string {
 			returns += "\n"+v.Pop+" "+ic.Tmp("")
 		}
 		
-		return "FORK "+name+returns
+		return "FORK "+name+returns+"\n"
 	} else {
-		return "RUN "+name
+		return "RUN "+name+"\n"
 	}
 }
 
@@ -122,7 +123,11 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 				//Try converting the argument.
 				if ic.CanCast(ic.ExpressionType, f.Args[i]) {
 					
+					var cast = ic.Tmp("cast")
 					ic.Assembly(ic.Cast(arg, ic.ExpressionType, f.Args[i]))
+					ic.Assembly(f.Args[i].Pop, " ", cast)
+					arg = cast
+					ic.ExpressionType = f.Args[i]
 					
 				} else {
 					

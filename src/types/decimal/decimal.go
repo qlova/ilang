@@ -81,7 +81,7 @@ func Builder(name string) *ilang.Function {
 		GenerateTypeFor(nil, precision1)
 		
 		f.Data += "\nPUSH decimalcast"
-		f.Data += "\nRETURN"
+		f.Data += "\nRETURN\n"
 		
 		return &f
 	}
