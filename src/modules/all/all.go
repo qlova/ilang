@@ -18,8 +18,8 @@ import (
 	_ "github.com/qlova/ilang/src/modules/method"
 	_ "github.com/qlova/ilang/src/modules/swap"
 	_ "github.com/qlova/ilang/src/modules/save"
-	_ "github.com/qlova/ilang/src/modules/generic"
-	_ "github.com/qlova/ilang/src/modules/pattern"
+	_ "github.com/qlova/ilang/src/modules/concept"
+	_ "github.com/qlova/ilang/src/modules/macro"
 	_ "github.com/qlova/ilang/src/modules/boolean"
 	
 	_ "github.com/qlova/ilang/src/modules/debug"

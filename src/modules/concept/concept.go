@@ -4,9 +4,9 @@ import "github.com/qlova/ilang/src"
 import "github.com/qlova/ilang/src/modules/function"
 import "fmt"
 
-var DefinedGenerics = make(map[string]Generic)
+var DefinedConcepts = make(map[string]Concept)
 
-type Generic struct {
+type Concept struct {
 	Arguments []string
 	Functions map[string]ilang.Function
 	ilang.Plugin
@@ -14,7 +14,7 @@ type Generic struct {
 
 func init() {
 	ilang.RegisterExpression(func(ic *ilang.Compiler) string {
-		if g, ok := DefinedGenerics[ic.LastToken]; ok {
+		if g, ok := DefinedConcepts[ic.LastToken]; ok {
 			//TODO reuse generated generics.
 			
 			var generic_name = ic.LastToken
@@ -129,11 +129,11 @@ func init() {
 		return ""
 	})
 	
-	ilang.RegisterToken([]string{"generic"}, func(ic *ilang.Compiler) {
+	ilang.RegisterToken([]string{"concept"}, func(ic *ilang.Compiler) {
 		var name = ic.Scan(ilang.Name)
 		ic.Scan('(')
 		
-		var g Generic
+		var g Concept
 		
 		//Count the generic arguments.
 		for {
@@ -175,6 +175,6 @@ func init() {
 		g.Plugin = plugin
 		g.Functions = make(map[string]ilang.Function)
 		
-		DefinedGenerics[name] = g
+		DefinedConcepts[name] = g
 	})
 }

@@ -1,10 +1,10 @@
-package pattern
+package macro
 
 import "github.com/qlova/ilang/src"
 
-var DefinedPatterns = make(map[string]Pattern)
+var DefinedMacros = make(map[string]Macro)
 
-type Pattern struct {
+type Macro struct {
 	Arguments []string
 	ilang.Plugin
 }
@@ -13,7 +13,7 @@ func init() {
 	
 	ilang.RegisterExpression(func(ic *ilang.Compiler) string {
 		
-		if p, ok := DefinedPatterns[ic.LastToken]; ok {
+		if p, ok := DefinedMacros[ic.LastToken]; ok {
 			//Argument loop.
 			ic.Scan('(')
 			
@@ -42,9 +42,7 @@ func init() {
 	
 	ilang.RegisterDefault(func(ic *ilang.Compiler) bool {
 		
-		if p, ok := DefinedPatterns[ic.LastToken]; ok {
-		
-			//println("pattern statement")
+		if p, ok := DefinedMacros[ic.LastToken]; ok {
 		
 			//Argument loop.
 			ic.Scan('(')
@@ -78,11 +76,11 @@ func init() {
 		return false
 	})
 
-	ilang.RegisterToken([]string{"pattern"}, func(ic *ilang.Compiler) {
+	ilang.RegisterToken([]string{"macro"}, func(ic *ilang.Compiler) {
 		var name = ic.Scan(ilang.Name)
 		ic.Scan('(')
 		
-		var p Pattern
+		var p Macro
 		
 		//Count the generic arguments.
 		for {
@@ -122,6 +120,6 @@ func init() {
 		
 		p.Plugin = plugin
 		
-		DefinedPatterns[name] = p
+		DefinedMacros[name] = p
 	})
 }
