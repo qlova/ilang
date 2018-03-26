@@ -151,6 +151,13 @@ func (ic *Compiler) optimise(asm string) {
 		
 		if strings.Contains(a, "_") &&  strings.Contains(b, "_") && len(a) > 4 && len(b) > 4 && a[:4] == "PUSH" && b[:4] == "PULL" && a[4:] == b[4:] {
 			ic.LastLine = "#opt"
+		
+		} else if strings.Contains(a, "_") &&  strings.Contains(b, "_") && len(a) > 5 && len(b) > 4 && a[:5] == "SHARE" && b[:4] == "GRAB" && a[5:] == b[4:] {
+			ic.LastLine = "#opt"
+		
+		} else if strings.Contains(a, "_") &&  strings.Contains(b, "_") && len(a) > 5 && len(b) > 4 && a[:5] == "RELAY" && b[:4] == "TAKE" && a[5:] == b[4:] {
+			ic.LastLine = "#opt"
+			
 		} else {
 			if ic.LastLine != "#opt" {
 				fmt.Fprintln(ic.Output, ic.LastLine)
