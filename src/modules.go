@@ -83,3 +83,11 @@ func RegisterShunt(token string, f func(*Compiler, string) string) {
 func RegisterCollection(f func(*Compiler, Type)) {
 	Collections = append(Collections, f)
 }
+
+var OnLoseScope = make([]func(*Compiler), 0, 4)
+
+//OnVariableMarked callback, run just before a given scope is dropped.
+func RegisterOnLoseScope(callback func(*Compiler)) {
+	OnLoseScope = append(OnLoseScope, callback)
+}
+

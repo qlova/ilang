@@ -23,6 +23,9 @@ func (ic *Compiler) ScanTextStatement() {
 			}
 				
 			ic.Assembly("SHARE %v\nRENAME %v", value, name)
+			
+			ic.MarkVariable(name, "renamed")
+			
 		default:
 			ic.ExpressionType = Text
 			ic.NextToken = token

@@ -16,6 +16,19 @@ func ScanStatement(ic *ilang.Compiler) {
 			var value = ic.Tmp("cut")
 			ic.Assembly("PLACE ", name)
 			ic.Assembly("POP ", value)
+		
+		case "=":
+			var value = ic.ScanExpression()
+			if !ic.ExpressionType.Equals(Type) {
+				ic.RaiseError("Only arrays can be assigned to arrays!")
+			}
+			
+			ic.Assembly("SHARE ", value)
+			ic.Assembly("RENAME ", name)
+			
+			//We want to signal that this value has been renamed.
+			//This is for garbage collection purposes.
+			ic.MarkVariable(name, "renamed")
 			
 		case "+":
 			if ic.Peek() == "+" {

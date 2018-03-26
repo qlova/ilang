@@ -369,7 +369,11 @@ func (c *Compiler) Expecting(token string) {
 }
 
 func (ic *Compiler) LoseScope() {
-
+	
+	for _, callback := range OnLoseScope {
+			callback(ic)
+	}
+	
 	ic.CollectGarbage()
 
 	if len(ic.Scope) == 0 {

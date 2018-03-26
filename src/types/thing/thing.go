@@ -60,10 +60,11 @@ func ScanStatement(ic *ilang.Compiler) {
 		if !ic.ExpressionType.User {
 			ic.RaiseError("Cannot set ", name, " to type ", ic.ExpressionType.Name, "! Must be a user defined type!")
 		}
-		ic.Assembly("PLACE ", value)
+		ic.Assembly("SHARE ", value)
 		ic.Assembly("RENAME ", name)
 		
 		ic.UpdateVariable(name, ic.ExpressionType)
+		ic.MarkVariable(name, "renamed")
 		
 		return
 	}
@@ -99,21 +100,13 @@ func ScanStatement(ic *ilang.Compiler) {
 	if token == "=" {
 		value = ic.ScanExpression()
 	
-	
-	//This works well.
-	} else if token == "+" {
-		
-		ic.NextToken = index
-		ic.NextNextToken = "+"
-		ic.ScanStatement()
-		return
-	
 	} else {
 		value = ic.IndexUserType(name, index)
 		ic.SetVariable(value, ic.ExpressionType)
 		ic.NextToken = value
 		ic.NextNextToken = token
 		ic.ScanStatement()
+		return
 	}
 	ic.SetVariable(value+".", ilang.Protected)
 	
@@ -129,6 +122,8 @@ func ScanStatement(ic *ilang.Compiler) {
 			ic.Assembly(usertype.FreeChildren(name))
 			ic.Assembly("SHARE ", value)
 			ic.Assembly("RENAME ", name)
+			
+			ic.MarkVariable(name, "renamed")
 		}
 	} else {
 		if ic.GetVariable(value) != ilang.Undefined {

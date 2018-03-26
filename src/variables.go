@@ -2,6 +2,13 @@ package ilang
 
 import "strings"
 
+var OnVariableMarked = make([]func(*Compiler, string, string), 0, 4)
+
+//OnVariableMarked callback, run when a variable is marked.
+func RegisterOnVariableMarked(callback func(*Compiler, string, string)) {
+	OnVariableMarked = append(OnVariableMarked, callback)
+}
+
 //Create the assembly for a new variable and keep track of it.
 //Type is inferred by the Compiler's ExpressionType value.
 func (ic *Compiler) CreateVariable(name, value string) {
@@ -32,6 +39,21 @@ func (c *Compiler) SetVariable(name string, sort Type) {
 		}
 	}
 	c.Scope[len(c.Scope)-1][name] = sort
+}
+
+//Mark the variable with a specific feature.
+func (ic *Compiler) MarkVariable(name string, mark string) {
+	for i:=len(ic.Scope)-1; i>=0; i-- {
+		if _, ok := ic.Scope[i][name]; ok {
+			ic.Scope[i][name+"_"+mark] = Used
+			
+			//Run the OnVariableMarked callbacks
+			for _, callback := range OnVariableMarked {
+				callback(ic, name, mark)
+			}
+			
+		}
+	}
 }
 
 //This will update a variable to be a new type.

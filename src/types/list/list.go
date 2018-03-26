@@ -112,6 +112,19 @@ func ScanStatement(ic *ilang.Compiler) {
 		case "=":
 			
 			
+			var value = ic.ScanExpression()
+			if !ic.ExpressionType.Equals(t) {
+				ic.RaiseError("Cannot assign "+ic.ExpressionType.GetComplexName()+" to a variable with type "+t.GetComplexName()+"!")
+			}
+			
+			ic.Assembly("SHARE ", value)
+			ic.Assembly("RENAME ", name)
+			
+			
+			//We want to signal that this value has been renamed.
+			//This is for garbage collection purposes.
+			ic.MarkVariable(name, "renamed")
+			
 		default:
 			ic.ExpressionType = t
 			ic.NextToken = token

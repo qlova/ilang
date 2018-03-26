@@ -2,9 +2,10 @@ package method
 
 import "github.com/qlova/ilang/src"
 import "github.com/qlova/ilang/src/modules/function"
+import "strings"
 
 var Flag = ilang.NewNamedFlag("Method")
-var New = ilang.NewNamedFlag("New")
+var New = ilang.NewNamedFlag("NewMethod")
 
 func Get(ic *ilang.Compiler, t ilang.Type, name string) *ilang.Function {
 	
@@ -28,6 +29,43 @@ func Get(ic *ilang.Compiler, t ilang.Type, name string) *ilang.Function {
 func init() {
 	ilang.RegisterToken([]string{"method"}, ScanMethod)
 	ilang.RegisterListener(New, NewEnd)
+	
+	//This listener is responsible for assigning member value changes back to the type.
+	ilang.RegisterOnLoseScope(func(ic *ilang.Compiler) {
+		if ic.GetFlag(Flag) {
+			var cleaning_jobs = []string{}
+			for variable, t := range ic.Scope[len(ic.Scope)-1] {
+				if splits := strings.Split(variable, "_"); len(splits) > 1 && splits[1] == "cleanup" {
+					cleaning_jobs = append(cleaning_jobs, splits[0])
+					
+					if t.Name == "i_cleanup" {
+						var pointer = ic.Tmp("pointer")
+					
+						ic.Assembly("PLACE ", ic.LastDefinedType.Name)
+						ic.Assembly("PUSH ", t.Int)
+						ic.Assembly("GET ", pointer)
+						ic.Assembly("IF ", pointer)
+						ic.Assembly(t.Free(pointer))
+						ic.Assembly("MUL ", pointer, " -1 ", pointer)
+						ic.Assembly("PUSH ", pointer)
+						ic.Assembly("HEAP")
+						ic.Assembly("END")
+					}
+				}
+			}
+			
+			Sync(ic, cleaning_jobs...)
+		}
+	})
+	
+	//We need to deal with renamed array members of the type.
+	ilang.RegisterOnVariableMarked(func(ic *ilang.Compiler, name, mark string) {
+		if ic.GetFlag(Flag) && mark == "renamed" {
+			if index, ok := ic.LastDefinedType.Detail.Table[name]; ok {
+				ic.Scope[len(ic.Scope)-1][name+"_cleanup"] = ilang.Type{Name: "i_cleanup", Int: index}
+			}
+		}
+	})
 	
 	ilang.RegisterDefault(func(ic *ilang.Compiler) bool {
 		token := ic.LastToken
@@ -55,16 +93,6 @@ func init() {
 					ic.Scan('(') //BUG I don't know why this has to be here.
 					return true
 				}
-			}
-		}
-		
-		if ic.GetFlag(Flag) && ic.LastDefinedType.Detail != nil {
-			if _, ok := ic.LastDefinedType.Detail.Table[token]; ok {
-				ic.NextToken = ic.LastDefinedType.Name
-				ic.NextNextToken = "."
-				ic.NextNextNextToken = token
-				ic.ScanStatement()
-				return true
 			}
 		}
 		
@@ -143,6 +171,13 @@ func init() {
 				ic.AssembleVar(name, value)
 				ic.SetVariable(name+"_use", ilang.Used)
 				ic.SetVariable(name+".", ilang.Protected)
+				
+				
+				//Add to cleaning jobs.
+				if ic.ExpressionType.Push == "PUSH" {
+					ic.Scope[len(ic.Scope)-1][name+"_cleanup"] = ilang.Used
+				}
+				
 				return ic.ExpressionType
 			}
 		}
@@ -153,13 +188,10 @@ func init() {
 }
 
 func Sync(ic *ilang.Compiler, variables ...string) {
-	if ic.GetFlag(Flag) && ic.LastDefinedType.Detail != nil {
-	
-		for _, variable := range variables {
-	
-			if _, ok := ic.LastDefinedType.Detail.Table[variable]; ok {
-				ic.SetUserType(ic.LastDefinedType.Name, variable, variable)
-			}
+	for _, variable := range variables {
+		if t, ok := ic.LastDefinedType.Detail.Table[variable]; ok {
+			ic.ExpressionType = ic.LastDefinedType.Detail.Elements[t]
+			ic.SetUserType(ic.LastDefinedType.Name, variable, variable)
 		}
 	}
 }

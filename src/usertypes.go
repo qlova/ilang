@@ -225,7 +225,7 @@ func (ic *Compiler) IndexUserType(name, element string) string {
 				} else {
 					ic.Assembly("HEAP")
 				}
-				tmp = ic.Tmp("index")
+				tmp = ic.Tmp(name+"."+element)
 				ic.Assembly(t.Elements[index].Pop, " ", tmp)
 				ic.Assembly(t.Elements[index].Push, " ", tmp)
 				ic.LoseScope()
