@@ -1,4 +1,5 @@
 ![i](media/banner.png)  
+[Download](#download-and-install)  [Wiki](../wiki)  [Reddit](http://reddit.com/r/ilang)  
 'i' is a hardware-agnostic maths-based cross-platform programming language in heavy development.
 
 Hello World:
