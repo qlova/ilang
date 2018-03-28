@@ -1,4 +1,4 @@
-# 'i'
+![i](media/banner.png)  
 'i' is a hardware-agnostic maths-based cross-platform programming language in heavy development.
 
 Hello World:
