@@ -44,6 +44,9 @@ func ScanAssembly(ic *ilang.Compiler) {
 			ic.Scan(0)
 			asm += "\t"
 			continue
+		} else if token == "\\" {
+			asm += ic.Scan(0)
+			continue
 		}
 		if strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") {
 			ic.GetVariable(token)
@@ -79,8 +82,8 @@ func ScanAssembly(ic *ilang.Compiler) {
 				asm = token
 				
 			}  else if first || (token[0] == '"') || 
-				(strings.ContainsAny(last, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_") &&
-				 strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")) {
+				(strings.ContainsAny(last, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789") &&
+				 strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789")) {
 				asm += " "+token
 				
 			}else if strings.ContainsAny(token, "+-/*().=[]<>{}:;!@#$%^&*") {
@@ -92,7 +95,7 @@ func ScanAssembly(ic *ilang.Compiler) {
 		}
 	
 		if block {
-			if token == "}"  {
+			if token == "}" {
 		 		if braces == 0 {
 					break
 				} else {
