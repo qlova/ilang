@@ -39,6 +39,6 @@ func init() {
 	
 	ilang.NewOperator(Type, "=", Type, "VAR %c\nSEQ %c %a %b", true, ilang.Number)
 	ilang.NewOperator(Type, "!=",Type, "VAR %c\nSNE %c %a %b", true, ilang.Number)
-	ilang.NewOperator(ilang.Text, "+=", Type, "PLACE %a\nPUT %b", false, ilang.Undefined)
+	ilang.NewOperator(ilang.Text, "+=", Type, "VAR %t\nSEQ %t %b 8\nPLACE %a\nIF %t\nIF #%a\nPOP i_backspace\nEND\nELSE\nPUT %b\nEND\n", false, ilang.Undefined)
 }
 
