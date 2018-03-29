@@ -41,6 +41,11 @@ var AlreadyGeneratedACollectionMethodFor = make(map[string]bool)
 
 func (t Type) Free(pointer string) string {
 	if (t.IsUser() == Undefined && t.SubType == nil) || (t.SubType != nil && t.SubType.Push == "PUSH" && t.SubType.SubType == nil) {
+		
+		if (t.Push == "SHARE") {
+			return "IF "+pointer+"\nMUL "+pointer+" -1 "+pointer+"\nPUSH "+pointer+"\nHEAP\nEND\n"
+		}
+		
 		return ""
 	}
 	if t.Empty() {
@@ -102,8 +107,12 @@ func (ic *Compiler) Collect(t Type) {
 			ic.Library("PUSH ", i)
 			ic.Library("GET ", tmp)
 			ic.Library("ADD ", tmp, " 0 ", tmp)
+
 			
 			ic.Library(element.Free(tmp))
+			
+			ic.Library("PUSH ", i)
+			ic.Library("SET 0")
 		}
 	}
 	ic.LoseScope()
