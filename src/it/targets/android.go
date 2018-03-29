@@ -5,6 +5,20 @@ import "os"
 import "os/exec"
 import "strings"
 import "errors"
+import "path/filepath"
+import "fmt"
+
+func FilePathWalkDir(root string) ([]string, error) {
+    var files []string
+    err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		path = strings.Replace(path, "../data/", "assets/", 1)
+        if !info.IsDir() {
+            files = append(files, path)
+        }
+        return nil
+    })
+    return files, err
+}
 
 type Android struct {}
 
@@ -12,6 +26,20 @@ func (Android) Compile(mainFile string) error {
 	
 	//Copy in MainActivity.
 	var SDK = Home()+"/.ilang/targets/android"
+	
+	if _, err := os.Stat(SDK+"/sdk.jar"); os.IsNotExist(err) {
+		fmt.Println("Downloading the android sdk... (15mb~)")
+		os.MkdirAll(SDK, 0755)
+		err := DownloadFile(SDK+"/../android.zip", "https://bitbucket.org/Splizard/ilang-release/downloads/android.zip")
+		if err != nil {
+			return err
+		}
+		err = Unzip(SDK+"/../android.zip", SDK)
+		if err != nil {
+			return err
+		}
+	}
+	
 	var base = path.Base(mainFile[:len(mainFile)-2])
 	var safebase = strings.Replace(base, " ", "", -1)
 	
@@ -40,6 +68,7 @@ func (Android) Compile(mainFile string) error {
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="`+base+`"
+		android:hardwareAccelerated="true"
 		android:theme="@android:style/Theme.NoTitleBar">
 		
         <activity android:name=".MainActivity">
@@ -87,6 +116,25 @@ func (Android) Compile(mainFile string) error {
 		return err
 	}
 	
+	//Add assets.
+	os.Symlink("../data", "assets")
+	
+	if _, err := os.Stat("../data"); err == nil {
+		files, err := FilePathWalkDir("../data")
+		if err != nil {
+			return err
+		}
+		
+		for _, file := range files {
+			cmd = exec.Command(SDK+"/aapt", "add", base+".apk.unaligned", file)	
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err = cmd.Run(); err != nil {
+				return err
+			}
+		}
+	}
+	
 	cmd = exec.Command(SDK+"/aapt", "add", base+".apk.unaligned", "classes.dex")	
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -115,14 +163,16 @@ func (Android) Run(mainFile string) error {
 	var safebase = strings.Replace(base, " ", "", -1)
 	var packagename = "nz.co.qlova.ilang."+safebase
 	
-	cmd := exec.Command("adb", "install", "-r", base+"-debug.apk")
+	var SDK = Home()+"/.ilang/targets/android"
+	
+	cmd := exec.Command(SDK+"/adb", "install", "-r", base+"-debug.apk")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return err
 	}
 	
-	cmd = exec.Command("adb", "shell", "am", "start", "-n", packagename+"/"+packagename+".MainActivity")
+	cmd = exec.Command(SDK+"/adb", "shell", "am", "start", "-n", packagename+"/"+packagename+".MainActivity")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
