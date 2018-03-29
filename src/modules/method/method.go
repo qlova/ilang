@@ -34,23 +34,9 @@ func init() {
 	ilang.RegisterOnLoseScope(func(ic *ilang.Compiler) {
 		if ic.GetFlag(Flag) {
 			var cleaning_jobs = []string{}
-			for variable, t := range ic.Scope[len(ic.Scope)-1] {
+			for variable, _ := range ic.Scope[len(ic.Scope)-1] {
 				if splits := strings.Split(variable, "_"); len(splits) > 1 && splits[1] == "cleanup" {
 					cleaning_jobs = append(cleaning_jobs, splits[0])
-					
-					if t.Name == "i_cleanup" {
-						var pointer = ic.Tmp("pointer")
-					
-						ic.Assembly("PLACE ", ic.LastDefinedType.Name)
-						ic.Assembly("PUSH ", t.Int)
-						ic.Assembly("GET ", pointer)
-						ic.Assembly("IF ", pointer)
-						ic.Assembly(t.Free(pointer))
-						ic.Assembly("MUL ", pointer, " -1 ", pointer)
-						ic.Assembly("PUSH ", pointer)
-						ic.Assembly("HEAP")
-						ic.Assembly("END")
-					}
 				}
 			}
 			
@@ -341,6 +327,7 @@ func ScanMethod(ic *ilang.Compiler) {
 			ic.Assembly("%v %v", t.Pop, t.Name)
 			ic.SetVariable(t.Name, t)
 			ic.SetVariable(t.Name+"_use", ilang.Used)
+			ic.SetVariable(t.Name+".", ilang.Protected)
 		}
 		
 		f = ic.DefinedFunctions[name]
@@ -383,6 +370,7 @@ func ScanMethod(ic *ilang.Compiler) {
 		ic.SetVariable("c", a)
 		ic.SetVariable("a", a)
 		ic.SetVariable("b", b)
+		ic.SetVariable("c.", ilang.Protected)
 	}
 }
 
