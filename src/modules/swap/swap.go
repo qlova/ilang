@@ -43,13 +43,13 @@ func ScanSwap(ic *ilang.Compiler) {
 
 			var tmp = ic.Tmp("swap")
 			ic.Assembly("ARRAY ", tmp)
-			ic.Assembly("PLACE ", a)
+			ic.Assembly("SHARE ", a)
 			ic.Assembly("RENAME ", tmp)
 			
-			ic.Assembly("PLACE ", b)
+			ic.Assembly("SHARE ", b)
 			ic.Assembly("RENAME ", a)
 			
-			ic.Assembly("PLACE ", tmp)
+			ic.Assembly("SHARE ", tmp)
 			ic.Assembly("RENAME ", b)
 		
 		case "RELAY":
