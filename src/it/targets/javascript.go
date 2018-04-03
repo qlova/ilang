@@ -90,11 +90,11 @@ func (t Javascript) Run(mainFile string) error {
 `)
 			wg.Done()
 		})
-		http.HandleFunc("/stack.js",  func(w http.ResponseWriter, r *http.Request) {
+		http.HandleFunc("/stack.js",  NoCache(func(w http.ResponseWriter, r *http.Request) {
 			wg.Add(1)
 			 http.ServeFile(w, r, "./stack.js")
 			 wg.Done()
-		})
+		}))
 		http.HandleFunc("/game.js",  func (w http.ResponseWriter, r *http.Request) {
 			wg.Add(1)
 			 http.ServeFile(w, r, path.Base(mainFile[:len(mainFile)-2]+".js"))
