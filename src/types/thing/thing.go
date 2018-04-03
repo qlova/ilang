@@ -119,7 +119,7 @@ func ScanStatement(ic *ilang.Compiler) {
 	if index == "" {
 		if !usertype.Empty() {
 			//TODO garbage collection.
-			ic.Assembly(usertype.FreeChildren(name))
+			//ic.Assembly(usertype.FreeChildren(name))
 			ic.Assembly("SHARE ", value)
 			ic.Assembly("RENAME ", name)
 			
