@@ -277,7 +277,7 @@ func (c *Compiler) scan(verify rune) string {
 				c.Collect(t)
 			}
 			
-			fmt.Fprintf(c.Lib, `DATA i_newline "\n"`+"\n")
+			fmt.Fprintf(c.Lib, `DATA i_newline 10`)
 			c.LoadFunction("strings.equal")
 			c.LoadFunction("strings.compare")
 			c.LoadFunction("i_base_number")
