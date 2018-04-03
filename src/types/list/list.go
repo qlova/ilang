@@ -142,6 +142,13 @@ func ScanSymbol(ic *ilang.Compiler) ilang.Type {
 	return ListType
 }
 
+func Of(t ilang.Type) ilang.Type {
+	var ListType = Type
+	ListType.SubType  = new(ilang.Type)
+	*ListType.SubType = t
+	return ListType	
+}
+
 func ScanExpression(ic *ilang.Compiler) string {
 	var token = ic.LastToken
 	
