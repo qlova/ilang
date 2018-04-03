@@ -21,6 +21,7 @@ import (
 	_ "github.com/qlova/ilang/src/modules/concept"
 	_ "github.com/qlova/ilang/src/modules/macro"
 	_ "github.com/qlova/ilang/src/modules/boolean"
+	_ "github.com/qlova/ilang/src/modules/data"
 	
 	_ "github.com/qlova/ilang/src/modules/debug"
 )
