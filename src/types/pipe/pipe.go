@@ -153,6 +153,8 @@ func ScanPipeStatement(ic *ilang.Compiler) {
 			}
 			ic.Assembly("RELAY ", value)
 			ic.Assembly("RELOAD ", name)
+			
+			ic.MarkVariable(name, "renamed")
 		default:
 			ic.ExpressionType = Type
 			ic.NextToken = token
