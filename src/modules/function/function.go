@@ -171,8 +171,8 @@ func ScanReturn(ic *ilang.Compiler) {
 	}
 	
 	//Infer return type for this function, because I is clever and concise.
-	if len(ic.CurrentFunction.Returns) == 0 {
-		if ic.Peek() != "\n" {
+	if len(ic.CurrentFunction.Returns) == 0 && ic.Peek() != "\n" {
+		for {
 			r := ic.ScanExpression()
 			
 			ic.SetVariable(r+".", ilang.Protected)
@@ -182,6 +182,12 @@ func ScanReturn(ic *ilang.Compiler) {
 			ic.DefinedFunctions[ic.CurrentFunction.Name] = ic.CurrentFunction
 		
 			ic.Assembly("%v %v", ic.ExpressionType.Push, r)
+			
+			if token := ic.Scan(0); token == "\n" {
+				break
+			} else if token != "," && token != "}" {
+				ic.RaiseError("Expecting ',' or '}'")
+			}
 		}
 	}
 	

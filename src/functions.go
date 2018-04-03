@@ -227,15 +227,49 @@ func (ic *Compiler) ScanFunctionCall(name string) string {
 	ic.Assembly(ic.RunFunction(name))
 	
 	if len(f.Returns) > 0 {
-		id := ic.Tmp("result")
+		ic.Values = make([]string, len(f.Returns))
+		ic.ExpressionTypes = make([]Type, len(f.Returns))
 		
-		var ReturnType = f.Returns[0]
 		
+		//OMG STACK PAIN.
+		var PUSHES, SHARES, RELAYS = []int{}, []int{}, []int{}
+		for i, ret := range f.Returns {
+			if ret.Push == "PUSH" {
+				PUSHES = append(PUSHES, i)
+			}
+			if ret.Push == "SHARE" {
+				SHARES = append(SHARES, i)
+			}
+			if ret.Push == "RELAY" {
+				RELAYS = append(RELAYS, i)
+			}
+		}
 		
-		ic.Assembly("%v %v", ReturnType.Pop, id)
-		ic.ExpressionType = ReturnType
+		for _, ret := range f.Returns {
+			id := ic.Tmp("result")
+
+			ic.Assembly("%v %v", ret.Pop, id)
+			
+			//Just ignore this.
+			if ret.Push == "PUSH" {
+				ic.Values[PUSHES[len(PUSHES)-1]] = id
+				ic.ExpressionTypes[PUSHES[len(PUSHES)-1]] = ret
+				PUSHES = PUSHES[:len(PUSHES)-1]
+			}
+			if ret.Push == "SHARE" {
+				ic.Values[SHARES[len(SHARES)-1]] = id
+				ic.ExpressionTypes[SHARES[len(SHARES)-1]] = ret
+				SHARES = SHARES[:len(SHARES)-1]
+			}
+			if ret.Push == "RELAY" {
+				ic.Values[RELAYS[len(RELAYS)-1]] = id
+				ic.ExpressionTypes[RELAYS[len(RELAYS)-1]] = ret
+				RELAYS = RELAYS[:len(RELAYS)-1]
+			}
+		}
 		
-		return id
+		ic.ExpressionType = ic.ExpressionTypes[0]
+		return ic.Values[0]
 	}	
 	return ""
 }

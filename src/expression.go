@@ -194,3 +194,26 @@ func (ic *Compiler) expression() string {
 func (ic *Compiler) ScanExpression() string {
 	return ic.Shunt(ic.expression())
 }
+
+func (ic *Compiler) ScanExpressions(number int) []string {
+	var values []string
+	ic.ExpressionTypes = []Type{}
+	
+	var peek = ic.Scan(0)
+	if f, ok := ic.DefinedFunctions[peek]; ok && len(f.Returns) > 1 {
+		if len(f.Returns) != number {
+			ic.RaiseError("Function ", peek, " cannot be used in multiple assignment, has ", 
+						  len(f.Returns), " return values but need ", number)
+		}
+		
+		ic.ScanFunctionCall(peek)
+		return ic.Values
+	}
+	ic.NextToken = peek
+	
+	for i := 0; i < number; i++ {
+		values = append(values, ic.Shunt(ic.expression()))
+		ic.ExpressionTypes = append(ic.ExpressionTypes, ic.ExpressionType)
+	}
+	return values
+}

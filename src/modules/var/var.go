@@ -21,17 +21,22 @@ func ScanVar(ic *ilang.Compiler) {
 			var names = []string{name}
 			for {
 				token = ic.Scan(0)
-				if token == "=" {
-					break	
-				}
 				names = append(names, token)
+				
+				if token = ic.Scan(0); token != "," {
+					if token == "=" {
+						break
+					}
+					ic.RaiseError("Expecting ',' or '=' ")
+				}
+				
 			}
 			
+			var values = ic.ScanExpressions(len(names))
+
 			for i, name := range names {
-				ic.AssembleVar(name, ic.ScanExpression())
-				if i < len(names)-1 { 
-					ic.Scan(',')
-				}
+				ic.ExpressionType = ic.ExpressionTypes[i]
+				ic.AssembleVar(name, values[i])
 			}
 		
 		//Uninitialised variables are illegal.
