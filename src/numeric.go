@@ -27,6 +27,9 @@ func (ic *Compiler) ScanNumericStatement() {
 			}
 				
 			ic.Assembly("ADD %v %v %v", name, 0, value)
+			
+			ic.MarkVariable(name, "renamed")
+			
 		default:
 			ic.ExpressionType = numeric
 			ic.NextToken = token
