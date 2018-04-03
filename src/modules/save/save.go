@@ -8,6 +8,8 @@ package save
 import "github.com/qlova/ilang/src"
 import "fmt"
 
+import "github.com/qlova/ilang/src/types/pipe"
+
 func init() {
 	ilang.RegisterExpression(ScanSave)
 }
@@ -26,17 +28,29 @@ var GeneratedSaveMethods = make(map[string]string)
 
 //TODO peformance this function lol
 func GenerateSaveMethodFor(t ilang.Type) string {
+	if !t.User {
+		return ""
+	}
+	
 	if _, ok := GeneratedSaveMethods[t.GetComplexName()]; ok {
 		return ""
 	}
 	
+	
 	var assembly string
+	
+	for _, i := range t.Detail.Table {
+		subelement := t.Detail.Elements[i]
+		assembly += GenerateSaveMethodFor(subelement)
+	}
 	
 	assembly += "FUNCTION save_m_"+t.GetComplexName()+"\n"
 	
 	assembly += "GRAB value\n"
 	
 	assembly += "ARRAY a\n"
+	
+	
 	
 	//Get each type member.
 	for element, i := range t.Detail.Table {
@@ -68,8 +82,33 @@ func GenerateSaveMethodFor(t ilang.Type) string {
 	
 			assembly += "JOIN a a txt"+fmt.Sprint(i)+"\n"
 			assembly += "PLACE a\n"
+		} else if subelement == pipe.Type {
+			
+			assembly += "PUT 64\n"
+			//ic.RaiseError("Cannot save types with pipe children!")
+			
+		} else if subelement.User {
+			
+			assembly += "PUT 123\n"
+			assembly += "PUSH "+fmt.Sprint(i)+"\n"
+			assembly += "PLACE value\n"
+			assembly += "GET elem"+fmt.Sprint(i)+"\n"
+			
+			assembly += "PUSH elem"+fmt.Sprint(i)+"\n"
+			assembly += "HEAP\n"
+			
+			assembly += "RUN save_m_"+subelement.GetComplexName()+"\n"
+			assembly += "GRAB txt"+fmt.Sprint(i)+"\n"
+			assembly += "JOIN a a txt"+fmt.Sprint(i)+"\n"
+			assembly += "PLACE a\n"
+			assembly += "PUT 125\n"
+
+			
+			
 		} else {
-			assembly += "PUT 63"
+			
+			assembly += "PUT 64\n"
+			//ic.RaiseError("Cannot save ", subelement.GetComplexName(), " types!")
 		}
 		assembly += "PUT 44\n" //,
 		
