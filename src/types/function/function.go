@@ -10,6 +10,18 @@ func init() {
 	ilang.RegisterExpression(FuncExpression)
 }
 
+func Call(ic *ilang.Compiler, name string) {
+	var data = ic.Tmp("fdata")
+	ic.Assembly("#STOP_OPTIMISE")
+	ic.Assembly("RELAY ", name)
+	ic.Assembly("CONNECT")
+	ic.Assembly("GRAB ", data)
+	ic.Assembly("IF #", data)
+		ic.Assembly("SHARE ", data)
+	ic.Assembly("END")
+	ic.Assembly("EXE ", name)
+}
+
 func ScanFuncSymbol(ic *ilang.Compiler) ilang.Type {
 	var t = Type
 	
@@ -105,7 +117,7 @@ func ScanFuncStatement(ic *ilang.Compiler) bool {
 				}
 			}
 			ic.Scan(')')
-			ic.Assembly("EXE ", name)
+			Call(ic, name)
 		case "=":
 			value := ic.ScanExpression()
 			if ic.ExpressionType != Type {

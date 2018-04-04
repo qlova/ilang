@@ -67,9 +67,15 @@ func (ic *Compiler) UpdateVariable(name string, sort Type) {
 
 //This will return the type of the variable. UNDEFINED for undefined variables.
 func (ic *Compiler) GetVariable(name string) Type {
+	ic.MarkVariable(name, "use")
+	
+	return ic.SneakyGetVariable(name)
+}
+
+//This will return the type of the variable. UNDEFINED for undefined variables.
+func (ic *Compiler) SneakyGetVariable(name string) Type {
 	for i:=len(ic.Scope)-1; i>=0; i-- {
 		if v, ok := ic.Scope[i][name]; ok {
-			ic.Scope[i][name+"_use"] = Used
 			return v
 		}
 	}
@@ -82,4 +88,15 @@ func (ic *Compiler) GetVariable(name string) Type {
 	}
 	
 	return Undefined
+}
+
+//This will return the type of the variable. UNDEFINED for undefined variables.
+func (ic *Compiler) GetScope(name string) int {
+	for i:=len(ic.Scope)-1; i>=0; i-- {
+		if _, ok := ic.Scope[i][name]; ok {
+			return i
+		}
+	}
+	
+	return 0
 }

@@ -13,88 +13,166 @@ func init() {
 	ilang.RegisterShunt("(", ShuntFunctionCall)
 }
 
+func ScanAnonymousFunction(ic *ilang.Compiler) string {
+	ic.Scan('(')
+	
+	var OldFunction = ic.CurrentFunction
+	defer func() {
+		ic.CurrentFunction = OldFunction
+	}()
+		
+	var name = ic.Tmp("anonymous")
+	
+	ic.DisableOutput = true
+	//ic.Assembly("FUNCTION ", name)
+	ic.GainScope()
+	ic.SetFlag(Flag)
+	
+	CreateFromArguments(name, ic)
+	
+	var copythisscope = ic.Scope[len(ic.Scope)-1]
+	var currentscopelen = len(ic.Scope)
+	
+	//Plugin Time!
+	var plugin ilang.Plugin
+	plugin.Line = ic.Scanner.Pos().Line
+
+	var braces = 0
+	for {
+		var token = ic.Scan(0)
+		if token == "}"  {
+			if braces == 0 {
+				plugin.Tokens = append(plugin.Tokens, token)
+				break
+			} else {
+				braces--
+			}
+		}
+		if token == "{" {
+			braces++
+		}
+		plugin.Tokens = append(plugin.Tokens, token)
+	}
+
+	plugin.File = ic.Scanner.Pos().Filename
+	
+	//Mock scan to load any needed requirements.
+	ic.Insertion = append(ic.Insertion, plugin)
+	
+	
+	//Somehow need to identify any variables used from outside of scope.
+	var UsedVariables = []string{}
+	var UsedTypes = []ilang.Type{}
+	ilang.OnVariableMarked = append(ilang.OnVariableMarked, func(ic *ilang.Compiler, name, mark string) {
+		for _, value := range UsedVariables {
+			if value == name {
+				return
+			}
+		}
+		if ic.GetScope(name) < currentscopelen {
+			UsedVariables = append(UsedVariables, name)
+			UsedTypes = append(UsedTypes, ic.SneakyGetVariable(name))
+		}
+	})
+	
+	for {	
+		ic.ScanAndCompile()
+		if len(ic.Scope) < currentscopelen {
+			break
+		}
+	}
+	ilang.OnVariableMarked = ilang.OnVariableMarked[:len(ilang.OnVariableMarked)-1]
+	
+	ic.DisableOutput = false
+	
+	var ScopedVariables = []string{}
+	var ScopedTypes = []ilang.Type{}
+	for i, variable := range UsedVariables {
+		if t := UsedTypes[i]; t != ilang.Undefined {
+			
+			ScopedVariables = append(ScopedVariables, variable)
+			ScopedTypes = append(ScopedTypes, t)
+		} else {
+			print(t.GetComplexName())
+		}
+	}
+	
+	ic.SwapOutput()
+	//Do it again properly.
+	ic.Assembly("FUNCTION ", name)
+	ic.GainScope()
+	
+	ic.Assembly(ic.DefinedFunctions[name].UnpackArguments)
+	
+	ic.Scope[len(ic.Scope)-1] = copythisscope
+	currentscopelen = len(ic.Scope)
+	
+	//Get Scoped variables.
+	if len( ScopedVariables) > 0 {
+		ic.Assembly("GRAB scope")
+		ic.Assembly("PLACE scope")
+		for i, variable := range ScopedVariables {
+			ic.Assembly("PUSH ", i)
+			if ScopedTypes[i].Push == "PUSH" {
+				ic.Assembly("GET ", variable)
+			} else {
+				pointer := ic.Tmp("pointer")
+				ic.Assembly("GET ", pointer)
+				
+				ic.ExpressionType = ScopedTypes[i]
+				ic.Assembly(ScopedTypes[i].Push, " ", ic.Dereference(pointer))
+				ic.Assembly(ScopedTypes[i].Pop, " ", variable)
+			}
+			ic.SetVariable(variable, ScopedTypes[i])
+		}
+	}
+	
+	ic.Insertion = append(ic.Insertion, plugin)
+	
+	for {	
+		ic.ScanAndCompile()
+		if len(ic.Scope) < currentscopelen {
+			break
+		}
+	}
+	
+	
+	ic.SwapOutput()
+	
+	var tmp = ic.Tmp("scope")
+	ic.Assembly("SCOPE ", name)
+	ic.Assembly("TAKE ", tmp)
+	
+	if len( ScopedVariables) > 0 {
+		//Push Scoped variables.
+		var scoped = ic.Tmp("scoped")
+		ic.Assembly("ARRAY ", scoped)
+		for i, variable := range ScopedVariables {
+			ic.ExpressionType = ScopedTypes[i]
+			ic.Assembly("PLACE ", scoped)
+			ic.Assembly("PUT ", ic.GetPointerTo(variable))
+		}
+		ic.Assembly("SHARE ", scoped)
+		ic.Assembly("RELAY ", tmp)
+		ic.Assembly("LINK")
+	}
+	
+	
+	
+	var t = function.Type
+	t.Detail = new(ilang.UserType)
+	t.Detail.Elements = ic.DefinedFunctions[name].Args
+	
+	ic.ExpressionType = t
+	return tmp
+}
+
 func FuncExpression(ic *ilang.Compiler) string {
 	var token = ic.LastToken
 	
 	//Scan anonymous function.
 	if token == "function" {
-		ic.Scan('(')
-		
-		var name = ic.Tmp("anonymous")
-		
-		ic.DisableOutput = true
-		//ic.Assembly("FUNCTION ", name)
-		ic.GainScope()
-		
-		CreateFromArguments(name, ic)
-		
-		var copythisscope = ic.Scope[len(ic.Scope)-1]
-		
-		//Plugin Time!
-		var plugin ilang.Plugin
-		plugin.Line = ic.Scanner.Pos().Line
-
-		var braces = 0
-		for {
-			var token = ic.Scan(0)
-			if token == "}"  {
-		 		if braces == 0 {
-		 			plugin.Tokens = append(plugin.Tokens, token)
-					break
-				} else {
-					braces--
-				}
-			}
-			if token == "{" {
-				braces++
-			}
-			plugin.Tokens = append(plugin.Tokens, token)
-		}
-
-		plugin.File = ic.Scanner.Pos().Filename
-		
-		//Mock scan to load any needed requirements.
-		ic.Insertion = append(ic.Insertion, plugin)
-		
-		for {	
-			ic.ScanAndCompile()
-			if !ic.GetFlag(Flag) {
-				break
-			}
-		}
-		
-		ic.DisableOutput = false
-		
-		ic.SwapOutput()
-		//Do it again properly.
-		ic.Assembly("FUNCTION ", name)
-		ic.GainScope()
-		ic.Assembly(ic.DefinedFunctions[name].UnpackArguments)
-		
-		ic.Scope[len(ic.Scope)-1] = copythisscope
-		
-		ic.Insertion = append(ic.Insertion, plugin)
-		
-		for {	
-			ic.ScanAndCompile()
-			if !ic.GetFlag(Flag) {
-				break
-			}
-		}
-		
-		ic.SwapOutput()
-		
-		var tmp = ic.Tmp("scope")
-		ic.Assembly("SCOPE ", name)
-		ic.Assembly("TAKE ", tmp)
-		
-		
-		var t = function.Type
-		t.Detail = new(ilang.UserType)
-		t.Detail.Elements = ic.DefinedFunctions[name].Args
-		
-		ic.ExpressionType = t
-		return tmp
+		return ScanAnonymousFunction(ic)
 	}
 		
 	if _, ok := ic.DefinedFunctions[token]; ok {
@@ -119,15 +197,25 @@ func ShuntFunctionCall(ic *ilang.Compiler, name string) string {
 }
 
 func ScanFunction(ic *ilang.Compiler) {
-	ic.Header = false
 	
-	var name string = ic.Scan(ilang.Name)
-	
-	ic.Assembly("FUNCTION ", name)
-	ic.Scan('(')
-	ic.GainScope()
-	
-	CreateFromArguments(name, ic)
+	if len(ic.Scope) > 1 { 
+		//Anonomous Function!
+		var name = ScanAnonymousFunction(ic)
+		ic.Scan('(')
+		ic.Scan(')')
+		function.Call(ic, name)
+		
+	} else {
+		ic.Header = false
+		
+		var name string = ic.Scan(ilang.Name)
+		
+		ic.Assembly("FUNCTION ", name)
+		ic.Scan('(')
+		ic.GainScope()
+		
+		CreateFromArguments(name, ic)
+	}
 }
 
 func FunctionEnd(ic *ilang.Compiler) {
@@ -186,7 +274,7 @@ func ScanReturn(ic *ilang.Compiler) {
 			if token := ic.Scan(0); token == "\n" {
 				break
 			} else if token != "," && token != "}" {
-				ic.RaiseError("Expecting ',' or '}'")
+				ic.RaiseError("Expecting ',' or '}', found ", token)
 			}
 		}
 	}

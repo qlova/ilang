@@ -172,6 +172,10 @@ func (t Type) IsList() Type {
 
 //TODO this will break something types.
 func (t Type) Empty() bool { 
+	if t.Push == "RELAY" {
+		return false
+	}
+	
 	simple := t.Detail != nil && len(t.Detail.Elements) == 0
 	if simple {
 		return true
@@ -433,7 +437,8 @@ func (ic *Compiler) Dereference(pointer string) string {
 
 		var tmp = ic.Tmp("empty")
 		ic.Assembly("ARRAY ", tmp)
-		ic.Assembly("OPEN ", tmp)
+		ic.Assembly("SHARE ", tmp)
+		ic.Assembly("OPEN")
 		
 		ic.Assembly("END")
 		ic.Assembly("TAKE ", value)
