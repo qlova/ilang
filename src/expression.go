@@ -206,13 +206,19 @@ func (ic *Compiler) ScanExpressions(number int) []string {
 						  len(f.Returns), " return values but need ", number)
 		}
 		
+		ic.Scan('(')
 		ic.ScanFunctionCall(peek)
+		ic.Scan(')')
 		return ic.Values
 	}
 	ic.NextToken = peek
 	
 	for i := 0; i < number; i++ {
 		values = append(values, ic.Shunt(ic.expression()))
+		
+		if i < number-1 {
+			ic.Scan(',')
+		}
 		ic.ExpressionTypes = append(ic.ExpressionTypes, ic.ExpressionType)
 	}
 	return values

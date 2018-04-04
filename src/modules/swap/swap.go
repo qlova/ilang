@@ -67,5 +67,7 @@ func ScanSwap(ic *ilang.Compiler) {
 			ic.RaiseError("Cannot swap variables ",a, " and ", b, "... Unswappable types!")
 	}
 	
-	method.Sync(ic, a, b)
+	if ic.GetFlag(method.Flag) {
+		method.Sync(ic, a, b)
+	}
 }
