@@ -18,7 +18,12 @@ func (Python) Run(mainFile string) error {
 	os.Chdir("../")
 	defer os.Chdir("./.it")
 	
-	run := exec.Command(command, "./.it/"+path.Base(mainFile[:len(mainFile)-2]+".py"))
+	var args = []string{"./.it/"+path.Base(mainFile[:len(mainFile)-2]+".py")}
+	if len(os.Args) > 3 {
+		args = append(args, os.Args[3:]...)
+	}
+	
+	run := exec.Command(command, args...)
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	return run.Run()	

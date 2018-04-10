@@ -15,7 +15,13 @@ func (Go) Compile(mainFile string) error {
 	return compile.Run() 
 }
 func (Go) Run(mainFile string) error {
-	run := exec.Command("./"+path.Base(mainFile[:len(mainFile)-2])+".gob")
+		
+	var args = []string{}
+	if len(os.Args) > 3 {
+		args = append(args, os.Args[3:]...)
+	}
+	
+	run := exec.Command("./"+path.Base(mainFile[:len(mainFile)-2])+".gob", args...)
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	return run.Run()	

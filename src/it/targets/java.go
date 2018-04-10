@@ -7,13 +7,19 @@ import "os/exec"
 type Java struct {}
 
 func (Java) Compile(mainFile string) error { 
-	compile := exec.Command("javac", path.Base(mainFile[:len(mainFile)-2])+".java")
+	compile := exec.Command("javac", "-Xlint:unchecked", path.Base(mainFile[:len(mainFile)-2])+".java")
 	compile.Stdout = os.Stdout
 	compile.Stderr = os.Stderr
 	return compile.Run() 
 }
 func (Java) Run(mainFile string) error {
-	run := exec.Command("java", path.Base(mainFile[:len(mainFile)-2]))
+	
+	var args = []string{path.Base(mainFile[:len(mainFile)-2])}
+	if len(os.Args) > 3 {
+		args = append(args, os.Args[3:]...)
+	}
+	
+	run := exec.Command("java", args...)
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	return run.Run()	

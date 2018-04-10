@@ -61,6 +61,7 @@ func (Android) Compile(mainFile string) error {
     package="nz.co.qlova.ilang.`+safebase+`">
     
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
@@ -172,7 +173,15 @@ func (Android) Run(mainFile string) error {
 		return err
 	}
 	
-	cmd = exec.Command(SDK+"/adb", "shell", "am", "start", "-n", packagename+"/"+packagename+".MainActivity")
+	var args = []string{"shell", "am", "start", "-n", packagename+"/"+packagename+".MainActivity"}
+	
+	for i, arg := range os.Args[3:] {
+		fmt.Println("--es", fmt.Sprint(i), `"`+arg+`"`)
+		args = append(args, "--es", fmt.Sprint(i), `"`+arg+`"`)
+	}
+	
+	
+	cmd = exec.Command(SDK+"/adb", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
