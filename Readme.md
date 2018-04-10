@@ -126,10 +126,12 @@ Something is the only builtin struture type, it can hold any value and needs to 
 
 ## DOWNLOAD AND INSTALL
 
+### Windows
 There is an alpha release for windows, it must be used from the command line.
 You can find it at https://bitbucket.org/Splizard/ilang-release/downloads/it.exe
 
-Otherwise here are the hacking instructions: (Linux and Mac)
+### Linux/Mac or Android (Termux)
+Here are the hacking instructions:
 
 		go get -u github.com/qlova/ilang/src/it
 		echo "The binary is now located in:"
