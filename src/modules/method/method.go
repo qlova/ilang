@@ -76,7 +76,10 @@ func init() {
 					ic.ExpressionType = function.Flag
 					
 					ic.Shunt(name+"_m_"+TYPE.GetComplexName())
-					ic.Scan('(') //BUG I don't know why this has to be here.
+					var token = ic.Scan(0)
+					if token != ")" && token != "\n" && token != "(" {
+						ic.RaiseError("Compiler bug!", token)
+					}
 					return true
 				}
 			}
