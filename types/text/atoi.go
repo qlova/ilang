@@ -20,6 +20,9 @@ var Atoi = compiler.Function {
 		c.Sub()
 		c.Pull("i")
 		
+		c.Int(0)
+		c.Pull("negative")
+		
 		c.Loop()
 			c.Push("i")
 			c.Int(0)
@@ -32,12 +35,23 @@ var Atoi = compiler.Function {
 			c.Get()
 			c.Pull("v")
 			
+			//Check if negative!
+			//TODO expand on this to include real shuting of operators.
+			c.Push("v")
+			c.Int('-')
+			c.Same()
+			c.If()
+				c.Push("negative")
+				c.Int(0)
+				c.Div()
+				c.Name("negative")
+				c.Or()
 			
-			c.Int(57)
+			c.Int('9')
 			c.Push("v")
 			c.More()
 
-			c.Int(46)
+			c.Int('*')
 			c.Push("v")
 			c.Less()
 			
@@ -50,7 +64,7 @@ var Atoi = compiler.Function {
 			c.No()
 
 			c.Push("v")
-			c.Int(48)
+			c.Int('0')
 			c.Sub()
 			c.Push("exponent")
 			c.Mul()
@@ -62,14 +76,21 @@ var Atoi = compiler.Function {
 			c.Push("base")
 			c.Mul()
 			c.Name("exponent")
+			c.No()
 			
 			c.Push("i")
 			c.Int(1)
 			c.Sub()
 			c.Name("i")
+			
 		c.Redo()
-		
+			
 		c.Used()
 		c.Push("number")
+		
+		c.Push("negative")
+		c.If()
+			c.Flip()
+		c.No()
 	},
 }  
