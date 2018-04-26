@@ -1,7 +1,8 @@
 software {
-	var a = len(16)
-	var counter = 0
-	for i over a 
+	a = list(16)
+	counter = 0
+	
+	for each in a
 		counter = i
 	end
 	print(counter)

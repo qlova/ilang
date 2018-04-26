@@ -1,5 +1,5 @@
 software {
-	var a = ["apple"#255, "orange"#255]
+	a = ["apple", "orange"]
 	
-	print(len(a))
+	print(a.size())
 }

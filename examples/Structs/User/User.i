@@ -1,15 +1,18 @@
 type User {
-	""Name, Age
-	""Address
-	""Phone
+	Name = ""
+	Age
+	Address = ""
+	Phone = ""
+	
+	convert text {
+		return Name
+	}
 }
 
-method text(User) "" {
-	return Name
-}
+
 
 software {
-	var bob = User()
+	bob = User()
 	bob.Name = "Bob Normal"
 	bob.Address = "22 Some Road"
 	bob.Phone = "555000555"

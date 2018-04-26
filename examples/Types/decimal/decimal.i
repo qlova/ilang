@@ -1,7 +1,7 @@
 software {
 
 	//Decimals support all of the basic operations.
-	var d = decimal()
+	d = decimal()
 	d += 1
 	d -= 0.5
 	d *= 3
@@ -9,16 +9,16 @@ software {
 	print(d) //0.75
 	
 	//By default, decimals have a precision of six decimal places. This can be adjusted to any length.
-	var d12 = decimal12()
+	d12 = decimal.12()
 	d12 += 0.123456789012
 	print(d12) //0.123456789012
 	
-	var d2 = decimal2()
+	d2 = decimal.2()
 	d2 += 0.99
 	d2 /= 2
 	print(d2) //0.49
 	
-	var d4 = decimal4()
+	d4 = decimal.4()
 	d4 += 0.99
 	d4 /= 2
 	print(d4) //0.495

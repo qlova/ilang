@@ -1,6 +1,6 @@
 software {
-	var a = [1, 2, 3]
-	var b = copy(a)
+	a = [1, 2, 3]
+	b = a.copy()
 	
 	a[0] = 2
 	

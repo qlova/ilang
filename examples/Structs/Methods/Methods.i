@@ -1,12 +1,14 @@
 
-type Math {}
+type Math {
 
-method Math.add(a, b) r {
-	return a + b
-}
+	concept add(a, b) {
+		return a + b
+	}
 
-method Math.combine(a, b) r {
-	return add(a, b)
+	concept combine(a, b) {
+		return add(a, b)
+	}
+
 }
 
 software {

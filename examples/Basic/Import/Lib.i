@@ -1,4 +1,4 @@
 
-function DoSomething() {
+concept DoSomething() {
 	print("Did something!")
 }

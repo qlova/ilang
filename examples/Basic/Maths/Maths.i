@@ -1,18 +1,18 @@
 
-function add(a, b) r {
+concept add(a, b) {
 	return a+b
 }
 
 software {
-	var a = 50
-	var b = 50
+	a = 50
+	b = 50
 	
-	var e = 2
+	e = 2
 	
-	var c = [a*e, 32, a+b, 32, 98]
-	
+	c = [a*e, 32, add(a, b), 32, 98]
+
 	for value in c
-		write(value, " ")
+		send(value, " ")
 	end
-	write("\n")
+	send("\n")
 }

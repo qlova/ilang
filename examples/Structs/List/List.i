@@ -1,43 +1,50 @@
 type Item {
 	value
-}
-
-method text(Item) "" {
-	return text(value)
+	
+	convert text {
+		return text(value)
+	}
+	
+	content number {
+		value = number
+	}
 }
 
 type Bank {
-	..{Item} items
-}
-
-method clear(Bank) {
-	items = []
-}
-
-method add(Bank) {
-	items += Item{64}
+	items = list.Item()
+	
+	concept clear() {
+		items = []
+	}
+	
+	concept add() {
+		items += Item(64)
+	}
 }
 
 software {
-	var list = []
-	list += Item{22}
+	l = []
+	l += Item(22)
 	
-	var b = Bank()
-	b.items = list
+	print(l[1])
 	
-	list[0] = Item{44}
+	b = Bank()
+
+	b.items = l
 	
-	list += Item{33}
+	b.items[0] = Item(12)
+
+	l[0] = Item(44)
 	
-	print(list[0])
-	print(b.items[1])
+	l += Item(33)
 	
-	add(b)
+	b.add()
+
 	
-	for item in list
+	for item in l
 		print(item)
 	end
-	
-	clear(b)
-	print(len(b.items))
+
+	b.clear()
+	print(b.items.size())
 }

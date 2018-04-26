@@ -1,8 +1,8 @@
 software {
-	for i over [1, 5]
-        for each over [1, i]
-             output("*")
+	for each 1 to 5
+        for each 1 to i
+             send("*")
         end
-        output("\n")
+        send("\n")
   	end
 }

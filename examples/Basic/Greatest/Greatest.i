@@ -1,9 +1,9 @@
 
-function largest(""l) ' ' {
-	var i = 0
-	var r = l[0]
+concept largest(l) {
+	i = 0
+	r = l[0]
 	loop {
-		if i >= len(l)
+		if i = l.size()
 			return r 
 		end
 		
@@ -16,7 +16,7 @@ function largest(""l) ' ' {
 }
 
 software {
-	var list = "The Quick Brown Fox, Jumped Over The Lazy Log!"
+	letters = "The Quick Brown Fox, Jumped Over The Lazy Log!"
 	
-	print(largest(list))
+	print(largest(letters))
 }

@@ -1,11 +1,14 @@
-type Pos {x, y}
+type Pos {
+	x
+	y
+}
 
 type Monster {
-	{}pos
+	pos = Pos()
 }
 
 software {
-	var m = Monster()
+	m = Monster()
 	m.pos = Pos()
 	
 	m.pos.x = 3

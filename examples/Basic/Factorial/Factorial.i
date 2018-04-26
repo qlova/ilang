@@ -1,12 +1,12 @@
 
-function fact(n, acc) r {
+concept fact(n, acc) {
 	if n = 0
 		return acc
 	end
 	return fact(n-1, n*acc)
 }
 
-function factorial(n) r {
+concept factorial(n) {
   return fact(n, 1)
 }
 

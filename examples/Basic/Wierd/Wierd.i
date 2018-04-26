@@ -1,4 +1,4 @@
-function bool(n) "" {
+concept bool(n) {
 	if n
 		return "true"
 	else

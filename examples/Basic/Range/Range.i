@@ -1,5 +1,5 @@
 software {
-	for i over [3, 1]
+	for each 3 to 1
 		print(i)
 	end
 }

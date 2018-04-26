@@ -1,8 +1,8 @@
 
 software {
 	loop {
-		var line = read('\n')
-		if len(line) = 0
+		line = read('\n')
+		if line.size() = 0
 			break
 		end
 	}

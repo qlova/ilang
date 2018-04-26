@@ -1,4 +1,4 @@
-function multiply(a, b) r {
+concept multiply(a, b) {
 	return a*b
 }
 

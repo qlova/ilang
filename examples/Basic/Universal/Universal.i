@@ -1,14 +1,14 @@
 .go import "fmt"
 
 software {
-	.java 		System.out.println("Hello World");
-	.go 		fmt.Println("Hello World")
-	.python 	print("Hello World")
-	.ruby		puts "Hello World"
-	.lua		print("Hello World")
-	.javascript	console.log("Hello World")
-	.rust		println!("Hello World")
-	.bash		echo "Hello World"
-	.csharp		System.Console.WriteLine("Hello World");
-	.arduino	Serial.println("Hello World");
+	.java 	System.out.println("Hello World");
+	.go 	fmt.Println("Hello World")
+	.py		print("Hello World")
+	.rb		puts "Hello World"
+	.lua	print("Hello World")
+	.js		console.log("Hello World")
+	.rs		println!("Hello World")
+	.sh		echo "Hello World"
+	.cs		System.Console.WriteLine("Hello World");
+	.ino	Serial.println("Hello World");
 }

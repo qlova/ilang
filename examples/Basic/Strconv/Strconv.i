@@ -1,10 +1,10 @@
 
-function numeric(""n) {
+concept numeric(n) {
 	number(n)
-	issues {
+	if error
 		print(n, "  is not numeric!")
 		return
-	}
+	end
 	print(n, "  is numeric :)")
 }
 

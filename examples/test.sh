@@ -12,7 +12,7 @@ fi
 function runit {
 	case $LANGUAGE in
 		py)
-			cd ./.it && python3 $1.py <<< $(echo -e "$2")
+			cd ./.it && python3 main.py <<< $(echo -e "$2")
 		;;
 		go)
 			cd ./.it && go build -o ../$1 && cd .. && ./$1 <<< $(echo -e "$2")

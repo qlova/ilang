@@ -3,7 +3,7 @@ type Object {
 }
 
 software {
-	var list = [Object{2}, Object{3}]
+	l = [Object{2}, Object{3}]
 	
-	print(list[0].value)
+	print(l[0].value)
 }

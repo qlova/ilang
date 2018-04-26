@@ -1,5 +1,5 @@
 software {
-	var n = 0
+	n = 0
 	n += 4
 	print(n)
 	n -= 2

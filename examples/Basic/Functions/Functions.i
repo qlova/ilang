@@ -1,22 +1,24 @@
-function f() {
+concept f() {
 	print("hi")
 }
 
-function call( ()a ) {
+concept call(a) {
 	a()
 }
 
-function add(a,b) r {
+concept add(a,b) {
 	return a+b
 }
 
-function printchars( ..x ) {
+concept PrintLetters(x...) {
 	print(text(x))
 }
 
 software {
-	var b = f
+	f()
+	b = f
 	b()
 	call(b)
-	printchars(add(40, 59), 98, 97)
+	
+	PrintLetters(add(40, 59), 98, 97)
 }

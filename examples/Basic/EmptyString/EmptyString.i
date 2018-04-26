@@ -1,11 +1,9 @@
 software {
-	var s = ""
+	s = ""
 	
-	if len(s) = 0 
+	if s.size() = 0
 		print("Empty string!")
-	end
-	
-	if s != "" 
+	else
 		print("Not an empty string!")
 	end
 }
