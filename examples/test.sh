@@ -45,7 +45,7 @@ function runit {
 }
 
 function BasicTest {
-	cd ./$1/ && it build $LANGUAGE
+	cd "${1}" && it build $LANGUAGE
 	if [ "$?" -eq "1" ]; then
 		echo -e "$1 \e[31mFAILED!\e[0m to compile D:"
 		exit 1
