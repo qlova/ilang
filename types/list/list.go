@@ -32,10 +32,6 @@ func (d *Data) Equals(b compiler.Data) bool {
 //Add type t that is sitting on the top of the stack to list l that is sitting next on the stack.
 func (d *Data) Add(c *compiler.Compiler, t compiler.Type) {
 	
-	if !d.SubType.Defined {
-		d.SubType = t
-	}
-	
 	if t.Equals(number.Type) {
 		
 		c.Put()
@@ -72,6 +68,16 @@ var Type = compiler.Type {
 	},
 }
 
+func Is(t compiler.Type) bool {
+	if t.Name[0] == Type.Name[0] {
+		return true
+	}
+	return false
+}
+
+func SubType(t compiler.Type) compiler.Type {
+	return t.Data.(*Data).SubType
+}
 
 
 func Of(t compiler.Type) compiler.Type {
@@ -110,6 +116,8 @@ func Shunt(data *Data, c *compiler.Compiler) *compiler.Type {
 				
 				var l = Type
 				l.Data = data
+				
+				AddShunts(&l)
 				
 				return &l
 			} else {
@@ -151,6 +159,8 @@ var Expression = compiler.Expression {
 						return &list.Data.(*Data).SubType
 					}
 						
+					AddShunts(&list)
+						
 					return &list
 				}
 			} 
@@ -177,6 +187,8 @@ var Expression = compiler.Expression {
 			if CheckIndex(c, &list) {
 				return &list.Data.(*Data).SubType
 			}
+			
+			AddShunts(&list)
 			
 			return &list
 		}
@@ -211,6 +223,8 @@ var Expression = compiler.Expression {
 				if CheckIndex(c, &list) {
 					return &list.Data.(*Data).SubType
 				}
+				
+				AddShunts(&list)
 				
 				return &list
 			}
@@ -438,8 +452,46 @@ func CheckIndex(c *compiler.Compiler, t *compiler.Type) bool {
 	return false
 }
 
+func AddShunts(list *compiler.Type) {
+	list.Shunts = compiler.Shunt {
+		symbols.Plus: func (c *compiler.Compiler, t compiler.Type) compiler.Type {
+			if !list.Equals(t) {
+				c.RaiseError(errors.Single(*list, symbols.Plus,t))
+			}
+			
+			c.Call(&text.Join)
+			
+			return t
+		},
+		
+		symbols.SelectMethod: func (c *compiler.Compiler, t compiler.Type) compiler.Type {
+		
+			if t.Name[c.Language] == "size" {
+				
+				c.Expecting(symbols.FunctionCallBegin)
+				c.Expecting(symbols.FunctionCallEnd)
+				
+				c.Size()
+				c.Used()
+				
+				return number.Type
+			} else if t.Name[c.Language] == "copy" {
+				
+				c.Expecting(symbols.FunctionCallBegin)
+				c.Expecting(symbols.FunctionCallEnd)
+				
+				c.Call(&Copy)
+				
+				return *list
+			} else {
+				c.Unimplemented()
+			}
+			return *list
+		},
+	}
+}
+
 func init() {
-	
 	
 	Type.EmbeddedStatement = func(c *compiler.Compiler, list compiler.Type) {
 		statement(c, list, true)

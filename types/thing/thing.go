@@ -31,6 +31,15 @@ func (Base) Free(c *compiler.Compiler) {
 	c.FreeList()
 }
 
+//Note this only works on standalone things!
+func (Base) Attach(c *compiler.Compiler) {
+	compiler.LIST.Attach(c)
+}
+
+func (Base) Detach(c *compiler.Compiler) {
+	compiler.LIST.Detach(c)
+}
+
 var Type = compiler.Type {
 	Name: compiler.Translatable{
 		compiler.English: "thing",
@@ -195,4 +204,18 @@ func NotThing(t compiler.Type) bool {
 	}
 	
 	return true
+}
+
+func Is(t compiler.Type) bool {
+	data := t.Data
+	
+	if data == nil {
+		return false
+	}
+	
+	if _, ok := data.(Data); ok {
+		return true
+	}
+	
+	return false
 }

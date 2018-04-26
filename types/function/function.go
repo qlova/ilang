@@ -8,6 +8,19 @@ var Name = compiler.Translatable{
 	compiler.English: "function",
 }
 
+
+type Data struct {
+	Arguments []compiler.Type
+}
+
+func (Data) Name(l compiler.Language) string {
+	return ""
+}
+
+func (Data) Equals(d compiler.Data) bool {
+	return false
+}
+
 var Type = compiler.Type {
 	Name: Name,
 	
@@ -20,9 +33,19 @@ var Statement = compiler.Statement {
 		//Shunt here.
 		if c.GetVariable(c.Token()).Type.Equals(Type) {
 			var name = c.Token()
-			//var function = c.GetVariable(c.Token()).Type
+			var function = c.GetVariable(c.Token()).Type
 			
 			c.Expecting(symbols.FunctionCallBegin)
+			
+			if function.Data != nil && len(function.Data.(Data).Arguments) > 0 {
+				var data = function.Data.(Data)
+				for i:=0; i < len(data.Arguments); i++ {
+					c.ExpectingType(data.Arguments[i])
+					if i < len(data.Arguments)-1 {
+						c.Expecting(symbols.ArgumentSeperator)
+					}
+				}
+			}
 			
 			if c.Peek() != symbols.FunctionCallEnd {
 				c.Unimplemented()

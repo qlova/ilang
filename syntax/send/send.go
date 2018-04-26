@@ -19,7 +19,7 @@ var Statement = compiler.Statement {
 		c.Open()
 		
 		for {
-			print.PrintType(c)
+			print.PrintType(c, c.ScanExpression())
 			
 			switch c.Scan() {
 				case symbols.ArgumentSeperator:

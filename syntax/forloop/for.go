@@ -2,6 +2,7 @@ package forloop
 
 import "github.com/qlova/ilang/types/list"
 import "github.com/qlova/ilang/types/number"
+import "github.com/qlova/ilang/types/thing"
 import "github.com/qlova/uct/compiler"
 
 import "github.com/qlova/ilang/syntax/errors"
@@ -232,15 +233,24 @@ func ScanIn(c *compiler.Compiler) {
 			c.Push(GetIteratorName(c))
 			
 			if t.Data == nil {
-				c.Get()
-				c.Pull(value)
-				c.SetVariable(value, t.Data.(*list.Data).SubType)
-			} else {
+				c.Unimplemented()
+			} else if !thing.NotThing(t.Data.(*list.Data).SubType) {
+				
 				c.Pull(value+"_pointer")
 				c.CopyList()
 				c.PullList(value)
 				
 				c.SetVariable(value, t.Data.(*list.Data).SubType)
+				
+			} else if t.Data.(*list.Data).SubType.Base == compiler.INT {
+				
+				c.Get()
+				c.Pull(value)
+				c.SetVariable(value, t.Data.(*list.Data).SubType)
+				
+				
+			} else {
+				c.Unimplemented()
 			}
 		}
 		

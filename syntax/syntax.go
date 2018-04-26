@@ -32,6 +32,9 @@ import (
 	"github.com/qlova/ilang/types/letter"
 	"github.com/qlova/ilang/types/number"
 	"github.com/qlova/ilang/types/list"
+	"github.com/qlova/ilang/types/array"
+	"github.com/qlova/ilang/types/metatype"
+	concept_type "github.com/qlova/ilang/types/concept"
 )
 
 //Pic'n Mix the 'i' language syntax!
@@ -56,16 +59,20 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterStatement(importation.Statement)
 	syntax.RegisterStatement(fixed.Statement)
 	syntax.RegisterStatement(forloop.Remove)
-	
-	syntax.RegisterStatement(function.Statement)
-	syntax.RegisterStatement(number.Statement)
-	syntax.RegisterStatement(letter.Statement)
-	syntax.RegisterStatement(list.Statement)
 	syntax.RegisterStatement(convert.Statement)
 	syntax.RegisterStatement(error.Statement)
 	syntax.RegisterStatement(native.Statement)
 	syntax.RegisterStatement(typer.Statement)
 	syntax.RegisterStatement(languages.Statement)
+	
+	
+	syntax.RegisterStatement(function.Statement)
+	syntax.RegisterStatement(number.Statement)
+	syntax.RegisterStatement(letter.Statement)
+	syntax.RegisterStatement(list.Statement)
+	syntax.RegisterStatement(array.Statement)
+	syntax.RegisterStatement(concept_type.Statement)
+	//syntax.RegisterStatement(metatype.Statement)
 
 	syntax.RegisterExpression(expression.Expression)
 	syntax.RegisterExpression(convert.Expression)
@@ -77,17 +84,25 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterExpression(booleans.Not)
 	syntax.RegisterExpression(binary.Expression)
 	syntax.RegisterExpression(expression.Negative)
+	syntax.RegisterExpression(print.Expression)
+	syntax.RegisterExpression(metatype.Expression)
 	
 	syntax.RegisterExpression(number.Expression)
 	syntax.RegisterExpression(error.Expression)
 	syntax.RegisterExpression(letter.Expression)
 	syntax.RegisterExpression(text.Expression)
 	syntax.RegisterExpression(list.Expression)
+	syntax.RegisterExpression(array.Expression)
+	syntax.RegisterExpression(concept_type.Expression)
 	
 	syntax.RegisterType(text.Type)
 	syntax.RegisterType(letter.Type)
 	syntax.RegisterType(number.Type)
+	syntax.RegisterType(function.Type)
 	syntax.RegisterType(list.Type)
+	syntax.RegisterType(array.Type)
+	syntax.RegisterType(concept_type.Type)
+	syntax.RegisterType(metatype.Type)
 	
 	syntax.RegisterFunction(&number.Method)
 	
@@ -95,6 +110,7 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterFunction(&text.Join)
 	syntax.RegisterFunction(&list.Copy)
 	
+	syntax.RegisterOperator(symbols.IndexEnd, -1)
 	syntax.RegisterOperator(symbols.Or, 0)
 	syntax.RegisterOperator(symbols.And, 1)
 	syntax.RegisterOperator(symbols.Equals, 2)
@@ -107,6 +123,7 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterOperator(symbols.Divide, 4)
 	syntax.RegisterOperator(symbols.Modulus, 4)
 	syntax.RegisterOperator(symbols.Index, 5)
+	syntax.RegisterOperator(symbols.IndexBegin, 6)
 	
 	syntax.RegisterAlias("×", symbols.Times)
 	syntax.RegisterAlias("÷", symbols.Divide)
