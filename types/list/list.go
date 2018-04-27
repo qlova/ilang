@@ -32,6 +32,10 @@ func (d *Data) Equals(b compiler.Data) bool {
 //Add type t that is sitting on the top of the stack to list l that is sitting next on the stack.
 func (d *Data) Add(c *compiler.Compiler, t compiler.Type) {
 	
+	if d.SubType.Name[c.Language] == "" {
+		d.SubType = t
+	}
+	
 	if t.Equals(number.Type) {
 		
 		c.Put()
@@ -492,6 +496,18 @@ func AddShunts(list *compiler.Type) {
 }
 
 func init() {
+	
+	Type.Shunt = func(c *compiler.Compiler, symbol string, a, b compiler.Type) *compiler.Type {
+		if symbol == symbols.Plus {
+			if a.Equals(b) {
+				
+				c.Call(&text.Join)
+
+				return &a
+			}
+		}
+		return nil
+	}
 	
 	Type.EmbeddedStatement = func(c *compiler.Compiler, list compiler.Type) {
 		statement(c, list, true)
