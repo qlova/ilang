@@ -84,6 +84,8 @@ var Return = compiler.Statement {
 	
 	OnScan: func(c *compiler.Compiler) {
 		
+		c.CollectAll()
+		
 		if c.Peek() == "\n" {
 			c.Back()
 			return
