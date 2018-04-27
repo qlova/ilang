@@ -10,6 +10,12 @@ func init() {
 	}
 }
 
+var Statement = compiler.Statement {
+	Detect: func(c *compiler.Compiler) bool {
+		return statement(c, false)
+	},
+}
+
 func statement(c *compiler.Compiler, embed bool) bool {
 	if embed || c.GetVariable(c.Token()).Type.Equals(Type) {
 			
@@ -44,6 +50,24 @@ func statement(c *compiler.Compiler, embed bool) bool {
 						c.NameList(name)
 					
 					}
+					
+				case symbols.Plus:
+					if embed {
+						c.Unimplemented()
+					}
+					
+					c.Expecting(symbols.Equals)
+					
+					c.PushList(name)
+					
+					var t = c.ScanExpression()
+					if !t.Equals(Type) {
+						c.RaiseError(errors.AssignmentMismatch(t, Type))
+					}
+					
+					c.Call(&Join)
+					
+					c.NameList(name)
 
 				default:
 					c.Unexpected(c.Token())
