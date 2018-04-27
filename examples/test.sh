@@ -12,7 +12,7 @@ fi
 function runit {
 	case $LANGUAGE in
 		py)
-			cd ./.it && python3 main.py <<< $(echo -e "$2")
+			python3 ./.it/main.py <<< $(echo -e "$2")
 		;;
 		go)
 			cd ./.it && go build -o ../$1 && cd .. && ./$1 <<< $(echo -e "$2")
@@ -64,6 +64,21 @@ function BasicTest {
 	cd ..
 }
 
+function Passed {
+	echo -e " \e[32mPASSED!\e[0m"
+}
+
+function Failed {
+	echo -e " \e[31mFAILED!\e[0m"
+}
+
+function IgnoreTest {
+	cd "${1}" && it build $LANGUAGE
+	runit $1 "$3"
+	echo -n "$1"
+	cd ..
+}
+
 function TESTING {
 	if [ ! -z "$2" ]; then
 		for l in rb py go java lua rb js bash cs; do
@@ -77,7 +92,10 @@ function TESTING {
 
 export -f TESTING
 export -f BasicTest
+export -f IgnoreTest
 export -f runit
+export -f Passed
+export -f Failed
 
 if [[ ! -z "$1" ]]; then
 	cd ./$1 && ./test.sh $2 $3 $4

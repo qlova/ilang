@@ -16,7 +16,9 @@ import (
 	"github.com/qlova/ilang/syntax/forloop"
 	"github.com/qlova/ilang/syntax/ifelse"
 	"github.com/qlova/ilang/syntax/error"
+	"github.com/qlova/ilang/syntax/errors"
 	"github.com/qlova/ilang/syntax/load"
+	"github.com/qlova/ilang/syntax/open"
 	"github.com/qlova/ilang/syntax/loop"
 	"github.com/qlova/ilang/syntax/breakfast"
 	"github.com/qlova/ilang/syntax/booleans"
@@ -26,6 +28,7 @@ import (
 	"github.com/qlova/ilang/syntax/binary"
 	"github.com/qlova/ilang/syntax/typer"
 	"github.com/qlova/ilang/syntax/languages"
+	"github.com/qlova/ilang/syntax/create"
 
 	"github.com/qlova/ilang/types/function"
 	"github.com/qlova/ilang/types/text"
@@ -33,6 +36,7 @@ import (
 	"github.com/qlova/ilang/types/number"
 	"github.com/qlova/ilang/types/list"
 	"github.com/qlova/ilang/types/array"
+	"github.com/qlova/ilang/types/connection"
 	"github.com/qlova/ilang/types/metatype"
 	concept_type "github.com/qlova/ilang/types/concept"
 )
@@ -64,21 +68,28 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterStatement(native.Statement)
 	syntax.RegisterStatement(typer.Statement)
 	syntax.RegisterStatement(languages.Statement)
+	syntax.RegisterStatement(open.Statement)
+	syntax.RegisterStatement(errors.Statement)
+	syntax.RegisterStatement(errors.End)
+	syntax.RegisterStatement(create.Statement)
 	
 	
 	syntax.RegisterStatement(function.Statement)
 	syntax.RegisterStatement(number.Statement)
 	syntax.RegisterStatement(letter.Statement)
 	syntax.RegisterStatement(list.Statement)
+	syntax.RegisterStatement(text.Statement)
 	syntax.RegisterStatement(array.Statement)
 	syntax.RegisterStatement(concept_type.Statement)
 	//syntax.RegisterStatement(metatype.Statement)
 
 	syntax.RegisterExpression(expression.Expression)
+	syntax.RegisterExpression(expression.NumberOf)
 	syntax.RegisterExpression(convert.Expression)
 	syntax.RegisterExpression(function.Expression)
 	syntax.RegisterExpression(read.Expression)
 	syntax.RegisterExpression(load.Expression)
+	syntax.RegisterExpression(open.Expression)
 	syntax.RegisterExpression(booleans.True)
 	syntax.RegisterExpression(booleans.False)
 	syntax.RegisterExpression(booleans.Not)
@@ -86,6 +97,7 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterExpression(expression.Negative)
 	syntax.RegisterExpression(print.Expression)
 	syntax.RegisterExpression(metatype.Expression)
+	syntax.RegisterExpression(create.Expression)
 	
 	syntax.RegisterExpression(number.Expression)
 	syntax.RegisterExpression(error.Expression)
@@ -101,6 +113,7 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterType(function.Type)
 	syntax.RegisterType(list.Type)
 	syntax.RegisterType(array.Type)
+	syntax.RegisterType(connection.Type)
 	syntax.RegisterType(concept_type.Type)
 	syntax.RegisterType(metatype.Type)
 	
