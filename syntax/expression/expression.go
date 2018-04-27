@@ -15,6 +15,24 @@ var Expression = compiler.Expression {
 	},
 }
 
+var NumberOf = compiler.Expression{
+	Name: compiler.NoTranslation(symbols.NumberOf),
+	
+	OnScan: func(c *compiler.Compiler) compiler.Type {
+		var list = c.ScanExpression()
+		
+		if list.Base != compiler.LIST {
+			c.RaiseError(compiler.Translatable{
+				compiler.English: "Can only get the number of elements for a list type!",
+			})
+		}
+		c.Size()
+		c.DropType(list)
+		
+		return number.Type
+	},
+}
+
 var Negative = compiler.Expression {
 	Name: compiler.NoTranslation(symbols.Negative),
 	

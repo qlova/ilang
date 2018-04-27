@@ -1,3 +1,3 @@
 software {
-	print(["apple", "orange"].size())
+	print(#["apple", "orange"])
 }
