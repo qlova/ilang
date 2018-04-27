@@ -39,3 +39,4 @@ const SubExpressionStart = "("
 const SubExpressionEnd	 = ")"
 
 const Index = "."
+const NumberOf = "#"
