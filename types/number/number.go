@@ -5,6 +5,7 @@ import "github.com/qlova/ilang/syntax/errors"
 import "github.com/qlova/ilang/syntax/symbols"
 
 import "math/big"
+import "strings"
 
 var Name = compiler.Translatable{
 	compiler.English: "number",
@@ -30,6 +31,10 @@ var Expression = compiler.Expression {
 			var name = c.Token()
 			
 			c.Push(name)
+
+			if c.ScanIf(symbols.Factorial) {
+				c.Call(&Factorial)
+			}
 			
 			var t = c.GetVariable(name).Type
 			return &t
@@ -38,6 +43,11 @@ var Expression = compiler.Expression {
 		switch c.Token()[0] {
 			
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				
+				if strings.Contains(c.Token(), ".") {
+					return nil
+				}
+				
 				var b big.Int
 				var worked bool
 				
@@ -59,6 +69,10 @@ var Expression = compiler.Expression {
 				if worked {
 					c.BigInt(&b)
 					
+					if c.ScanIf(symbols.Factorial) {
+						c.Call(&Factorial)
+					}
+					
 					return &Type
 				} else {
 					return nil
@@ -71,6 +85,16 @@ var Expression = compiler.Expression {
 }
 
 var Shunt = compiler.Shunt {
+	symbols.Factorial: func (c *compiler.Compiler, t compiler.Type) compiler.Type {
+		if !t.Equals(Type) {
+			errors.Single(Type, symbols.Factorial, compiler.Type{})
+		}
+
+		c.Call(&Factorial)
+		
+		return Type
+	},
+	
 	symbols.Equals: func (c *compiler.Compiler, t compiler.Type) compiler.Type {
 		if !t.Equals(Type) {
 			errors.Single(Type, symbols.Plus, t)

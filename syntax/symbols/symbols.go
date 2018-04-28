@@ -40,3 +40,5 @@ const SubExpressionEnd	 = ")"
 
 const Index = "."
 const NumberOf = "#"
+
+const Factorial = "!"
