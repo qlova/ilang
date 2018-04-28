@@ -63,6 +63,28 @@ var Shunts = compiler.Shunt {
 		
 		return Type
 	},
+	
+	symbols.Equals: func (c *compiler.Compiler, t compiler.Type) compiler.Type {
+		if !t.Equals(Type) {
+			c.RaiseError(errors.Single(Type, symbols.Equals,t))
+		}
+		
+		c.Call(&Equals)
+		
+		return number.Type
+	},
+	
+	symbols.Minus: func (c *compiler.Compiler, t compiler.Type) compiler.Type {
+		if !t.Equals(Type) {
+			c.RaiseError(errors.Single(Type, symbols.Equals,t))
+		}
+		
+		c.Call(&Equals)
+		c.Int(0)
+		c.Div()
+		
+		return number.Type
+	},
 }
 
 //Could optimise this if there are two of the same string.
