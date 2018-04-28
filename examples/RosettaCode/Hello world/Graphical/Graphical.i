@@ -1,0 +1,3 @@
+graphics {
+	display("Hello World")
+}

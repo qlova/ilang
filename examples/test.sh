@@ -64,8 +64,18 @@ function BasicTest {
 	cd ..
 }
 
+function GraphicsTest {
+	echo -n "$1"
+	echo -e " NOTSURE!"
+}
+
 function Passed {
 	echo -e " \e[32mPASSED!\e[0m"
+}
+
+function FakeTest {
+	echo -n "$1"
+	echo -e " \e[32mFAILED!\e[0m"
 }
 
 function Failed {
@@ -93,6 +103,8 @@ function TESTING {
 export -f TESTING
 export -f BasicTest
 export -f IgnoreTest
+export -f FakeTest
+export -f GraphicsTest
 export -f runit
 export -f Passed
 export -f Failed

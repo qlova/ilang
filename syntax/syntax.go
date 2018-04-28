@@ -29,11 +29,14 @@ import (
 	"github.com/qlova/ilang/syntax/typer"
 	"github.com/qlova/ilang/syntax/languages"
 	"github.com/qlova/ilang/syntax/create"
+	"github.com/qlova/ilang/syntax/maths"
+	"github.com/qlova/ilang/syntax/graphics"
 
 	"github.com/qlova/ilang/types/function"
 	"github.com/qlova/ilang/types/text"
 	"github.com/qlova/ilang/types/letter"
 	"github.com/qlova/ilang/types/number"
+	"github.com/qlova/ilang/types/decimal"
 	"github.com/qlova/ilang/types/list"
 	"github.com/qlova/ilang/types/array"
 	"github.com/qlova/ilang/types/connection"
@@ -73,6 +76,8 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterStatement(errors.End)
 	syntax.RegisterStatement(create.Statement)
 	
+	syntax.RegisterStatement(graphics.Display)
+	syntax.RegisterStatement(graphics.Graphics)
 	
 	syntax.RegisterStatement(function.Statement)
 	syntax.RegisterStatement(number.Statement)
@@ -80,6 +85,7 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterStatement(list.Statement)
 	syntax.RegisterStatement(text.Statement)
 	syntax.RegisterStatement(array.Statement)
+	syntax.RegisterStatement(decimal.Statement)
 	syntax.RegisterStatement(concept_type.Statement)
 	//syntax.RegisterStatement(metatype.Statement)
 
@@ -98,6 +104,7 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterExpression(print.Expression)
 	syntax.RegisterExpression(metatype.Expression)
 	syntax.RegisterExpression(create.Expression)
+	syntax.RegisterExpression(maths.Abs)
 	
 	syntax.RegisterExpression(number.Expression)
 	syntax.RegisterExpression(error.Expression)
@@ -105,11 +112,13 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterExpression(text.Expression)
 	syntax.RegisterExpression(list.Expression)
 	syntax.RegisterExpression(array.Expression)
+	syntax.RegisterExpression(decimal.Expression)
 	syntax.RegisterExpression(concept_type.Expression)
 	
 	syntax.RegisterType(text.Type)
 	syntax.RegisterType(letter.Type)
 	syntax.RegisterType(number.Type)
+	syntax.RegisterType(decimal.Type)
 	syntax.RegisterType(function.Type)
 	syntax.RegisterType(list.Type)
 	syntax.RegisterType(array.Type)
@@ -123,6 +132,7 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterFunction(&text.Join)
 	syntax.RegisterFunction(&list.Copy)
 	
+	syntax.RegisterOperator(symbols.FunctionCallEnd, -1)
 	syntax.RegisterOperator(symbols.IndexEnd, -1)
 	syntax.RegisterOperator(symbols.Or, 0)
 	syntax.RegisterOperator(symbols.And, 1)
@@ -135,8 +145,11 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterOperator(symbols.Power, 5)
 	syntax.RegisterOperator(symbols.Divide, 4)
 	syntax.RegisterOperator(symbols.Modulus, 4)
-	syntax.RegisterOperator(symbols.Index, 5)
+
+	syntax.RegisterOperator(symbols.FunctionCallBegin, 6)
 	syntax.RegisterOperator(symbols.IndexBegin, 6)
+	syntax.RegisterOperator(symbols.Index, 7)
+	
 	
 	syntax.RegisterAlias("×", symbols.Times)
 	syntax.RegisterAlias("÷", symbols.Divide)
