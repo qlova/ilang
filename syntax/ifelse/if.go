@@ -2,8 +2,6 @@ package ifelse
 
 import "github.com/qlova/uct/compiler"
 
-import "github.com/qlova/ilang/types/number"
-
 var If = struct { 
 	Name compiler.Translatable 
 	Flag compiler.Flag
@@ -22,7 +20,7 @@ func init() {
 		
 		OnScan: func(c *compiler.Compiler) {
 			var test = c.ScanExpression()
-			if test.Equals(number.Type) {
+			if test.Base == compiler.INT {
 				
 				c.If()
 				c.GainScope()

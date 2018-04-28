@@ -4,6 +4,7 @@ import "github.com/qlova/uct/compiler"
 import "github.com/qlova/ilang/types/number"
 
 import "github.com/qlova/ilang/syntax/symbols"
+import "github.com/qlova/ilang/syntax/errors"
 
 var Expression = compiler.Expression {
 	Name: compiler.NoTranslation(symbols.SubExpressionStart),
@@ -19,7 +20,7 @@ var NumberOf = compiler.Expression{
 	Name: compiler.NoTranslation(symbols.NumberOf),
 	
 	OnScan: func(c *compiler.Compiler) compiler.Type {
-		var list = c.ScanExpression()
+		var list = c.Shunt(c.Expression(), 5)
 		
 		if list.Base != compiler.LIST {
 			c.RaiseError(compiler.Translatable{
@@ -39,13 +40,11 @@ var Negative = compiler.Expression {
 	OnScan: func(c *compiler.Compiler) compiler.Type {
 		var value = c.ScanExpression()
 		
-		if !value.Equals(number.Type) {
-			c.RaiseError(compiler.Translatable{
-				compiler.English: "Only numbers can be negative!",
-			})
+		if value.Base != compiler.INT {
+			c.RaiseError(errors.MustBeNumeric(value))
 		}
 		
 		c.Flip()
-		return number.Type
+		return value
 	},
 }

@@ -75,7 +75,11 @@ func UnknownType(a string) compiler.Translatable {
 	}
 }
 
-
+func MustBeNumeric(a compiler.Type) compiler.Translatable {
+	return compiler.Translatable {
+		compiler.English: a.String()+" is not a numeric type!",
+	}
+}
 
 func Single(a compiler.Type, symbol string, b compiler.Type) compiler.Translatable {
 	return compiler.Translatable {
