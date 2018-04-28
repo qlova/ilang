@@ -55,7 +55,7 @@ func init() {
 		if b.Equals(text.Type) {
 			
 			c.SwapOutput()
-			c.Data("text_literal"+strconv.Itoa(text.Tmp), []byte(a.Data.(Data).Type.Name[c.Language]))
+			c.Data("text_literal"+strconv.Itoa(text.Tmp), []byte(a.Data.(Data).Type.String()))
 			c.SwapOutput()
 			
 			c.PushList("text_literal"+strconv.Itoa(text.Tmp))
