@@ -18,6 +18,42 @@ var Type = compiler.Type {
 }
 
 var Shunts = compiler.Shunt {
+	symbols.Times: func (c *compiler.Compiler, t compiler.Type) compiler.Type {
+		if !t.Equals(number.Type) {
+			c.RaiseError(errors.Single(Type, symbols.Plus,t))
+		}
+		
+		c.Size()
+		c.Mul()
+		c.Flip()
+		c.List()
+		c.Loop()
+			c.Copy()
+			c.Int(0)
+			c.Same()
+			c.If()
+				c.Done()
+			c.No()
+		
+			c.Copy()
+			c.SwapList()
+			c.Size()
+			c.Mod()
+			c.Get()
+			c.SwapList()
+			
+			c.Put()
+		
+			c.Int(1)
+			c.Add()
+		c.Redo()
+		
+		c.SwapList()
+		c.DropList()
+		
+		return Type
+	},
+	
 	symbols.Plus: func (c *compiler.Compiler, t compiler.Type) compiler.Type {
 		if !t.Equals(Type) {
 			c.RaiseError(errors.Single(Type, symbols.Plus,t))
