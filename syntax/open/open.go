@@ -1,6 +1,7 @@
 package open
 
 import "github.com/qlova/uct/compiler"
+import "github.com/qlova/ilang/syntax/symbols"
 import "github.com/qlova/ilang/types/connection"
 import "github.com/qlova/ilang/types/text"
 
@@ -35,6 +36,11 @@ var Statement = compiler.Statement {
 	
 	OnScan: func(c *compiler.Compiler) {
 		Expression.OnScan(c)
+		if c.Peek() == symbols.Index {
+			c.CopyPipe()
+
+			connection.Statement.OnScan(c)
+		}
 		c.FreePipe()
 	},
 }
