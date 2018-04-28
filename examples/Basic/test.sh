@@ -45,11 +45,12 @@ BasicTest Constant "42\n"
 BasicTest Delete "5\n2\n3\n4"
 BasicTest Shortcuts "4\n6\n1\n2"
 
+BasicTest Decimal "1.0\n0.3\n1.245"
 BasicTest Universal "Hello World\n"
 
 BasicTest Binary "111111011001000\n0\n-1"
 
-#BasicTest Decimal "0.333333\n1.245"
+
 #BasicTest Swap "4 2\n4 2"
 
 #BasicTest Split "192\n168\n1\n70"
