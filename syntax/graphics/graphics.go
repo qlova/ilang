@@ -142,7 +142,7 @@ var Display = compiler.Statement {
 			c.RaiseError(errors.ExpectingType(text.Type, arg))
 		}
 		
-		c.Native("py", "grate_label.text = runtime.Lists.pop().decode('utf8')")
+		c.Native("py", "grate_label.text = bytearray(runtime.Lists.pop()).decode('utf8')")
 		c.Native("py", "grate_label.draw()")
 		
 		c.Native("go", "display_text()")
