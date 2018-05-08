@@ -2,7 +2,10 @@ package statement
 
 import "github.com/qlova/ilang/syntax/symbols"
 import "github.com/qlova/ilang/syntax/errors"
+import "github.com/qlova/ilang/syntax/global"
 import "github.com/qlova/uct/compiler"
+
+import "io/ioutil"
 
 var Statement = compiler.Statement {
 	Detect: func(c *compiler.Compiler) bool {
@@ -35,6 +38,34 @@ var Statement = compiler.Statement {
 			
 			c.Expecting("=")
 			
+			//Global!
+			if len(c.Scope) == 0 {
+				if len(names) > 0 {
+					c.Unimplemented()
+				}
+				
+				var cache = c.NewCache("", "\n")
+				
+				c.LoadCache(cache, "statement.go", 0)
+				
+				output := c.Output
+				c.Output = ioutil.Discard
+				
+				var t = c.ScanExpression()
+
+				c.Output = output
+				
+				c.SetGlobal(name, global.Type.With(global.Data{
+					Type: t,
+					Cache: cache,
+					Line: 0,
+					FileName: "statement.go",
+					Index: len(c.GlobalScope.Variables),
+				}))
+				
+
+				return true
+			}
 			
 			var t = c.ScanExpression()
 			
