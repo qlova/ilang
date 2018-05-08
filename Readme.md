@@ -1,7 +1,7 @@
 ## The 'i' programming language
 ![i](spotlight.png)  
 
-'i' is a hardware-agnostic maths-based cross-platform programming language in heavy development.
+'i' is a hardware-agnostic cross-platform creative programming language in heavy development.
 
 Hello World:
 
@@ -45,8 +45,7 @@ Given hardware with an infinite amount of memory, 'i' will never crash.
 * Statically typed.
 * Feels dynamic.
 * Cross-platform.
-* Has a Gui library.
-* Has a **WIP** game engine.
+* Has cross-platform graphics support.
 
 ## Documentation
 
