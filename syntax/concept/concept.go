@@ -84,6 +84,17 @@ var Return = compiler.Statement {
 	
 	OnScan: func(c *compiler.Compiler) {
 		
+		//TODO ignore everything after final return.
+		if len(c.Scope) < 2 {
+			c.Int(1)
+			c.If()
+		}
+		defer func(c *compiler.Compiler) {
+			if len(c.Scope) < 2 {
+				c.No()
+			}
+		}(c)
+		
 		c.CollectAll()
 		
 		if c.Peek() == "\n" {
@@ -102,6 +113,8 @@ var Return = compiler.Statement {
 		if len(c.Scope) > 1 {
 			c.Back()
 		}
+		
+		
 	},
 }
 
@@ -261,6 +274,7 @@ var Statement = compiler.Statement {
 						c.Errors = true
 						
 						if os.Getenv("PANIC") == "1" { 
+							fmt.Println(b.String())
 							panic("PANIC=1")
 						}
 						

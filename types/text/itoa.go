@@ -57,14 +57,9 @@ var Itoa = compiler.Function {
 		c.Loop()
 		
 			//if exponent <= 0
-			c.Int(0)
-			c.Push("number")
+			c.Int(1)
+			c.Push("exponent")
 			c.Less()
-			c.Int(0)
-			c.Push("number")
-			c.Same()
-			c.Add()
-			
 			c.If()
 				c.Done()
 			c.No()

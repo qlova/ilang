@@ -47,3 +47,11 @@ var Expression = compiler.Expression {
 		return compiler.Type{}
 	},
 }
+
+var Statement = compiler.Statement {
+	Name: Name,
+	
+	OnScan: func(c *compiler.Compiler) {
+		c.DropType(Expression.OnScan(c))
+	},
+}

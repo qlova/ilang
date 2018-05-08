@@ -20,7 +20,6 @@ import (
 	"github.com/qlova/ilang/syntax/load"
 	"github.com/qlova/ilang/syntax/open"
 	"github.com/qlova/ilang/syntax/loop"
-	"github.com/qlova/ilang/syntax/breakfast"
 	"github.com/qlova/ilang/syntax/booleans"
 	"github.com/qlova/ilang/syntax/importation"
 	"github.com/qlova/ilang/syntax/fixed"
@@ -30,7 +29,11 @@ import (
 	"github.com/qlova/ilang/syntax/languages"
 	"github.com/qlova/ilang/syntax/create"
 	"github.com/qlova/ilang/syntax/maths"
+	"github.com/qlova/ilang/syntax/global"
+	
 	"github.com/qlova/ilang/syntax/graphics"
+	"github.com/qlova/ilang/syntax/update"
+	"github.com/qlova/ilang/syntax/input"
 
 	"github.com/qlova/ilang/types/function"
 	"github.com/qlova/ilang/types/text"
@@ -49,9 +52,11 @@ func Syntax() compiler.Syntax {
 	var syntax = compiler.NewSyntax("i")
 	
 	syntax.RegisterStatement(software.Statement)
+	syntax.RegisterStatement(software.Exit)
 	syntax.RegisterStatement(software.End)
 	syntax.RegisterStatement(print.Statement)
 	syntax.RegisterStatement(send.Statement)
+	syntax.RegisterStatement(read.Statement)
 	syntax.RegisterStatement(statement.Statement)
 	syntax.RegisterStatement(concept.Return)
 	syntax.RegisterStatement(concept.Statement)
@@ -62,7 +67,7 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterStatement(ifelse.End)
 	syntax.RegisterStatement(loop.Statement)
 	syntax.RegisterStatement(loop.End)
-	syntax.RegisterStatement(breakfast.Statement)
+	syntax.RegisterStatement(loop.Break)
 	syntax.RegisterStatement(importation.Statement)
 	syntax.RegisterStatement(fixed.Statement)
 	syntax.RegisterStatement(forloop.Remove)
@@ -75,6 +80,7 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterStatement(errors.Statement)
 	syntax.RegisterStatement(errors.End)
 	syntax.RegisterStatement(create.Statement)
+	syntax.RegisterStatement(update.Statement)
 	
 	syntax.RegisterStatement(graphics.Display)
 	syntax.RegisterStatement(graphics.Graphics)
@@ -104,7 +110,9 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterExpression(print.Expression)
 	syntax.RegisterExpression(metatype.Expression)
 	syntax.RegisterExpression(create.Expression)
+	syntax.RegisterExpression(global.Expression)
 	syntax.RegisterExpression(maths.Abs)
+	syntax.RegisterExpression(input.Keys)
 	
 	syntax.RegisterExpression(number.Expression)
 	syntax.RegisterExpression(error.Expression)
