@@ -1,5 +1,4 @@
 TESTING $1 $2 $3
-
 BasicTest A+B "4" "2 2\n"
 BasicTest Arithmetic/Integer "Sum: 8\nDifference: -2\nProduct: 15\nQuotient: 0\nModulus: 3\nExponent: 243" "3 5\n"
 cd ..
@@ -56,4 +55,11 @@ BasicTest "Function definition" ""
 BasicTest "Greatest element of a list" "35757\n"
 
 GraphicsTest "Hello world/Graphical"
+BasicTest "Hello world/Text" "Hello world!"
 cd ..
+BasicTest "Increment a numerical string" "2\n"
+BasicTest "Input loop" ""
+BasicTest "Integer comparison" "7 is greater than 2\n" "7 2\n" 
+BasicTest "Jump anywhere" "This will print\nHello there\n"
+BasicTest "Integer comparison" "7 is greater than 2" '7 2\n'
+IgnoreTest "Keyboard input/Flush the keyboard buffer" "\n"

@@ -1,3 +1,3 @@
 graphics {
-	display("Hello World")
+	display("Goodbye, World!")
 }

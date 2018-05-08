@@ -15,7 +15,7 @@ function runit {
 			python3 ./.it/main.py <<< $(echo -e "$2")
 		;;
 		go)
-			cd ./.it && go build -o ../$1 && cd .. && ./$1 <<< $(echo -e "$2")
+			go run ./.it/main.go  <<< $(echo -e "$2")
 		;;
 		
 		rs)
@@ -26,7 +26,9 @@ function runit {
 			./$1.bash <<< $(echo -e "$2")
 		;;
 		java) 
-			cd ./.it && javac $1.java && java $1 <<< $(echo -e "$2")
+			rm Runtime.java 2> /dev/null
+			mv main.java Runtime.java 2> /dev/null
+			cd ./.it && javac Runtime.java && java Runtime <<< $(echo -e "$2")
 		;;
 		cs) 
 			cd ./.it && mcs -nowarn:414 /r:mscorlib.dll /r:System.Numerics.dll $1.cs stack.cs > /dev/null && mono $1.exe <<< $(echo -e "$2")
@@ -50,7 +52,7 @@ function BasicTest {
 		echo -e "$1 \e[31mFAILED!\e[0m to compile D:"
 		exit 1
 	fi
-	local OUTPUT=$(runit $1 "$3")
+	local OUTPUT=$(runit "$1" "$3")
 	local DEFINED=$(echo -e "$2")
 	if [ "$OUTPUT" = "$DEFINED" ]; then
 		echo -e "$1 \e[32mPASSED!\e[0m"
@@ -61,6 +63,7 @@ function BasicTest {
 		echo	 "$DEFINED"
 		exit 1
 	fi
+	rm -r ./.it
 	cd ..
 }
 
