@@ -4,6 +4,8 @@ import "github.com/qlova/uct/compiler"
 import "github.com/qlova/ilang/syntax/errors"
 import "github.com/qlova/ilang/syntax/symbols"
 
+import "github.com/qlova/ilang/types/number"
+
 func init() {
 	Type.EmbeddedStatement = func(c *compiler.Compiler, list compiler.Type) {
 		statement(c, true)
@@ -61,6 +63,19 @@ func statement(c *compiler.Compiler, embed bool) bool {
 					c.PushList(name)
 					
 					var t = c.ScanExpression()
+					
+					//string += 1 (increments the numeric value encoded in string)
+					if t.Equals(number.Type) {
+						c.Int(10)
+						c.Call(&Atoi)
+						c.Add()
+						c.Int(10)
+						c.Call(&Itoa)
+						c.NameList(name)
+						
+						return true
+					}
+					
 					if !t.Equals(Type) {
 						c.RaiseError(errors.AssignmentMismatch(t, Type))
 					}
