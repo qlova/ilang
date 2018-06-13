@@ -39,21 +39,7 @@ var Statement = compiler.Statement {
 		c.SetFlag(Flag)
 		
 		
-		c.Int(int64(len(c.GlobalScope.Variables)))
-		c.Make()
-		c.NameList("GLOBAL")
-		c.PushList("GLOBAL")
-		
-		//Do the globals.
-		for _, variable := range c.GlobalScope.Variables {
-			var data = variable.Data.(global.Data)
-			c.LoadCache(data.Cache, data.FileName, data.Line)
-			var t = c.ScanExpression()
-			c.Int(int64(data.Index)-1)
-			t.Base.Attach(c)
-		}
-		
-		c.DropList()
+		global.Init(c)
 	},
 }
 

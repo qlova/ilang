@@ -255,6 +255,7 @@ func statement(c *compiler.Compiler, list compiler.Type, embed bool) bool {
 				}
 				
 				if embed {
+					c.Int(0)
 					c.HeapList()
 					c.Set()
 				} else {

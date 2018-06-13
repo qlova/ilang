@@ -80,6 +80,8 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterStatement(errors.Statement)
 	syntax.RegisterStatement(errors.End)
 	syntax.RegisterStatement(create.Statement)
+	syntax.RegisterStatement(global.Statement)
+	
 	syntax.RegisterStatement(update.Statement)
 	
 	syntax.RegisterStatement(graphics.Display)

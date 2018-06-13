@@ -12,6 +12,14 @@ var Statement = compiler.Statement {
 		if !c.GetVariable(c.Token()).Defined {
 			
 			var name = c.Token()
+			
+			//Don't reassign globals?
+			for names := range c.GlobalScope.Variables {
+				if names == name {
+					return false
+				}
+			}
+			
 			if errors.IsInvalidName(name) {
 				c.RaiseError(errors.InvalidName(name))
 			}
