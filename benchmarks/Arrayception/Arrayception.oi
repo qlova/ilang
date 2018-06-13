@@ -1,0 +1,9 @@
+software {
+	var a = []
+	
+	for i over [0,1000000]
+		a += i*2
+	end
+	
+	print(a[12317])
+}

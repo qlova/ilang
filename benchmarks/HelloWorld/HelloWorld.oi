@@ -1,0 +1,8 @@
+// An introductory benchmark.
+// Heavily affected by buffer size of the target.
+
+software {
+	for i over [0, 1000000]
+		print("Hello World")
+	end
+}
