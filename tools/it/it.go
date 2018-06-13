@@ -2,7 +2,7 @@ package main
 
 import "os"
 import "fmt"
-import "path"
+import path "path/filepath"
 import "github.com/qlova/ilang/tools/it/targets"
 
 func main() {
@@ -44,7 +44,7 @@ func main() {
 		}
 		
 		switch Mode {
-			case "run":
+			case "run": 
 				if err := target.Run(File); err != nil {
 					fmt.Println(err)
 					return
