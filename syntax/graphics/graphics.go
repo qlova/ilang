@@ -24,7 +24,10 @@ var Flag = compiler.Flag {
 		global.Init(c)
 
 		c.Native("py", "global_runtime = runtime")
-		c.Native("py", "pyglet.clock.schedule_interval(update, 1/30.0)")
+		c.Native("py", "try:")
+		c.Native("py", "\tpyglet.clock.schedule_interval(update, 1/30.0)")
+		c.Native("py", "except NameError:")
+		c.Native("py", "\tpass")
 		c.Native("py", "pyglet.app.run()")
 		
 		
