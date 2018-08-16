@@ -23,7 +23,7 @@ var Flag = compiler.Flag {
 func Init(c *compiler.Compiler) {
 	c.Native("go", `
 // update is called every frame (1/60 [s]).
-func update(screen *ebiten.Image) error {
+func grate_update(screen *ebiten.Image) error {
 	grate_screen = screen
 
     // Write your game's logical update.
