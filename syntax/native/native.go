@@ -41,6 +41,7 @@ var Statement = compiler.Statement {
 		
 		var LastToken = ""
 		for {
+			
 			c.Scanners[len(c.Scanners)-1].Scan()
 			var token = c.Scanners[len(c.Scanners)-1].TokenText()
 			
@@ -48,6 +49,7 @@ var Statement = compiler.Statement {
 				ThisIsABlock = true
 				c.Expecting("\n")
 				CheckInBlock = false
+				continue
 			}
 			
 			if token == "\\" && c.Peek() == "t" {
