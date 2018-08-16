@@ -34,9 +34,9 @@ func init() {
 		
 		if symbol == symbols.Equals {
 			
-			if !a.Equals(b) {
-				return nil
-			}
+			//if !a.Equals(b) {
+			//	return nil
+			//}
 			
 			//TODO use fixed type so if statements using this expression can be optimised away.
 			if a.Data.(Data).Type.Equals(b.Data.(Data).Type) {
