@@ -1,48 +1,61 @@
+/*	
+ *  Native syntax.
+ * 
+ * 	Run code on a specified target. For example, in order to run Go code:
+ * 	
+ * 	.go System.out.println("Hello World");
+ * 
+ */
+
 package native
 
 import "github.com/qlova/uct/compiler"
 import "strings"
 
 var Statement = compiler.Statement {
+	
+	//Native code begins with a dot.
 	Name: compiler.NoTranslation("."),
 
 	OnScan: func(c *compiler.Compiler) {
-		cmd := c.Scan()
-		asm := ""
+		
+		//This can be a UCT command or a language extension.
+		Command := c.Scan()
+		Assembly := ""
 
-		var data bool
-		if cmd == "data" {
-			data = true
+		var ThisIsADataCommand bool
+		if Command == "data" {
+			ThisIsADataCommand = true
 		}
 
 		//Are we in a block of code?
-		var block = false
-
-		var peeking = c.Scan() 
-		if peeking  == "{" {
-			block = true
-			c.Expecting("\n")
-			asm = ""
-		} else {
-			c.NextToken = peeking 
-		}
+		var ThisIsABlock = false
 
 		//Do some magic so that we can use variables in inline assembly.
 		//Keep track of braces so we can have blocks of code.
-		var braces = 0
-		var first = true
-		var second = false
-		var last = ""
+		var NumberOfBraces = 0
+		var FirstIteration = true
+		var SecondIteration = false
+		
+		var CheckInBlock = true
+		
+		var LastToken = ""
 		for {
 			c.Scanners[len(c.Scanners)-1].Scan()
 			var token = c.Scanners[len(c.Scanners)-1].TokenText()
 			
+			if CheckInBlock && token == "{" {
+				ThisIsABlock = true
+				c.Expecting("\n")
+				CheckInBlock = false
+			}
+			
 			if token == "\\" && c.Peek() == "t" {
 				c.Scan()
-				asm += "\t"
+				Assembly += "\t"
 				continue
 			} else if token == "\\" {
-				asm += c.Scan()
+				Assembly += c.Scan()
 				continue
 			}
 			if strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") {
@@ -56,57 +69,57 @@ var Statement = compiler.Statement {
 					ic.SetVariable(token+"_use", ilang.Used)
 				}*/
 			}
-			if data {
+			if ThisIsADataCommand {
 				//ic.SetVariable(token, ilang.Text)
-				data = false
+				ThisIsADataCommand = false
 			}
 			if token == "\n" {
+
+				c.Native(Command, strings.TrimSpace(Assembly))
 				
-				c.Native(cmd, asm)
-				
-				if !block {
+				if !ThisIsABlock {
 					break
 				} else {
-					asm = ""
+					Assembly = ""
 				}
 			} else {
-				if asm == "" {
-					asm = token
+				if Assembly == "" {
+					Assembly = token
 					
-				}  else if first || (token[0] == '"') || 
-					(strings.ContainsAny(last, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789") &&
+				}  else if FirstIteration || (token[0] == '"') || 
+					(strings.ContainsAny(LastToken, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789") &&
 					strings.ContainsAny(token, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789")) {
-					asm += " "+token
+					Assembly += " "+token
 					
 				}else if strings.ContainsAny(token, "+-/*().=[]<>{}:;!@#$%^&*") {
-					asm += token
+					Assembly += token
 					
 				} else {
-					asm += token
+					Assembly += token
 				}
 			}
 		
-			if block {
+			if ThisIsABlock {
 				if token == "}" {
-					if braces == 0 {
+					if NumberOfBraces == 0 {
 						break
 					} else {
-						braces--
+						NumberOfBraces--
 					}
 				}
 				if token == "{" {
-					braces++
+					NumberOfBraces++
 				}
 			}
 			
-			if first {
-				first = false
-				second = true
-			} else if second {
-				second = false
+			if FirstIteration {
+				FirstIteration = false
+				SecondIteration = true
+			} else if SecondIteration {
+				SecondIteration = false
 			}
 			
-			last = token
+			LastToken = token
 		}
 	},
 }
