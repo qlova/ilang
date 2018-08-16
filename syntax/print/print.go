@@ -15,7 +15,133 @@ import "io/ioutil"
 
 var Name = compiler.Translatable{
 	compiler.English: "print",
+	compiler.Dutch: "afdrukken",
 	compiler.Maori: "perehitia",
+	compiler.French: "imprime",
+	compiler.Spanish: "imprimir",
+	compiler.Chinese: "打印",
+	compiler.Japanese: "プリント",
+	compiler.Samoan: "lolomi",
+	compiler.German: "drucke",
+	
+	compiler.Afrikaans: "druk",
+	compiler.Albanian: "printoni",
+	compiler.Amharic: "አትም",
+	compiler.Arabic: "اطبع",
+	compiler.Armenian: "Տպել",
+	compiler.Azerbaijani: "çap",
+	
+	compiler.Basque: "inprimatu",
+	compiler.Belarusian: "друк",
+	compiler.Bengali: "মুদ্রণ",
+	compiler.Bosnian: "štampanje",
+	compiler.Bulgarian: "печат",
+	compiler.Burmese: "ပုံနှိပ်",
+	
+	compiler.Catalan: "imprimiu",
+	compiler.Cebuano: "imprinta",
+	compiler.Chichewa: "sindikizani",
+	compiler.Corsican: "stampa",
+	compiler.Croatian: "ispisati",
+	compiler.Czech: "tisk",
+	
+	compiler.Danish: "print",
+	
+	compiler.Esperanto: "presi",
+	compiler.Estonian: "trüki",
+	
+	compiler.Filipino: "print",
+	compiler.Finnish: "tulostettava",
+	compiler.Frisian: "ôfdrukke",
+	
+	compiler.Galician: "imprimir",
+	compiler.Georgian: "ბეჭდვითი",
+	compiler.Greek: "Τυπώνω",
+	compiler.Gujarati: "પ્રિન્ટ",
+	
+	compiler.HaitianCreole: "enprime",
+	compiler.Hausa: "buga",
+	compiler.Hawaiian: "papa",
+	compiler.Hebrew: "הדפס",
+	compiler.Hindi: "प्रिंट",
+	compiler.Hmong: "sau",
+	compiler.Hungarian: "nyomtatott",
+	
+	compiler.Icelandic: "prenta",
+	compiler.Igbo: "ebipụta",
+	compiler.Indonesian: "mencetak",
+	compiler.Irish: "priontáil",
+	compiler.Italian: "stampare",
+	
+	compiler.Javanese: "print",
+	
+	compiler.Kannada: "ಮುದ್ರಣ",
+	compiler.Kazakh: "басыпшығару",
+	compiler.Khmer: "បោះពុម្ព",
+	compiler.Klingon: "SevIr",
+	compiler.Korean: "인쇄",
+	compiler.Kurdish: "çap",
+	compiler.Kyrgyz: "басып",
+	
+	compiler.Lao: "ພິມ",
+	compiler.Latin: "print",
+	compiler.Latvian: "drukas",
+	compiler.Lithuanian: "spausdinimo",
+	compiler.Luxembourgish: "drucken",
+	
+	compiler.Macedonian: "печатење",
+	compiler.Malagasy: "print",
+	compiler.Malay: "cetak",
+	compiler.Malayalam: "അച്ചടി",
+	compiler.Maltese: "stampa",
+	compiler.Marathi: "प्रिंट",
+	compiler.Mongolian: "хэвлэх",
+	
+	compiler.Nepali: "प्रिन्ट",
+	compiler.Norwegian: "skrive",
+	
+	compiler.Pashto: "چاپ",
+	compiler.Persian: "چاپ",
+	compiler.Polish: "wydrukuj",
+	compiler.Portuguese: "impressão",
+	compiler.Punjabi: "ਛਾਪੋ",
+	
+	compiler.Romanian: "tipăriți",
+	compiler.Russian: "Распечатать",
+	
+	compiler.ScotsGaelic: "clò",
+	compiler.Serbian: "штампани",
+	compiler.Sesotho: "hatisa",
+	compiler.Shona: "print",
+	compiler.Sindhi: "پرنٽ",
+	compiler.Sinhala: "මුද්රිත",
+	compiler.Slovak: "tlačový",
+	compiler.Slovenian: "tiskalni",
+	compiler.Somali: "daabacan",
+	compiler.Sundanese: "nyitak",
+	compiler.Swahili: "magazeti",
+	compiler.Swedish: "skriva",
+	
+	compiler.Tajik: "чоп",
+	compiler.Tamil: "அச்சு",
+	compiler.Telugu: "ప్రింట్",
+	compiler.Thai: "พิมพ์",
+	compiler.Turkish: "baskı",
+	
+	compiler.Ukrainian: "друкований",
+	compiler.Urdu: "پرنٹکریں",
+	compiler.Uzbek: "bosma",
+	
+	compiler.Vietnamese: "in",
+	
+	compiler.Welsh: "argraffu",
+	
+	compiler.Xhosa: "lokuprinta",
+	
+	compiler.Yiddish: "דרוק",
+	compiler.Yoruba: "tẹjade",
+	
+	compiler.Zulu: "phrinta",
 }
 
 func PrintType(c *compiler.Compiler, t compiler.Type) {
@@ -45,6 +171,7 @@ func PrintType(c *compiler.Compiler, t compiler.Type) {
 			c.Get()
 			
 			if list.SubType(t).Base != compiler.INT && !list.SubType(t).Equals(text.Type) {
+				print(list.SubType(t).String())
 				c.Unimplemented()
 			}
 			

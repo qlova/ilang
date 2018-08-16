@@ -20,6 +20,8 @@ var Type = compiler.Type {
 	Base: compiler.INT,
 }
 
+var DefaultExponent = big.NewInt(1000000)
+
 type Data struct {
 	Exponent *big.Int
 	Precision int64
@@ -29,7 +31,12 @@ func (d Data) Name(l compiler.Language) string {
 	return fmt.Sprint(d.Precision)
 }
 
-func (Data) Equals(d compiler.Data) bool {
+func (self Data) Equals(d compiler.Data) bool {
+	
+	if (d.(Data).Precision == self.Precision) {
+		return true
+	}
+	
 	return false
 }
 
@@ -87,7 +94,6 @@ var Expression = compiler.Expression {
 
 var Method = compiler.Function {
 	Name: Name,
-	Returns: []compiler.Type{Type},
 	
 	Inline: func(c *compiler.Compiler) {
 		c.Int(0)
@@ -158,4 +164,6 @@ func init() {
 			return false			
 		},
 	)
+	
+	Method.Returns = []compiler.Type{Type.With(Data{Exponent: big.NewInt(1000000), Precision: 6})}
 }

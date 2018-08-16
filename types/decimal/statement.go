@@ -4,8 +4,12 @@ import "github.com/qlova/uct/compiler"
 import "github.com/qlova/ilang/syntax/errors"
 import "github.com/qlova/ilang/syntax/symbols"
 
+import "github.com/qlova/ilang/types/number"
+
 func statement(c *compiler.Compiler, embed bool) bool {
 	if embed || c.GetVariable(c.Token()).Type.Equals(Type) {
+			
+			var decimal = c.GetVariable(c.Token()).Type
 			
 			var name = c.Token()
 			
@@ -13,8 +17,8 @@ func statement(c *compiler.Compiler, embed bool) bool {
 				
 				case symbols.Equals:
 					var t = c.ScanExpression()
-					if !t.Equals(Type) {
-						c.RaiseError(errors.AssignmentMismatch(t, Type))
+					if !t.Equals(decimal) {
+						c.RaiseError(errors.AssignmentMismatch(t, decimal))
 					}
 					
 					if embed {
@@ -52,7 +56,20 @@ func statement(c *compiler.Compiler, embed bool) bool {
 							
 							var t = c.ScanExpression()
 							if !t.Equals(Type) {
-								c.RaiseError(errors.AssignmentMismatch(t, Type))
+								
+								if t.Equals(number.Type) {
+									
+									var exponent = DefaultExponent
+									if decimal.Data != nil {
+										exponent = decimal.Data.(Data).Exponent
+									}
+									
+									c.BigInt(exponent)
+									c.Mul()
+								} else {
+								
+									c.RaiseError(errors.AssignmentMismatch(t, decimal))
+								}
 							}
 							
 							c.Add()
@@ -89,10 +106,12 @@ func statement(c *compiler.Compiler, embed bool) bool {
 							c.Push(name)
 							
 							var t = c.ScanExpression()
-							if !t.Equals(Type) {
-								c.RaiseError(errors.AssignmentMismatch(t, Type))
+							if !t.Equals(decimal) {
+								
+								
+								
+								c.RaiseError(errors.AssignmentMismatch(t, decimal))
 							}
-							
 							
 							c.Sub()
 							c.Name(name)
@@ -109,8 +128,8 @@ func statement(c *compiler.Compiler, embed bool) bool {
 					switch c.Scan() {						
 						case symbols.Equals:
 							var t = c.ScanExpression()
-							if !t.Equals(Type) {
-								c.RaiseError(errors.AssignmentMismatch(t, Type))
+							if !t.Equals(decimal) {
+								c.RaiseError(errors.AssignmentMismatch(t, decimal))
 							}
 							
 							c.Push(name)
@@ -131,8 +150,8 @@ func statement(c *compiler.Compiler, embed bool) bool {
 							c.Push(name)
 							
 							var t = c.ScanExpression()
-							if !t.Equals(Type) {
-								c.RaiseError(errors.AssignmentMismatch(t, Type))
+							if !t.Equals(decimal) {
+								c.RaiseError(errors.AssignmentMismatch(t, decimal))
 							}
 							
 							

@@ -137,6 +137,7 @@ func Syntax() compiler.Syntax {
 	syntax.RegisterType(metatype.Type)
 	
 	syntax.RegisterFunction(&number.Method)
+	syntax.RegisterFunction(&decimal.Method)
 	
 	syntax.RegisterFunction(&text.Itoa)
 	syntax.RegisterFunction(&text.Join)

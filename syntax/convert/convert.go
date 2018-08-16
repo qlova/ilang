@@ -18,6 +18,16 @@ var Expression = compiler.Expression {
 			return nil
 		}
 		
+		
+		if f := c.GetFunction(name); f != nil && f.Inline != nil {
+			c.Expecting("(")
+			c.Expecting(")")
+			f.Inline(c)
+			return &f.Returns[0]
+		} else {
+			c.UndefinedError(name)
+		}
+		
 		if c.GetVariable(name).Defined {
 			return nil
 		}

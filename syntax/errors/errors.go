@@ -59,13 +59,13 @@ var End = compiler.Statement {
 
 func AssignmentMismatch(a, b compiler.Type) compiler.Translatable {
 	return compiler.Translatable {
-		compiler.English: "Cannot assign a "+a.Name[compiler.English]+" value to a variable of type "+b.Name[compiler.English],
+		compiler.English: "Cannot assign a "+a.String()+" value to a variable of type "+b.String(),
 	}
 }
 
 func ExpectingType(a, b compiler.Type) compiler.Translatable {
 	return compiler.Translatable {
-		compiler.English: "Expecting a value of type "+a.Name[compiler.English]+" instead got a value of type "+b.Name[compiler.English],
+		compiler.English: "Expecting a value of type "+a.String()+" instead got a value of type "+b.String(),
 	}
 }
 
@@ -83,7 +83,7 @@ func MustBeNumeric(a compiler.Type) compiler.Translatable {
 
 func Single(a compiler.Type, symbol string, b compiler.Type) compiler.Translatable {
 	return compiler.Translatable {
-		compiler.English: "The relationship "+a.Name[compiler.English]+symbol+b.Name[compiler.English]+" is not defined!",
+		compiler.English: "The relationship "+a.String()+symbol+b.String()+" is not defined!",
 	}
 }
 
@@ -100,12 +100,12 @@ func InvalidName(name string) compiler.Translatable {
 
 func Inconsistent(a, b compiler.Type) compiler.Translatable {
 	return compiler.Translatable {
-		compiler.English: "The usage here of the '"+a.Name[compiler.English]+"' type is inconsistent with the\n use of the '"+b.Name[compiler.English]+"' type before this!", 
+		compiler.English: "The usage here of the '"+a.String()+"' type is inconsistent with the\n use of the '"+b.String()+"' type before this!", 
 	}
 }
 
 func NoSuchElement(a string, b compiler.Type) compiler.Translatable {
 	return compiler.Translatable {
-		compiler.English: "No such element '"+a+"' in type '"+b.Name[compiler.English]+"'!", 
+		compiler.English: "No such element '"+a+"' in type '"+b.String()+"'!", 
 	}
 }
